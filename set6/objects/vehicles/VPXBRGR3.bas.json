@@ -1,0 +1,2316 @@
+{
+ "MC2 ": [ 
+  {
+   "OBJT": [ 
+    {
+     "CLID": {
+      "class_id": "base.class"
+     }
+    }, 
+    {
+     "BASE": [ 
+      {
+       "ROOT": [ 
+        {
+         "NAME": {
+          "name": "VPXBRGR3",
+          "zero_terminated": false
+         }
+        } ]
+      }, 
+      {
+       "STRC": {
+        "_un1": 0,
+        "ambient_light": 255,
+        "att_flags": 72,
+        "ax": 0,
+        "ay": 0,
+        "az": 0,
+        "pos": [ 0.0, 0.0, 0.0 ],
+        "rx": 0,
+        "ry": 0,
+        "rz": 0,
+        "scale": [ 1.0, 1.0, 1.0 ],
+        "strc_type": "STRC_BASE",
+        "vec": [ 0.0, 0.0, 0.0 ],
+        "version": 1,
+        "vis_limit": 4096
+       }
+      }, 
+      {
+       "OBJT": [ 
+        {
+         "CLID": {
+          "class_id": "sklt.class"
+         }
+        }, 
+        {
+         "SKLC": [ 
+          {
+           "NAME": {
+            "name": "Skeleton/VPXBRGR3.sklt",
+            "zero_terminated": true
+           }
+          } ]
+        } ]
+      }, 
+      {
+       "ADES": [ 
+        {
+         "OBJT": [ 
+          {
+           "CLID": {
+            "class_id": "particle.class"
+           }
+          }, 
+          {
+           "PTCL": [ 
+            {
+             "ADE ": [ 
+              {
+               "ROOT": []
+              }, 
+              {
+               "STRC": {
+                "_nu2": 0,
+                "_nul": 0,
+                "flags": 0,
+                "point": 0,
+                "poly": 0,
+                "strc_type": "STRC_ADE ",
+                "version": 1
+               }
+              } ]
+            }, 
+            {
+             "ATTS": {
+              "atts_entries": [ 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 1,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": -16192,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": -16192,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 18,
+                "pad": 2,
+                "poly_id": 0,
+                "shade_val": 132,
+                "tracy_val": 63
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 70,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 128,
+                "poly_id": 2,
+                "shade_val": 30,
+                "tracy_val": 132
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 5,
+                "poly_id": 200,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 2,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 88,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 71,
+                "poly_id": 160,
+                "shade_val": 0,
+                "tracy_val": 0
+               } ]
+             }
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "BORGBLITZE3.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "16109603.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "BORGBLITZE2.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "16109602.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "smiley8.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "SMILEY8.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "smiley9.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "SMILEY9.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            } ]
+          } ]
+        }, 
+        {
+         "OBJT": [ 
+          {
+           "CLID": {
+            "class_id": "particle.class"
+           }
+          }, 
+          {
+           "PTCL": [ 
+            {
+             "ADE ": [ 
+              {
+               "ROOT": []
+              }, 
+              {
+               "STRC": {
+                "_nu2": 0,
+                "_nul": 0,
+                "flags": 0,
+                "point": 1,
+                "poly": 0,
+                "strc_type": "STRC_ADE ",
+                "version": 1
+               }
+              } ]
+            }, 
+            {
+             "ATTS": {
+              "atts_entries": [ 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 1,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": -16192,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": -16192,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 160,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 192
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 160,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 192
+               }, 
+               {
+                "color_val": 18,
+                "pad": 2,
+                "poly_id": 0,
+                "shade_val": 132,
+                "tracy_val": 63
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 100,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 128,
+                "poly_id": 3,
+                "shade_val": 30,
+                "tracy_val": 132
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 20,
+                "poly_id": 1000,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 4,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 176,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 100,
+                "poly_id": 10,
+                "shade_val": 0,
+                "tracy_val": 0
+               } ]
+             }
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "smiley3.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "SMILEY3.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "BLITZ1.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "BLITZL1.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "smiley2.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "SMILEY2.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "BLITZ3.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "BLITZL3.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "smiley8.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "SMILEY8.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            } ]
+          } ]
+        }, 
+        {
+         "OBJT": [ 
+          {
+           "CLID": {
+            "class_id": "particle.class"
+           }
+          }, 
+          {
+           "PTCL": [ 
+            {
+             "ADE ": [ 
+              {
+               "ROOT": []
+              }, 
+              {
+               "STRC": {
+                "_nu2": 0,
+                "_nul": 0,
+                "flags": 0,
+                "point": 2,
+                "poly": 0,
+                "strc_type": "STRC_ADE ",
+                "version": 1
+               }
+              } ]
+            }, 
+            {
+             "ATTS": {
+              "atts_entries": [ 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 1,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": -16128,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": -16128,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": -16320,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": -16320,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 18,
+                "pad": 2,
+                "poly_id": 0,
+                "shade_val": 132,
+                "tracy_val": 63
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 10,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 88,
+                "poly_id": 3,
+                "shade_val": 0,
+                "tracy_val": 27
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 9,
+                "poly_id": 5000,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 5,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 220,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 60,
+                "poly_id": 10,
+                "shade_val": 0,
+                "tracy_val": 0
+               } ]
+             }
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "BLAUBOILEED.ADE",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "25089701.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "BORGBLITZE.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "BRGBLTZ.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "BLAUBOILEED.ADE",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "25089701.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "NEUROT3.ADE",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "22089703.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "NEUROT4.ADE",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "22089704.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "NEUROT4.ADE",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "22089704.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            } ]
+          } ]
+        }, 
+        {
+         "OBJT": [ 
+          {
+           "CLID": {
+            "class_id": "particle.class"
+           }
+          }, 
+          {
+           "PTCL": [ 
+            {
+             "ADE ": [ 
+              {
+               "ROOT": []
+              }, 
+              {
+               "STRC": {
+                "_nu2": 0,
+                "_nul": 0,
+                "flags": 0,
+                "point": 4,
+                "poly": 0,
+                "strc_type": "STRC_ADE ",
+                "version": 1
+               }
+              } ]
+            }, 
+            {
+             "ATTS": {
+              "atts_entries": [ 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 1,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 18,
+                "pad": 2,
+                "poly_id": 0,
+                "shade_val": 132,
+                "tracy_val": 63
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 50,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 224,
+                "poly_id": 3,
+                "shade_val": 0,
+                "tracy_val": 46
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 4,
+                "poly_id": 480,
+                "shade_val": 0,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 1,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 44,
+                "tracy_val": 0
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 450,
+                "shade_val": 0,
+                "tracy_val": 0
+               } ]
+             }
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "BLAUBOILEED.ADE",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "bmpanim.class"
+                   }
+                  }, 
+                  {
+                   "BANI": [ 
+                    {
+                     "STRC": {
+                      "anim_name": "25089701.ANM",
+                      "anim_type": 0,
+                      "offset": 6,
+                      "strc_type": "STRC_BANI",
+                      "version": 1
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "nix.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "ilbm.class"
+                   }
+                  }, 
+                  {
+                   "CIBO": [ 
+                    {
+                     "NAM2": {
+                      "name": "FX1.ILBM",
+                      "zero_terminated": true
+                     }
+                    }, 
+                    {
+                     "OTL2": {
+                      "points": [ 
+                       [ 251, 7 ], 
+                       [ 247, 7 ], 
+                       [ 247, 2 ], 
+                       [ 251, 2 ] ]
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "nix.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "ilbm.class"
+                   }
+                  }, 
+                  {
+                   "CIBO": [ 
+                    {
+                     "NAM2": {
+                      "name": "FX1.ILBM",
+                      "zero_terminated": true
+                     }
+                    }, 
+                    {
+                     "OTL2": {
+                      "points": [ 
+                       [ 251, 7 ], 
+                       [ 247, 7 ], 
+                       [ 247, 2 ], 
+                       [ 251, 2 ] ]
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "nix.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "ilbm.class"
+                   }
+                  }, 
+                  {
+                   "CIBO": [ 
+                    {
+                     "NAM2": {
+                      "name": "FX1.ILBM",
+                      "zero_terminated": true
+                     }
+                    }, 
+                    {
+                     "OTL2": {
+                      "points": [ 
+                       [ 251, 7 ], 
+                       [ 247, 7 ], 
+                       [ 247, 2 ], 
+                       [ 251, 2 ] ]
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "nix.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "ilbm.class"
+                   }
+                  }, 
+                  {
+                   "CIBO": [ 
+                    {
+                     "NAM2": {
+                      "name": "FX1.ILBM",
+                      "zero_terminated": true
+                     }
+                    }, 
+                    {
+                     "OTL2": {
+                      "points": [ 
+                       [ 251, 7 ], 
+                       [ 247, 7 ], 
+                       [ 247, 2 ], 
+                       [ 251, 2 ] ]
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "nix.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "ilbm.class"
+                   }
+                  }, 
+                  {
+                   "CIBO": [ 
+                    {
+                     "NAM2": {
+                      "name": "FX1.ILBM",
+                      "zero_terminated": true
+                     }
+                    }, 
+                    {
+                     "OTL2": {
+                      "points": [ 
+                       [ 251, 7 ], 
+                       [ 247, 7 ], 
+                       [ 247, 2 ], 
+                       [ 251, 2 ] ]
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "nix.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "ilbm.class"
+                   }
+                  }, 
+                  {
+                   "CIBO": [ 
+                    {
+                     "NAM2": {
+                      "name": "FX1.ILBM",
+                      "zero_terminated": true
+                     }
+                    }, 
+                    {
+                     "OTL2": {
+                      "points": [ 
+                       [ 251, 7 ], 
+                       [ 247, 7 ], 
+                       [ 247, 2 ], 
+                       [ 251, 2 ] ]
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "OBJT": [ 
+              {
+               "CLID": {
+                "class_id": "area.class"
+               }
+              }, 
+              {
+               "AREA": [ 
+                {
+                 "ADE ": [ 
+                  {
+                   "ROOT": [ 
+                    {
+                     "NAME": {
+                      "name": "nix.ade",
+                      "zero_terminated": false
+                     }
+                    } ]
+                  }, 
+                  {
+                   "STRC": {
+                    "_nu2": 0,
+                    "_nul": 0,
+                    "flags": 4,
+                    "point": 0,
+                    "poly": 0,
+                    "strc_type": "STRC_ADE ",
+                    "version": 1
+                   }
+                  } ]
+                }, 
+                {
+                 "STRC": {
+                  "_un1": 0,
+                  "clrVal": 0,
+                  "flags": 0,
+                  "polFlags": 138,
+                  "shdVal": 0,
+                  "strc_type": "STRC_AREA",
+                  "trcVal": 128,
+                  "version": 256
+                 }
+                }, 
+                {
+                 "OBJT": [ 
+                  {
+                   "CLID": {
+                    "class_id": "ilbm.class"
+                   }
+                  }, 
+                  {
+                   "CIBO": [ 
+                    {
+                     "NAM2": {
+                      "name": "FX1.ILBM",
+                      "zero_terminated": true
+                     }
+                    }, 
+                    {
+                     "OTL2": {
+                      "points": [ 
+                       [ 251, 7 ], 
+                       [ 247, 7 ], 
+                       [ 247, 2 ], 
+                       [ 251, 2 ] ]
+                     }
+                    } ]
+                  } ]
+                } ]
+              } ]
+            } ]
+          } ]
+        }, 
+        {
+         "OBJT": [ 
+          {
+           "CLID": {
+            "class_id": "amesh.class"
+           }
+          }, 
+          {
+           "AMSH": [ 
+            {
+             "AREA": [ 
+              {
+               "ADE ": [ 
+                {
+                 "ROOT": []
+                }, 
+                {
+                 "STRC": {
+                  "_nu2": 0,
+                  "_nul": 0,
+                  "flags": 2,
+                  "point": 0,
+                  "poly": 0,
+                  "strc_type": "STRC_ADE ",
+                  "version": 1
+                 }
+                } ]
+              }, 
+              {
+               "STRC": {
+                "_un1": 0,
+                "clrVal": 1,
+                "flags": 1,
+                "polFlags": 58,
+                "shdVal": 0,
+                "strc_type": "STRC_AREA",
+                "trcVal": 0,
+                "version": 256
+               }
+              }, 
+              {
+               "OBJT": [ 
+                {
+                 "CLID": {
+                  "class_id": "ilbm.class"
+                 }
+                }, 
+                {
+                 "CIBO": [ 
+                  {
+                   "NAM2": {
+                    "name": "AIR1TXT.ILBM",
+                    "zero_terminated": true
+                   }
+                  } ]
+                } ]
+              } ]
+            }, 
+            {
+             "ATTS": {
+              "atts_entries": [ 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 0,
+                "shade_val": 100,
+                "tracy_val": 128
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 1,
+                "shade_val": 100,
+                "tracy_val": 128
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 2,
+                "shade_val": 100,
+                "tracy_val": 128
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 3,
+                "shade_val": 100,
+                "tracy_val": 128
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 4,
+                "shade_val": 100,
+                "tracy_val": 128
+               }, 
+               {
+                "color_val": 0,
+                "pad": 0,
+                "poly_id": 5,
+                "shade_val": 100,
+                "tracy_val": 128
+               } ]
+             }
+            }, 
+            {
+             "OLPL": {
+              "points": [ 
+               [ 
+                [ 134, 146 ], 
+                [ 219, 146 ], 
+                [ 219, 249 ], 
+                [ 134, 249 ] ], 
+               [ 
+                [ 134, 146 ], 
+                [ 219, 146 ], 
+                [ 219, 249 ], 
+                [ 134, 249 ] ], 
+               [ 
+                [ 134, 146 ], 
+                [ 219, 146 ], 
+                [ 219, 249 ], 
+                [ 134, 249 ] ], 
+               [ 
+                [ 134, 146 ], 
+                [ 219, 146 ], 
+                [ 219, 249 ], 
+                [ 134, 249 ] ], 
+               [ 
+                [ 134, 146 ], 
+                [ 219, 146 ], 
+                [ 219, 249 ], 
+                [ 134, 249 ] ], 
+               [ 
+                [ 134, 146 ], 
+                [ 219, 146 ], 
+                [ 219, 249 ], 
+                [ 134, 249 ] ] ]
+             }
+            } ]
+          } ]
+        } ]
+      } ]
+    } ]
+  } ]
+}
