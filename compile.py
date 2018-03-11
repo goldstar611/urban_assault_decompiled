@@ -389,7 +389,7 @@ class Strc(Chunk):
             if self.conversion_class.__dict__["strc_type"] == "STRC_BANI":
                 strc = BaniStrc()
 
-            strc.set_text_data(self.get_text_data())
+            strc.set_text_data(self.to_json())
             return strc.get_data()
 
 
@@ -567,7 +567,6 @@ class BaniStrc(Chunk):
 
 
 def strc_factory(data=bytes()):
-    chunk_id = "STRC"
     binary_data = data
     if not binary_data:
         return Strc(data)
@@ -747,7 +746,7 @@ class Atts(Chunk):
         self.set_binary_data(data)
 
     @staticmethod
-    def AttsEntry(poly_id=0, color_val=0, shade_val=0, tracy_val=0, pad=0):
+    def atts_entry(poly_id=0, color_val=0, shade_val=0, tracy_val=0, pad=0):
         return {"poly_id": poly_id,
                 "color_val": color_val,
                 "shade_val": shade_val,
@@ -767,7 +766,7 @@ class Atts(Chunk):
 
             poly_id, color_val, shade_val, tracy_val, pad = struct.unpack(">hBBBB", binary_data[offset:offset + 6])
 
-            new_atts_entry = self.AttsEntry(poly_id, color_val, shade_val, tracy_val, pad)
+            new_atts_entry = self.atts_entry(poly_id, color_val, shade_val, tracy_val, pad)
             atts_entries.append(new_atts_entry)
 
         self.conversion_class.atts_entries = atts_entries
