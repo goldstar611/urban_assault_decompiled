@@ -954,9 +954,12 @@ class Embd(Form):
         self.add_chunk(incoming_form)
 
     def add_sklt(self, file_name, sklt_form):
+        #if not isinstance(sklt_form, Sklt)
         self.add_emrs_resource("sklt.class", file_name, sklt_form)
 
     def add_vbmp(self, file_name, vbmp_form):
+        if not isinstance(vbmp_form, Vbmp):
+            logging.warning("Adding non-vbmp instance to Embd!")
         self.add_emrs_resource("ilbm.class", file_name, vbmp_form)
 
     def add_vanm(self, file_name, vanm_form):
@@ -1009,12 +1012,24 @@ size_of_unsigned_short = 2
 
 if __name__ == "__main__":
 
-    # TODO Bitmap function
-    bitmaps = glob.glob("set1/*.bmp")
-    bitmaps.extend(glob.glob("set1/*.BMP"))
-
     embd = Embd()
-    
+
+    # TODO Skeleton functions (in Embd class)
+    skeletons = glob.glob("set1/Skeleton/*.json")
+
+    # Add skeletons to Embd
+    for skeleton in skeletons:
+        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0]
+
+        with open(skeleton, "r") as f:
+            sklt_form = Form().from_json(myjson.loads(f.read()))
+            embd.add_sklt(resource_name, sklt_form)
+
+
+    # TODO Bitmap function (in Embd class)
+    bitmaps = glob.glob("set1/*.bmp")
+
+    # Add bitmaps to Embd
     for bitmap in bitmaps:
         print(bitmap)
 
@@ -1037,7 +1052,6 @@ if __name__ == "__main__":
             f.seek(data_offset)
             bitmap_data = f.read(65536)
 
-            # TODO Create QImage, flip image, read bytes out
             from PyQt5 import QtGui
             mirror_horizontal = False
             mirror_vertical = False
