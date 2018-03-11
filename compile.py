@@ -927,7 +927,7 @@ class Otl2(Chunk):
 
 class Vbmp(Form):
     def __init__(self, sub_chunks=list()):
-        super(Form, self).__init__("VBMP", sub_chunks)
+        super(Vbmp, self).__init__("VBMP", sub_chunks)
 
     def load_from_ilbm(self, file_name):
         pass
@@ -1050,8 +1050,7 @@ if __name__ == "__main__":
             new_vbmp_head = Head().from_json(myjson.loads("""{ "flags": 0, "height": 256, "width": 256 }"""))
             new_vbmp_body = Body()
             new_vbmp_body.set_binary_data(bitmap_data)
-            new_vbmp = Form("VBMP", [new_vbmp_head, new_vbmp_body])
-            new_vbmp
+            new_vbmp = Vbmp([new_vbmp_head, new_vbmp_body])
             embd.add_sklt(bitmap, new_vbmp)
 
     print(embd.to_json())
