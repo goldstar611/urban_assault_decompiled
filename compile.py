@@ -570,26 +570,27 @@ def strc_factory(data=bytes()):
     chunk_id = "STRC"
     binary_data = data
     if not binary_data:
-        return Strc(chunk_id, data)
+        return Strc(data)
     if len(binary_data) == 62:
-        return BaseStrc(chunk_id, data)
+        return BaseStrc(data)
     if len(binary_data) == 10:
         version = struct.unpack(">h", binary_data[0:2])[0]
         if version == 1:
-            return AdeStrc(chunk_id, data)
+            return AdeStrc(data)
         if version == 256:
-            return AreaStrc(chunk_id, data)
+            return AreaStrc(data)
         raise ValueError("strc_factory() received invalid data:", binary_data)
     if binary_data[0:5] == b"\x00\x01\x00\x06\x00":
-        return BaniStrc(chunk_id, data)
+        return BaniStrc(data)
 
     warnings.warn("strc_factory() received invalid data: %s" % binary_data)
-    return Strc(chunk_id, data)
+    return Strc(data)
 
 
 class Nam2(Name):
     def __init__(self, data=bytes()):
-        super(Nam2, self).__init__("NAM2", data)
+        super(Nam2, self).__init__(data)
+        self.chunk_id = "NAM2"
         self.conversion_class.zero_terminated = False
         self.conversion_class.name = ""
         self.set_binary_data(data)
@@ -1024,7 +1025,6 @@ if __name__ == "__main__":
         with open(skeleton, "r") as f:
             sklt_form = Form().from_json(myjson.loads(f.read()))
             embd.add_sklt(resource_name, sklt_form)
-
 
     # TODO Bitmap function (in Embd class)
     bitmaps = glob.glob("set1/*.bmp")
