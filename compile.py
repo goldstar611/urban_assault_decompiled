@@ -1015,6 +1015,17 @@ if __name__ == "__main__":
 
     embd = Embd()
 
+    # TODO Animation functions (in Embd class)
+    animations = glob.glob("set1/rsrcpool/*.json")
+
+    # Add animations to Embd
+    for animation in animations:
+        resource_name = os.path.splitext(os.path.basename(animation))[0]
+
+        with open(animation, "r") as f:
+            vanm_form = Form().from_json(myjson.loads(f.read()))
+            embd.add_vanm(resource_name, vanm_form)
+
     # TODO Skeleton functions (in Embd class)
     skeletons = glob.glob("set1/Skeleton/*.json")
 
