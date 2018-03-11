@@ -1051,6 +1051,6 @@ if __name__ == "__main__":
             new_vbmp_body = Body()
             new_vbmp_body.set_binary_data(bitmap_data)
             new_vbmp = Vbmp([new_vbmp_head, new_vbmp_body])
-            embd.add_sklt(bitmap, new_vbmp)
+            embd.add_vbmp(bitmap, new_vbmp)
 
     print(embd.to_json())
