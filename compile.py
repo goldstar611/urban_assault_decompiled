@@ -971,9 +971,14 @@ class Embd(Form):
 class Mc2(Form):
     def __init__(self):
         super(Mc2, self).__init__("MC2 ")
-        self.embd = None
-        self.kids = None
+        self.embd = Embd()
+        self.kids = Form("KIDS")
         self.init_mc2()
+
+        # Add convenience functions
+        self.add_sklt = self.embd.add_sklt
+        self.add_vbmp = self.embd.add_vbmp
+        self.add_vanm = self.embd.add_vanm
 
     def init_mc2(self):
         # Populate MC2 /OBJT
@@ -998,8 +1003,7 @@ class Mc2(Form):
         mc2_objt_base_objt.add_chunk(mc2_objt_base_objt_clid)
 
         # Populate MC2 /OBJT/BASE/OBJT/EMBD
-        mc2_objt_base_objt_embd = Embd()
-        self.embd = mc2_objt_base_objt_embd
+        mc2_objt_base_objt_embd = self.embd
         mc2_objt_base_objt.add_chunk(mc2_objt_base_objt_embd)
 
         # Populate MC2 /OBJT/BASE/STRC
@@ -1023,8 +1027,7 @@ class Mc2(Form):
         mc2_objt_base.add_chunk(mc2_objt_base_strc)
 
         # Populate MC2 /OBJT/BASE/KIDS
-        mc2_objt_base_kids = Form("KIDS")
-        self.kids = mc2_objt_base_kids
+        mc2_objt_base_kids = self.kids
         mc2_objt_base.add_chunk(mc2_objt_base_kids)
 
 
