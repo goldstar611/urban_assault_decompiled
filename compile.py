@@ -110,7 +110,7 @@ class Chunk(object):
 
 
 class Form(object):
-    def __init__(self, form_type=str(), sub_chunks=list()):
+    def __init__(self, form_type: str="", sub_chunks: list=None):
         self.form_type = self.validate_form_type(form_type)
         self.sub_chunks = self.validate_sub_chunks(sub_chunks)
 
@@ -126,6 +126,8 @@ class Form(object):
 
     @staticmethod
     def validate_sub_chunks(sub_chunks):
+        if sub_chunks is None:
+            return []
         if not isinstance(sub_chunks, list):
             raise ValueError("sub_chunks must be a list. Supplied type was %s" % type(sub_chunks))
         return sub_chunks
@@ -966,6 +968,66 @@ class Embd(Form):
         self.add_emrs_resource("bmpanim.class", file_name, vanm_form)
 
 
+class Mc2(Form):
+    def __init__(self):
+        super(Mc2, self).__init__("MC2 ")
+        self.embd = None
+        self.kids = None
+        self.init_mc2()
+
+    def init_mc2(self):
+        # Populate MC2 /OBJT
+        mc2_objt = Form("OBJT")
+        self.add_chunk(mc2_objt)
+
+        # Populate MC2 /OBJT/CLID
+        mc2_objt_clid = Clid().from_json(myjson.loads("""{ "class_id": "base.class" }"""))
+        mc2_objt.add_chunk(mc2_objt_clid)
+
+        # Populate MC2 /OBJT/BASE and
+        # Populate MC2 /OBJT/BASE/ROOT
+        mc2_objt_base = Form("BASE", [Form("ROOT")])
+        mc2_objt.add_chunk(mc2_objt_base)
+
+        # Populate MC2 /OBJT/BASE/OBJT
+        mc2_objt_base_objt = Form("OBJT")
+        mc2_objt_base.add_chunk(mc2_objt_base_objt)
+
+        # Populate MC2 /OBJT/BASE/OBJT/CLID
+        mc2_objt_base_objt_clid = Clid().from_json(myjson.loads("""{ "class_id": "embed.class" }"""))
+        mc2_objt_base_objt.add_chunk(mc2_objt_base_objt_clid)
+
+        # Populate MC2 /OBJT/BASE/OBJT/EMBD
+        mc2_objt_base_objt_embd = Embd()
+        self.embd = mc2_objt_base_objt_embd
+        mc2_objt_base_objt.add_chunk(mc2_objt_base_objt_embd)
+
+        # Populate MC2 /OBJT/BASE/STRC
+        mc2_objt_base_strc = Strc().from_json(myjson.loads("""{
+                                                            "_un1": 0,
+                                                            "ambient_light": 255,
+                                                            "att_flags": 72,
+                                                            "ax": 0,
+                                                            "ay": 0,
+                                                            "az": 0,
+                                                            "pos": [ 0.0, 0.0, 0.0 ],
+                                                            "rx": 0,
+                                                            "ry": 0,
+                                                            "rz": 0,
+                                                            "scale": [ 1.0, 1.0, 1.0 ],
+                                                            "strc_type": "STRC_BASE",
+                                                            "vec": [ 0.0, 0.0, 0.0 ],
+                                                            "version": 1,
+                                                            "vis_limit": 4096
+                                                        }"""))
+        mc2_objt_base.add_chunk(mc2_objt_base_strc)
+
+        # Populate MC2 /OBJT/BASE/KIDS
+        mc2_objt_base_kids = Form("KIDS")
+        self.kids = mc2_objt_base_kids
+        mc2_objt_base.add_chunk(mc2_objt_base_kids)
+
+
 all_ua_python_objects = {
     "ADE ": Form,
     "ADES": Form,
@@ -976,7 +1038,7 @@ all_ua_python_objects = {
     "CIBO": Form,
     "EMBD": Embd,
     "KIDS": Form,
-    "MC2 ": Form,
+    "MC2 ": Mc2,
     "OBJT": Form,
     "PTCL": Form,
     "ROOT": Form,
@@ -1012,7 +1074,9 @@ size_of_unsigned_short = 2
 
 if __name__ == "__main__":
 
-    embd = Embd()
+    mc2 = Mc2()
+
+    embd = mc2.embd
 
     # TODO Animation functions (in Embd class)
     animations = glob.glob("set1/rsrcpool/*.json")
