@@ -972,7 +972,9 @@ class Mc2(Form):
     def __init__(self):
         super(Mc2, self).__init__("MC2 ")
         self.embd = Embd()
-        self.kids = Form("KIDS")
+        self.vehicles = Form("KIDS")
+        self.buildings = Form("KIDS")
+        self.ground = Form("KIDS")
         self.init_mc2()
 
         # Add convenience functions
@@ -1027,7 +1029,7 @@ class Mc2(Form):
         mc2_objt_base.add_chunk(mc2_objt_base_strc)
 
         # Populate MC2 /OBJT/BASE/KIDS
-        mc2_objt_base_kids = self.kids
+        mc2_objt_base_kids = Form("KIDS")
         mc2_objt_base.add_chunk(mc2_objt_base_kids)
 
         # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT
@@ -1063,9 +1065,9 @@ class Mc2(Form):
         mc2_objt_base_kids_objt2.add_chunk(bani_strc)
 
         # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT/KIDS
-        mc2_objt_base_kids_objt0.add_chunk(Form("KIDS"))
-        mc2_objt_base_kids_objt1.add_chunk(Form("KIDS"))
-        mc2_objt_base_kids_objt2.add_chunk(Form("KIDS"))
+        mc2_objt_base_kids_objt0.add_chunk(self.vehicles)
+        mc2_objt_base_kids_objt1.add_chunk(self.buildings)
+        mc2_objt_base_kids_objt2.add_chunk(self.ground)
 
 
 all_ua_python_objects = {
