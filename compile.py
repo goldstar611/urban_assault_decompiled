@@ -1030,6 +1030,15 @@ class Mc2(Form):
         mc2_objt_base_kids = self.kids
         mc2_objt_base.add_chunk(mc2_objt_base_kids)
 
+        # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT
+        clid_base = Clid().from_json(myjson.loads("""{ "class_id": "base.class" }"""))
+        mc2_objt_base_kids_objt0 = Form("OBJT", [clid_base, Form("BASE", [Form("ROOT")])])
+        mc2_objt_base_kids_objt1 = Form("OBJT", [clid_base, Form("BASE", [Form("ROOT")])])
+        mc2_objt_base_kids_objt2 = Form("OBJT", [clid_base, Form("BASE", [Form("ROOT")])])
+        mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt0)
+        mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt1)
+        mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt2)
+
 
 all_ua_python_objects = {
     "ADE ": Form,
@@ -1144,4 +1153,11 @@ if __name__ == "__main__":
             new_vbmp = Vbmp([new_vbmp_head, new_vbmp_body])
             embd.add_vbmp(bitmap, new_vbmp)
 
-    print(embd.to_json())
+    # TODO Move vehicles functions to MC2 object
+    vehicles = glob.glob("set1/objects/vehicles/*.json")
+
+    for vehicle in vehicles:
+        print(vehicle)
+
+    pass
+    #print(embd.to_json())
