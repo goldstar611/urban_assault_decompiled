@@ -1039,6 +1039,34 @@ class Mc2(Form):
         mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt1)
         mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt2)
 
+        bani_strc = Strc().from_json(myjson.loads("""{
+                                                    "_un1": 0,
+                                                    "ambient_light": 255,
+                                                    "att_flags": 72,
+                                                    "ax": 0,
+                                                    "ay": 0,
+                                                    "az": 0,
+                                                    "pos": [ 0.0, 0.0, 0.0 ],
+                                                    "rx": 0,
+                                                    "ry": 0,
+                                                    "rz": 0,
+                                                    "scale": [ 1.0, 1.0, 1.0 ],
+                                                    "strc_type": "STRC_BASE",
+                                                    "vec": [ 0.0, 0.0, 0.0 ],
+                                                    "version": 1,
+                                                    "vis_limit": 4096
+                                                }"""))
+
+        # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT/STRC
+        mc2_objt_base_kids_objt0.add_chunk(bani_strc)
+        mc2_objt_base_kids_objt1.add_chunk(bani_strc)
+        mc2_objt_base_kids_objt2.add_chunk(bani_strc)
+
+        # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT/KIDS
+        mc2_objt_base_kids_objt0.add_chunk(Form("KIDS"))
+        mc2_objt_base_kids_objt1.add_chunk(Form("KIDS"))
+        mc2_objt_base_kids_objt2.add_chunk(Form("KIDS"))
+
 
 all_ua_python_objects = {
     "ADE ": Form,
@@ -1160,4 +1188,4 @@ if __name__ == "__main__":
         print(vehicle)
 
     pass
-    #print(embd.to_json())
+    print(mc2.to_json())
