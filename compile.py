@@ -1205,6 +1205,16 @@ if __name__ == "__main__":
         for chunk in building_form.sub_chunks:
             mc2.buildings.add_chunk(chunk)
 
+    # TODO Move ground functions to MC2 object
+    grounds = glob.glob("set1/objects/ground/*.json")
+
+    for ground in grounds:
+        print(ground)
+        with open(ground, "r") as f:
+            ground_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
+
+        for chunk in ground_form.sub_chunks:
+            mc2.ground.add_chunk(chunk)
 
     pass
     print(mc2.to_json())
