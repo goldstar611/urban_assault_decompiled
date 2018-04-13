@@ -374,7 +374,7 @@ class Strc(Chunk):
             if "STRC_BANI" == strc_type:
                 strc = BaniStrc()
 
-            strc.set_text_data(text_data)
+            strc.from_json(myjson.loads(text_data))
             self.conversion_class.__dict__ = strc.conversion_class__dict__
 
     def get_data(self):
@@ -391,7 +391,9 @@ class Strc(Chunk):
             if self.conversion_class.__dict__["strc_type"] == "STRC_BANI":
                 strc = BaniStrc()
 
-            strc.set_text_data(self.to_json())
+            a = self.to_json()
+            b = myjson.loads(a)["STRC"]  # HACK HACK
+            strc.from_json(b)
             return strc.get_data()
 
 
@@ -413,7 +415,8 @@ class BaseStrc(Chunk):
         self.conversion_class._un1 = 0
         self.conversion_class.vis_limit = 0
         self.conversion_class.ambient_light = 0
-        self.set_binary_data(data)
+        if data:
+            self.set_binary_data(data)
 
     def set_binary_data(self, binary_data):
         if len(binary_data) != 62:
@@ -1217,4 +1220,5 @@ if __name__ == "__main__":
             mc2.ground.add_chunk(chunk)
 
     pass
-    print(mc2.to_json())
+    #print(mc2.to_json())
+    mc2.save_to_file("set_compiled.bas")
