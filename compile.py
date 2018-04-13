@@ -1188,6 +1188,11 @@ if __name__ == "__main__":
 
     for vehicle in vehicles:
         print(vehicle)
+        with open(vehicle, "r") as f:
+            vehicle_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
+
+        for chunk in vehicle_form.sub_chunks:
+            mc2.vehicles.add_chunk(chunk)
 
     pass
     print(mc2.to_json())
