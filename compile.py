@@ -1194,5 +1194,17 @@ if __name__ == "__main__":
         for chunk in vehicle_form.sub_chunks:
             mc2.vehicles.add_chunk(chunk)
 
+    # TODO Move buildings functions to MC2 object
+    buildings = glob.glob("set1/objects/buildings/*.json")
+
+    for building in buildings:
+        print(building)
+        with open(building, "r") as f:
+            building_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
+
+        for chunk in building_form.sub_chunks:
+            mc2.buildings.add_chunk(chunk)
+
+
     pass
     print(mc2.to_json())
