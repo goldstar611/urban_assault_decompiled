@@ -705,7 +705,7 @@ class Data(Chunk):
         return None
 
     def get_data(self):
-        class_id = self.conversion_class.class_id
+        class_id = self.conversion_class.class_id + "\x00"
         vbmp_names = []  # HACK, Duplicate vbmp names can get added and not referenced
         poly = []  # HACK, Duplicate polys can get added and not referenced
         frame_times = []
@@ -717,7 +717,7 @@ class Data(Chunk):
                                 vbmp_names.index(frame["vbmp_name"]),
                                 poly.index(frame["vbmp_coords"])])
 
-        vbmp_names_bytes = bytes("\x00".join(vbmp_names), "ascii") + b"\x00"
+        vbmp_names_bytes = bytes("\x00".join(vbmp_names), "ascii") + b"\x00\x00"
 
         poly_bytes = b""
         for pol in poly:
@@ -727,7 +727,7 @@ class Data(Chunk):
                     poly_bytes += struct.pack(">B", p)
 
         frame_times_bytes = b"".join([struct.pack(">I", x[0]) + struct.pack(">H", x[1]) + struct.pack(">H", x[2]) for x in frame_times])
-        a = struct.pack(">H", len(class_id)) + bytes(class_id, "ascii") + struct.pack(">H", len(vbmp_names_bytes) + 1) + vbmp_names_bytes + b"\x00" + struct.pack(">H", len(poly_bytes)) + poly_bytes + struct.pack(">H", len(frame_times)) + frame_times_bytes
+        a = struct.pack(">H", len(class_id)) + bytes(class_id, "ascii") + struct.pack(">H", len(vbmp_names_bytes)) + vbmp_names_bytes + struct.pack(">H", len(poly_bytes)) + poly_bytes + struct.pack(">H", len(frame_times)) + frame_times_bytes
         raise NotImplementedError
         return a
 
