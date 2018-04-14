@@ -184,7 +184,8 @@ class Form(object):
                 if isinstance(v, list):
                     return Form(k, self.from_json(v))
                 if isinstance(v, dict):
-                    return Chunk(k).from_json(v)
+                    #return Chunk(k).from_json(v)
+                    return all_ua_python_objects[k]().from_json(v)
                 raise ValueError("not dict or list :(", k, v)
 
     def size(self):
@@ -472,7 +473,8 @@ class AdeStrc(Chunk):
         self.conversion_class.point = 0
         self.conversion_class.poly = 0
         self.conversion_class._nu2 = 0
-        self.set_binary_data(data)
+        if data:
+            self.set_binary_data(data)
 
     def set_binary_data(self, binary_data):
         version = struct.unpack(">h", binary_data[0:2])[0]
@@ -513,7 +515,8 @@ class AreaStrc(Chunk):
         self.conversion_class.clrVal = 0
         self.conversion_class.trcVal = 0
         self.conversion_class.shdVal = 0
-        self.set_binary_data(data)
+        if data:
+            self.set_binary_data(data)
 
     def set_binary_data(self, binary_data):
         version = struct.unpack(">h", binary_data[0:2])[0]
@@ -554,7 +557,8 @@ class BaniStrc(Chunk):
         self.conversion_class.offset = 0
         self.conversion_class.anim_type = 0
         self.conversion_class.anim_name = ""
-        self.set_binary_data(data)
+        if data:
+            self.set_binary_data(data)
 
     def set_binary_data(self, binary_data):
         version, offset, anim_type = struct.unpack(">hhh", binary_data[0:6])
@@ -631,7 +635,8 @@ class Data(Chunk):
         super(Data, self).__init__("DATA", data)
         self.conversion_class.class_id = ""
         self.conversion_class.frames = []
-        self.set_binary_data(data)
+        if data:
+            self.set_binary_data(data)
 
     def set_binary_data(self, binary_data):
         vanm_data = binary_data
@@ -836,7 +841,8 @@ class Pol2(Chunk):
     def __init__(self, data=bytes()):
         super(Pol2, self).__init__("POL2", data)
         self.conversion_class.edges = []
-        self.set_binary_data(data)
+        if data:
+            self.set_binary_data(data)
 
     def set_binary_data(self, binary_data):
         offset = 0
