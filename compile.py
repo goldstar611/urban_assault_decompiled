@@ -610,7 +610,7 @@ class Data(Chunk):
     69 6C 62 6D 2E 63 6C 61 73 73 00 # class_id
     000A                             # vbmp_name_len
     46 58 32 2E 49 4C 42 4D 00 00    # vbmp[0] = vbmp_name
-    0019                             # num_polygons
+    0019                             # len(poly[...])
     0004 19 42 01 42 01 01 19 01     # poly[0] = num_verts + x,y coords
     0004 1E 12 1E 07 26 07 26 12
     0004 18 42 3A 42 3A 01 18 01
@@ -705,11 +705,31 @@ class Data(Chunk):
         return None
 
     def get_data(self):
-        return self.chunk_data
-        # TODO TODO Dont just return self.chunk_data
-        # TODO TODO Instead, read the conversion_class and
-        # TODO TODO Generate the binary data
-        # TODO TODO
+        class_id = self.conversion_class.class_id
+        vbmp_names = []  # HACK, Duplicate vbmp names can get added and not referenced
+        poly = []  # HACK, Duplicate polys can get added and not referenced
+        frame_times = []
+        for frame in self.conversion_class.frames:
+            print(frame)
+            poly.append(frame["vbmp_coords"])
+            vbmp_names.append(frame["vbmp_name"])
+            frame_times.append([frame["frame_time"],
+                                vbmp_names.index(frame["vbmp_name"]),
+                                poly.index(frame["vbmp_coords"])])
+
+        vbmp_names_bytes = bytes("\x00".join(vbmp_names), "ascii") + b"\x00"
+
+        poly_bytes = b""
+        for pol in poly:
+            poly_bytes += struct.pack(">H", len(pol))
+            for po in pol:
+                for p in po:
+                    poly_bytes += struct.pack(">B", p)
+
+        frame_times_bytes = b"".join([struct.pack(">I", x[0]) + struct.pack(">H", x[1]) + struct.pack(">H", x[2]) for x in frame_times])
+        a = struct.pack(">H", len(class_id)) + bytes(class_id, "ascii") + struct.pack(">H", len(vbmp_names_bytes) + 1) + vbmp_names_bytes + b"\x00" + struct.pack(">H", len(poly_bytes)) + poly_bytes + struct.pack(">H", len(frame_times)) + frame_times_bytes
+        raise NotImplementedError
+        return a
 
 
 class Head(Chunk):
