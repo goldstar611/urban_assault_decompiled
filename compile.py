@@ -729,7 +729,6 @@ class Data(Chunk):
 
         frame_times_bytes = b"".join([struct.pack(">I", x[0]) + struct.pack(">H", x[1]) + struct.pack(">H", x[2]) for x in frame_times])
         a = struct.pack(">H", len(class_id)) + bytes(class_id, "ascii") + struct.pack(">H", len(vbmp_names_bytes)) + vbmp_names_bytes + struct.pack(">H", int(len(poly_bytes) / 2)) + poly_bytes + struct.pack(">H", len(frame_times)) + frame_times_bytes
-        raise NotImplementedError
         return a
 
 
@@ -1144,8 +1143,7 @@ unsigned_short_be = "<H"
 size_of_unsigned_short = 2
 
 
-if __name__ == "__main__":
-
+def compile_set_bas():
     mc2 = Mc2()
 
     embd = mc2.embd
@@ -1249,3 +1247,7 @@ if __name__ == "__main__":
     pass
     #print(mc2.to_json())
     mc2.save_to_file("set_compiled.bas")
+
+
+if __name__ == "__main__":
+    compile_set_bas()
