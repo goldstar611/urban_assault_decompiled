@@ -706,13 +706,14 @@ class Data(Chunk):
 
     def get_data(self):
         class_id = self.conversion_class.class_id + "\x00"
-        vbmp_names = []  # HACK, Duplicate vbmp names can get added and not referenced
-        poly = []  # HACK, Duplicate polys can get added and not referenced
+        vbmp_names = []
+        poly = []
         frame_times = []
         for frame in self.conversion_class.frames:
             print(frame)
             poly.append(frame["vbmp_coords"])
             vbmp_names.append(frame["vbmp_name"])
+            vbmp_names = list(set(vbmp_names))  # HACK
             frame_times.append([frame["frame_time"],
                                 vbmp_names.index(frame["vbmp_name"]),
                                 poly.index(frame["vbmp_coords"])])
@@ -1165,7 +1166,7 @@ if __name__ == "__main__":
 
     # Add skeletons to Embd
     for skeleton in skeletons:
-        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0]
+        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0] + "t"
 
         with open(skeleton, "r") as f:
             sklt_form = Form().from_json(myjson.loads(f.read()))
@@ -1210,7 +1211,7 @@ if __name__ == "__main__":
             new_vbmp_body = Body()
             new_vbmp_body.set_binary_data(bitmap_data)
             new_vbmp = Vbmp([new_vbmp_head, new_vbmp_body])
-            embd.add_vbmp(bitmap, new_vbmp)
+            embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)
 
     # TODO Move vehicles functions to MC2 object
     vehicles = glob.glob("set1/objects/vehicles/*.json")
