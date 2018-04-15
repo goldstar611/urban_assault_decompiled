@@ -1249,5 +1249,39 @@ def compile_set_bas():
     mc2.save_to_file("set_compiled.bas")
 
 
+def compile_single_files():
+    import shutil
+    # Delete output folder if it exists
+    if os.path.exists(os.getcwd() + "/output"):
+        shutil.rmtree(os.getcwd() + "/output")
+
+    # Copy static files
+    shutil.copytree(os.getcwd() + "/mc2res", os.getcwd() + "/output/data/mc2res")
+    shutil.copytree(os.getcwd() + "/set1/hi", os.getcwd() + "/output/data/set/hi")
+    shutil.copytree(os.getcwd() + "/set1/palette", os.getcwd() + "/output/data/set/palette")
+    shutil.copytree(os.getcwd() + "/set1/remap", os.getcwd() + "/output/data/set/remap")
+    shutil.copytree(os.getcwd() + "/set1/scripts", os.getcwd() + "/output/data/set/scripts")
+
+    # Create necessary folders that have not been created yet
+    check_dirs = ["/output/data/set/rsrcpool",
+                  "/output/data/set/Skeleton",
+                  "/output/data/set/objects",
+                  ]
+    for dirs in check_dirs:
+        if not os.path.exists(os.getcwd() + dirs):
+            os.makedirs(os.getcwd() + dirs)
+
+    # Compile images
+
+    # Compile animations
+
+    # Compile vehicles
+
+    # Compile buildings
+
+    # Compile ground
+
+
 if __name__ == "__main__":
-    compile_set_bas()
+    # compile_set_bas()
+    compile_single_files()
