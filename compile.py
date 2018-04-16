@@ -1310,7 +1310,12 @@ def compile_single_files():
             new_vbmp.save_to_file("output/data/set/" + os.path.splitext(os.path.basename(bitmap))[0])
 
     # Compile animations
+    for animation in glob.glob("set1/rsrcpool/*.json"):
+        resource_name = os.path.splitext(os.path.basename(animation))[0]
 
+        with open(animation, "r") as f:
+            vanm_form = Form().from_json(myjson.loads(f.read()))
+            vanm_form.save_to_file("output/data/set/rsrcpool/" + resource_name)
 
     # Compile vehicles (Inside MC2 class)
 
