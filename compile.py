@@ -1272,14 +1272,54 @@ def compile_single_files():
             os.makedirs(os.getcwd() + dirs)
 
     # Compile images
+    for bitmap in glob.glob("set1/*.bmp"):
+        print(bitmap)
+
+        with open(bitmap, "rb") as f:
+            f.seek(10)
+            data_offset = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
+
+            f.seek(18)
+            width = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
+            height = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
+
+            f.seek(28)
+            bpp = struct.unpack(unsigned_short_be, f.read(size_of_unsigned_short))[0]
+
+            if bpp != 8 or width != 256 or height != 256:
+                print("Bitmap must be 256x256 and using an indexed 8bit color map!\n"
+                      "Image was: %sw*%sh*%sb" % (str(width), str(height), str(bpp)))
+                raise ValueError("Selected bitmap was not in the correct format.")
+
+            f.seek(data_offset)
+            bitmap_data = f.read(65536)
+
+            from PyQt5 import QtGui
+            mirror_horizontal = False
+            mirror_vertical = False
+            image = QtGui.QImage(bitmap_data, width, height, QtGui.QImage.Format_Indexed8)
+            image = image.mirrored(mirror_horizontal, mirror_vertical)
+            ptr_image_data = image.bits()
+            ptr_image_data.setsize(image.byteCount())
+            bitmap_data = ptr_image_data.asstring()
+
+            new_vbmp_head = Head().from_json(myjson.loads("""{ "flags": 0, "height": 256, "width": 256 }"""))
+            new_vbmp_body = Body()
+            new_vbmp_body.set_binary_data(bitmap_data)
+            new_vbmp = Vbmp([new_vbmp_head, new_vbmp_body])
+            new_vbmp.save_to_file("output/data/set/" + os.path.splitext(os.path.basename(bitmap))[0])
 
     # Compile animations
 
-    # Compile vehicles
 
-    # Compile buildings
+    # Compile vehicles (Inside MC2 class)
 
-    # Compile ground
+
+    # Compile buildings (Inside MC2 class)
+
+
+    # Compile ground (Inside MC2 class)
+
 
 
 if __name__ == "__main__":
