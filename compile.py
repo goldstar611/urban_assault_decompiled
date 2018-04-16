@@ -1255,13 +1255,6 @@ def compile_single_files():
     if os.path.exists(os.getcwd() + "/output"):
         shutil.rmtree(os.getcwd() + "/output")
 
-    # Copy static files
-    shutil.copytree(os.getcwd() + "/mc2res", os.getcwd() + "/output/data/mc2res")
-    shutil.copytree(os.getcwd() + "/set1/hi", os.getcwd() + "/output/data/set/hi")
-    shutil.copytree(os.getcwd() + "/set1/palette", os.getcwd() + "/output/data/set/palette")
-    shutil.copytree(os.getcwd() + "/set1/remap", os.getcwd() + "/output/data/set/remap")
-    shutil.copytree(os.getcwd() + "/set1/scripts", os.getcwd() + "/output/data/set/scripts")
-
     # Create necessary folders that have not been created yet
     check_dirs = ["/output/data/set/rsrcpool",
                   "/output/data/set/Skeleton",
@@ -1270,6 +1263,14 @@ def compile_single_files():
     for dirs in check_dirs:
         if not os.path.exists(os.getcwd() + dirs):
             os.makedirs(os.getcwd() + dirs)
+
+    # Copy static files
+    shutil.copytree(os.getcwd() + "/mc2res", os.getcwd() + "/output/data/mc2res")
+    shutil.copytree(os.getcwd() + "/set1/hi", os.getcwd() + "/output/data/set/hi")
+    shutil.copytree(os.getcwd() + "/set1/palette", os.getcwd() + "/output/data/set/palette")
+    shutil.copytree(os.getcwd() + "/set1/remap", os.getcwd() + "/output/data/set/remap")
+    shutil.copytree(os.getcwd() + "/set1/scripts", os.getcwd() + "/output/data/set/scripts")
+    shutil.copy(os.getcwd() + "/set1/objects/beebox.bas", os.getcwd() + "/output/data/set/objects/beebox.bas")
 
     # Compile images
     for bitmap in glob.glob("set1/*.bmp"):
@@ -1317,14 +1318,37 @@ def compile_single_files():
             vanm_form = Form().from_json(myjson.loads(f.read()))
             vanm_form.save_to_file("output/data/set/rsrcpool/" + resource_name)
 
-    # Compile vehicles (Inside MC2 class)
+    # Compile skeletons
+    for skeleton in glob.glob("set1/Skeleton/*.json"):
+        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0]
 
+        with open(skeleton, "r") as f:
+            sklt_form = Form().from_json(myjson.loads(f.read()))
+            sklt_form.save_to_file("output/data/set/" + resource_name)
+
+    # Compile vehicles (Inside MC2 class)
+    for vehicle in glob.glob("set1/objects/vehicles/*.json"):
+        resource_name = os.path.splitext(os.path.basename(vehicle))[0]
+
+        with open(vehicle, "r") as f:
+            sklt_form = Form().from_json(myjson.loads(f.read()))
+            sklt_form.save_to_file("output/data/set/objects/" + resource_name)
 
     # Compile buildings (Inside MC2 class)
+    for building in glob.glob("set1/objects/buildings/*.json"):
+        resource_name = os.path.splitext(os.path.basename(building))[0]
 
+        with open(building, "r") as f:
+            sklt_form = Form().from_json(myjson.loads(f.read()))
+            sklt_form.save_to_file("output/data/set/objects/" + resource_name)
 
     # Compile ground (Inside MC2 class)
+    for ground in glob.glob("set1/objects/ground/*.json"):
+        resource_name = os.path.splitext(os.path.basename(ground))[0]
 
+        with open(ground, "r") as f:
+            sklt_form = Form().from_json(myjson.loads(f.read()))
+            sklt_form.save_to_file("output/data/set/objects/" + resource_name)
 
 
 if __name__ == "__main__":
