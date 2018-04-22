@@ -786,7 +786,7 @@ class Atts(Chunk):
 
     def set_binary_data(self, binary_data):
         if len(binary_data) % 6 != 0:
-            logging.info("Atts.convert_binary_data(): Length of binary data was not a multiple of 6!")
+            logging.info("Atts.convert_binary_data(): Length of binary data was not a multiple of 6! Size: %i" % len(binary_data))
 
         poly_cnt = int(len(binary_data) / 6)
         atts_entries = []
