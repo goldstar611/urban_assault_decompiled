@@ -769,6 +769,7 @@ class Body(Chunk):
 
 
 # https://github.com/Marisa-Chan/UA_source/blob/master/src/amesh.cpp#L262
+# Particle.class has its own binary format https://github.com/Marisa-Chan/UA_source/blob/master/src/particle.cpp#L681
 class Atts(Chunk):
     def __init__(self, data=bytes()):
         super(Atts, self).__init__("ATTS", data)
