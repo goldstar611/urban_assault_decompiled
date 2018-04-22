@@ -785,9 +785,52 @@ class Atts(Chunk):
                 "pad": pad,
                 }
 
+    def _set_binary_data_particle(self, binary_data):
+        if hasattr(self.conversion_class, "atts_entries"):  # HACK
+            del self.conversion_class.atts_entries
+        (version,
+         accel_start_x, accel_start_y, accel_start_z,
+         accel_end_x, accel_end_y, accel_end_z,
+         magnify_start_x, magnify_start_y, magnify_start_z,
+         magnify_end_x, magnify_end_y, magnify_end_z,
+         collide, start_speed,
+         context_number, context_life_time,
+         context_start_gen, context_stop_gen,
+         gen_rate, lifetime,
+         start_size, end_size, noise) = struct.unpack(">hfffffffffffflllllllllll", binary_data)
+
+        self.conversion_class.version = version
+        self.conversion_class.accel_start_x = accel_start_x
+        self.conversion_class.accel_start_y = accel_start_y
+        self.conversion_class.accel_start_z = accel_start_z
+        self.conversion_class.accel_end_x = accel_end_x
+        self.conversion_class.accel_end_y = accel_end_y
+        self.conversion_class.accel_end_z = accel_end_z
+        self.conversion_class.magnify_start_x = magnify_start_x
+        self.conversion_class.magnify_start_y = magnify_start_y
+        self.conversion_class.magnify_start_z = magnify_start_z
+        self.conversion_class.magnify_end_x = magnify_end_x
+        self.conversion_class.magnify_end_y = magnify_end_y
+        self.conversion_class.magnify_end_z = magnify_end_z
+        self.conversion_class.collide = collide
+        self.conversion_class.start_speed = start_speed
+        self.conversion_class.context_number = context_number
+        self.conversion_class.context_life_time = context_life_time
+        self.conversion_class.context_start_gen = context_start_gen
+        self.conversion_class.context_stop_gen = context_stop_gen
+        self.conversion_class.gen_rate = gen_rate
+        self.conversion_class.lifetime = lifetime
+        self.conversion_class.start_size = start_size
+        self.conversion_class.end_size = end_size
+        self.conversion_class.noise = noise
+
     def set_binary_data(self, binary_data):
+        if len(binary_data) == 94:
+            self._set_binary_data_particle(binary_data)
+            return
+
         if len(binary_data) % 6 != 0:
-            logging.info("Atts.convert_binary_data(): Length of binary data was not a multiple of 6! Size: %i" % len(binary_data))
+            logging.error("Atts.convert_binary_data(): Length of binary data was not a multiple of 6! Size: %i" % len(binary_data))
 
         poly_cnt = int(len(binary_data) / 6)
         atts_entries = []
@@ -803,7 +846,32 @@ class Atts(Chunk):
         self.conversion_class.atts_entries = atts_entries
         assert binary_data[0:len(self.get_data())] == self.get_data()
 
+    def _get_data_particle(self):
+        return struct.pack(">hfffffffffffflllllllllll",
+                           self.conversion_class.version,
+                           self.conversion_class.accel_start_x,
+                           self.conversion_class.accel_start_y,
+                           self.conversion_class.accel_start_z,
+                           self.conversion_class.accel_end_x,
+                           self.conversion_class.accel_end_y,
+                           self.conversion_class.accel_end_z,
+                           self.conversion_class.magnify_start_x,
+                           self.conversion_class.magnify_start_y,
+                           self.conversion_class.magnify_start_z,
+                           self.conversion_class.magnify_end_x,
+                           self.conversion_class.magnify_end_y,
+                           self.conversion_class.magnify_end_z,
+                           self.conversion_class.collide, self.conversion_class.start_speed,
+                           self.conversion_class.context_number, self.conversion_class.context_life_time,
+                           self.conversion_class.context_start_gen, self.conversion_class.context_stop_gen,
+                           self.conversion_class.gen_rate, self.conversion_class.lifetime,
+                           self.conversion_class.start_size, self.conversion_class.end_size,
+                           self.conversion_class.noise)
+
     def get_data(self):
+        if not hasattr(self.conversion_class, "atts_entries"):  # HACK, although its a lot better than how STRC is doing
+            return self._get_data_particle()
+
         ret = bytes()
         for atts in self.conversion_class.atts_entries:
             ret += struct.pack(">hBBBB",
