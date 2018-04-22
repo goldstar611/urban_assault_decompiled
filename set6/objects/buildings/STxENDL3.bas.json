@@ -84,112 +84,30 @@
             }, 
             {
              "ATTS": {
-              "atts_entries": [ 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 1,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": -16512,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": -16512,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": -16224,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 18,
-                "pad": 2,
-                "poly_id": 0,
-                "shade_val": 132,
-                "tracy_val": 63
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 70,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 40,
-                "poly_id": 1,
-                "shade_val": 0,
-                "tracy_val": 35
-               }, 
-               {
-                "color_val": 5,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 120,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 10,
-                "poly_id": 2400,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 11,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 184,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 20,
-                "poly_id": 70,
-                "shade_val": 0,
-                "tracy_val": 0
-               } ]
+              "accel_end_x": 0.0,
+              "accel_end_y": -1.0,
+              "accel_end_z": 0.0,
+              "accel_start_x": 0.0,
+              "accel_start_y": -1.0,
+              "accel_start_z": 0.0,
+              "collide": 310656770,
+              "context_life_time": 9000,
+              "context_number": 1,
+              "context_start_gen": 1400,
+              "context_stop_gen": 2400,
+              "end_size": 20,
+              "gen_rate": 10,
+              "lifetime": 3000,
+              "magnify_end_x": 0.0,
+              "magnify_end_y": 0.0,
+              "magnify_end_z": 0.0,
+              "magnify_start_x": 0.0,
+              "magnify_start_y": -5.0,
+              "magnify_start_z": 0.0,
+              "noise": 12,
+              "start_size": 70,
+              "start_speed": 70,
+              "version": 1
              }
             }, 
             {
@@ -486,112 +404,30 @@
             }, 
             {
              "ATTS": {
-              "atts_entries": [ 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 1,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": -16512,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": -16512,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": -16224,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 18,
-                "pad": 2,
-                "poly_id": 0,
-                "shade_val": 132,
-                "tracy_val": 63
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 50,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 160,
-                "poly_id": 1,
-                "shade_val": 0,
-                "tracy_val": 15
-               }, 
-               {
-                "color_val": 1,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 144,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 10,
-                "poly_id": 600,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 3,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 232,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 20,
-                "poly_id": 70,
-                "shade_val": 0,
-                "tracy_val": 0
-               } ]
+              "accel_end_x": 0.0,
+              "accel_end_y": -1.0,
+              "accel_end_z": 0.0,
+              "accel_start_x": 0.0,
+              "accel_start_y": -1.0,
+              "accel_start_z": 0.0,
+              "collide": 310656770,
+              "context_life_time": 4000,
+              "context_number": 1,
+              "context_start_gen": 400,
+              "context_stop_gen": 600,
+              "end_size": 20,
+              "gen_rate": 10,
+              "lifetime": 1000,
+              "magnify_end_x": 0.0,
+              "magnify_end_y": 0.0,
+              "magnify_end_z": 0.0,
+              "magnify_start_x": 0.0,
+              "magnify_start_y": -5.0,
+              "magnify_start_z": 0.0,
+              "noise": 12,
+              "start_size": 70,
+              "start_speed": 50,
+              "version": 1
              }
             }, 
             {
@@ -888,112 +724,30 @@
             }, 
             {
              "ATTS": {
-              "atts_entries": [ 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 1,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": -16512,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": -16512,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": -16224,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 18,
-                "pad": 2,
-                "poly_id": 0,
-                "shade_val": 132,
-                "tracy_val": 63
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 10,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 176,
-                "poly_id": 1,
-                "shade_val": 0,
-                "tracy_val": 54
-               }, 
-               {
-                "color_val": 0,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 200,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 10,
-                "poly_id": 600,
-                "shade_val": 0,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 5,
-                "pad": 0,
-                "poly_id": 0,
-                "shade_val": 20,
-                "tracy_val": 0
-               }, 
-               {
-                "color_val": 0,
-                "pad": 20,
-                "poly_id": 70,
-                "shade_val": 0,
-                "tracy_val": 0
-               } ]
+              "accel_end_x": 0.0,
+              "accel_end_y": -1.0,
+              "accel_end_z": 0.0,
+              "accel_start_x": 0.0,
+              "accel_start_y": -1.0,
+              "accel_start_z": 0.0,
+              "collide": 310656770,
+              "context_life_time": 14000,
+              "context_number": 1,
+              "context_start_gen": 200,
+              "context_stop_gen": 600,
+              "end_size": 20,
+              "gen_rate": 10,
+              "lifetime": 1300,
+              "magnify_end_x": 0.0,
+              "magnify_end_y": 0.0,
+              "magnify_end_z": 0.0,
+              "magnify_start_x": 0.0,
+              "magnify_start_y": -5.0,
+              "magnify_start_z": 0.0,
+              "noise": 12,
+              "start_size": 70,
+              "start_speed": 10,
+              "version": 1
              }
             }, 
             {
