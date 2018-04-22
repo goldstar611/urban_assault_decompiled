@@ -175,7 +175,7 @@ class Form(object):
         if isinstance(json_dict, list):
             ret_list = []
             for child in json_dict:
-                #print(child)
+                # print(child)
                 ret_list.append(self.from_json(child))
             return ret_list
 
@@ -184,7 +184,7 @@ class Form(object):
                 if isinstance(v, list):
                     return Form(k, self.from_json(v))
                 if isinstance(v, dict):
-                    #return Chunk(k).from_json(v)
+                    # return Chunk(k).from_json(v)
                     return all_ua_python_objects[k]().from_json(v)
                 raise ValueError("not dict or list :(", k, v)
 
@@ -286,7 +286,7 @@ class Form(object):
                     bas_data.read(1)  # Discard pad byte
                 print("Found Chunk", chunk_id, chunk_size)
                 a = all_ua_python_objects.get(chunk_id, Chunk)
-                ret_chunks.append(a(chunk_id, chunk_data))
+                ret_chunks.append(a(data=chunk_data))
 
         return ret_chunks
 
@@ -985,7 +985,7 @@ class Embd(Form):
         self.add_chunk(incoming_form)
 
     def add_sklt(self, file_name, sklt_form):
-        #if not isinstance(sklt_form, Sklt)
+        # if not isinstance(sklt_form, Sklt)
         self.add_emrs_resource("sklt.class", file_name, sklt_form)
 
     def add_vbmp(self, file_name, vbmp_form):
@@ -1070,7 +1070,7 @@ class Mc2(Form):
         mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt1)
         mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt2)
 
-        bani_strc = Strc().from_json(myjson.loads("""{
+        base_strc = Strc().from_json(myjson.loads("""{
                                                     "_un1": 0,
                                                     "ambient_light": 255,
                                                     "att_flags": 72,
@@ -1089,14 +1089,14 @@ class Mc2(Form):
                                                 }"""))
 
         # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT/STRC
-        mc2_objt_base_kids_objt0.add_chunk(bani_strc)
-        mc2_objt_base_kids_objt1.add_chunk(bani_strc)
-        mc2_objt_base_kids_objt2.add_chunk(bani_strc)
+        mc2_objt_base_kids_objt0.sub_chunks[1].add_chunk(base_strc)  # Hack with sub_chunks[1]
+        mc2_objt_base_kids_objt1.sub_chunks[1].add_chunk(base_strc)  # Hack with sub_chunks[1]
+        mc2_objt_base_kids_objt2.sub_chunks[1].add_chunk(base_strc)  # Hack with sub_chunks[1]
 
         # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT/KIDS
-        mc2_objt_base_kids_objt0.add_chunk(self.vehicles)
-        mc2_objt_base_kids_objt1.add_chunk(self.buildings)
-        mc2_objt_base_kids_objt2.add_chunk(self.ground)
+        mc2_objt_base_kids_objt0.sub_chunks[1].add_chunk(self.vehicles)  # Hack with sub_chunks[1]
+        mc2_objt_base_kids_objt1.sub_chunks[1].add_chunk(self.buildings)  # Hack with sub_chunks[1]
+        mc2_objt_base_kids_objt2.sub_chunks[1].add_chunk(self.ground)  # Hack with sub_chunks[1]
 
 
 all_ua_python_objects = {
@@ -1164,7 +1164,7 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
 
     # Add skeletons to Embd
     for skeleton in skeletons:
-        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0] + "t"
+        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0] + "t"  # HACK make .sklt
 
         with open(skeleton, "r") as f:
             sklt_form = Form().from_json(myjson.loads(f.read()))
@@ -1209,12 +1209,13 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             new_vbmp_body = Body()
             new_vbmp_body.set_binary_data(bitmap_data)
             new_vbmp = Vbmp([new_vbmp_head, new_vbmp_body])
-            embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)
+            embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
 
     # TODO Move vehicles functions to MC2 object
-    vehicles = glob.glob("set%i/objects/vehicles/*.json" % set_number)
+    # vehicles = glob.glob("set%i/objects/vehicles/*.json" % set_number)
+    vehicles2 = ["set%i/objects/vehicles/%s.json" % (set_number, x.replace("base", "bas")) for x in visproto]
 
-    for vehicle in vehicles:
+    for vehicle in vehicles2:
         print(vehicle)
         with open(vehicle, "r") as f:
             vehicle_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
@@ -1223,9 +1224,10 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             mc2.vehicles.add_chunk(chunk)
 
     # TODO Move buildings functions to MC2 object
-    buildings = glob.glob("set%i/objects/buildings/*.json" % set_number)
+    # buildings = glob.glob("set%i/objects/buildings/*.json" % set_number)
+    buildings2 = ["set%i/objects/buildings/%s.json" % (set_number, x.replace("base", "bas")) for x in sdf]
 
-    for building in buildings:
+    for building in buildings2:
         print(building)
         with open(building, "r") as f:
             building_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
@@ -1234,9 +1236,10 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             mc2.buildings.add_chunk(chunk)
 
     # TODO Move ground functions to MC2 object
-    grounds = glob.glob("set%i/objects/ground/*.json" % set_number)
+    # grounds = glob.glob("set%i/objects/ground/*.json" % set_number)
+    grounds2 = ["set%i/objects/ground/%s.json" % (set_number, x.replace("base", "bas")) for x in slurps]
 
-    for ground in grounds:
+    for ground in grounds2:
         print(ground)
         with open(ground, "r") as f:
             ground_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
@@ -1245,7 +1248,7 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             mc2.ground.add_chunk(chunk)
 
     pass
-    #print(mc2.to_json())
+    # print(mc2.to_json())
     mc2.save_to_file("output/set_compiled.bas")
 
 
