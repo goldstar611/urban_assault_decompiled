@@ -1217,28 +1217,6 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
 
     embd = mc2.embd
 
-    # TODO Animation functions (in Embd class)
-    animations = glob.glob("set%i/rsrcpool/*.json" % set_number)
-
-    # Add animations to Embd
-    for animation in animations:
-        resource_name = os.path.splitext(os.path.basename(animation))[0]
-
-        with open(animation, "r") as f:
-            vanm_form = Form().from_json(myjson.loads(f.read()))
-            embd.add_vanm(resource_name, vanm_form)
-
-    # TODO Skeleton functions (in Embd class)
-    skeletons = glob.glob("set%i/Skeleton/*.json" % set_number)
-
-    # Add skeletons to Embd
-    for skeleton in skeletons:
-        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0] + "t"  # HACK make .sklt
-
-        with open(skeleton, "r") as f:
-            sklt_form = Form().from_json(myjson.loads(f.read()))
-            embd.add_sklt(resource_name, sklt_form)
-
     # TODO Bitmap function (in Embd class)
     bitmaps = glob.glob("set%i/*.bmp" % set_number)
 
@@ -1279,6 +1257,28 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             new_vbmp_body.set_binary_data(bitmap_data)
             new_vbmp = Vbmp([new_vbmp_head, new_vbmp_body])
             embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
+
+    # TODO Skeleton functions (in Embd class)
+    skeletons = glob.glob("set%i/Skeleton/*.json" % set_number)
+
+    # Add skeletons to Embd
+    for skeleton in skeletons:
+        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0] + "t"  # HACK make .sklt
+
+        with open(skeleton, "r") as f:
+            sklt_form = Form().from_json(myjson.loads(f.read()))
+            embd.add_sklt(resource_name, sklt_form)
+
+    # TODO Animation functions (in Embd class)
+    animations = glob.glob("set%i/rsrcpool/*.json" % set_number)
+
+    # Add animations to Embd
+    for animation in animations:
+        resource_name = os.path.splitext(os.path.basename(animation))[0]
+
+        with open(animation, "r") as f:
+            vanm_form = Form().from_json(myjson.loads(f.read()))
+            embd.add_vanm(resource_name, vanm_form)
 
     # TODO Move vehicles functions to MC2 object
     # vehicles = glob.glob("set%i/objects/vehicles/*.json" % set_number)
