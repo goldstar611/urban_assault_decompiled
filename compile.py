@@ -1243,7 +1243,7 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             f.seek(data_offset)
             bitmap_data = f.read(65536)
 
-            from PyQt5 import QtGui
+            from PyQt5 import QtGui  # TODO REMOVE DUPLICATED CODE
             mirror_horizontal = False
             mirror_vertical = True
             image = QtGui.QImage(bitmap_data, width, height, QtGui.QImage.Format_Indexed8)
@@ -1367,7 +1367,7 @@ def compile_single_files(set_number=1):
             f.seek(data_offset)
             bitmap_data = f.read(65536)
 
-            from PyQt5 import QtGui
+            from PyQt5 import QtGui  # TODO REMOVE DUPLICATED CODE
             mirror_horizontal = False
             mirror_vertical = True
             image = QtGui.QImage(bitmap_data, width, height, QtGui.QImage.Format_Indexed8)
