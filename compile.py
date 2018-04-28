@@ -1315,7 +1315,7 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
 
     pass
     # print(mc2.to_json())
-    mc2.save_to_file("output/set_compiled.bas")
+    mc2.save_to_file("output/set%i_compiled.bas" % set_number)
 
 
 def compile_single_files(set_number=1):
@@ -1457,10 +1457,12 @@ def parse_slurps(set_number=1):
 
 
 if __name__ == "__main__":
-    compile_single_files(1)
+    set_number = 1
 
-    sdf = parse_set_descriptor(1)
-    visproto = parse_visproto(1)
-    slurps = parse_slurps(1)
+    # compile_single_files(set_number)
 
-    compile_set_bas(visproto, sdf, slurps, 1)
+    sdf = parse_set_descriptor(set_number)
+    visproto = parse_visproto(set_number)
+    slurps = parse_slurps(set_number)
+
+    compile_set_bas(visproto, sdf, slurps, set_number)
