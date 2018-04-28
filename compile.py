@@ -1281,10 +1281,9 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             embd.add_vanm(resource_name, vanm_form)
 
     # TODO Move vehicles functions to MC2 object
-    # vehicles = glob.glob("set%i/objects/vehicles/*.json" % set_number)
-    vehicles2 = ["set%i/objects/vehicles/%s.json" % (set_number, x.replace("base", "bas")) for x in visproto]
+    vehicles = ["set%i/objects/vehicles/%s.json" % (set_number, x.replace("base", "bas")) for x in visproto]
 
-    for vehicle in vehicles2:
+    for vehicle in vehicles:
         print(vehicle)
         with open(vehicle, "r") as f:
             vehicle_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
@@ -1293,10 +1292,9 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             mc2.vehicles.add_chunk(chunk)
 
     # TODO Move buildings functions to MC2 object
-    # buildings = glob.glob("set%i/objects/buildings/*.json" % set_number)
-    buildings2 = ["set%i/objects/buildings/%s.json" % (set_number, x.replace("base", "bas")) for x in sdf]
+    buildings = ["set%i/objects/buildings/%s.json" % (set_number, x.replace("base", "bas")) for x in sdf]
 
-    for building in buildings2:
+    for building in buildings:
         print(building)
         with open(building, "r") as f:
             building_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
@@ -1305,10 +1303,9 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             mc2.buildings.add_chunk(chunk)
 
     # TODO Move ground functions to MC2 object
-    # grounds = glob.glob("set%i/objects/ground/*.json" % set_number)
-    grounds2 = ["set%i/objects/ground/%s.json" % (set_number, x.replace("base", "bas")) for x in slurps]
+    grounds = ["set%i/objects/ground/%s.json" % (set_number, x.replace("base", "bas")) for x in slurps]
 
-    for ground in grounds2:
+    for ground in grounds:
         print(ground)
         with open(ground, "r") as f:
             ground_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
