@@ -3,7 +3,7 @@ import glob
 
 
 def main():
-    files = glob.glob("**/*.bas", recursive=True)
+    files = glob.glob("set*/**/*.bas", recursive=True)
 
     for file in files:
         print("file:", file)
