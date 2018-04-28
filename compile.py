@@ -358,7 +358,6 @@ class Strc(Chunk):
         self.conversion_class.strc_type = "STRC_UNKNOWN"
 
     def set_text_data(self, text_data):
-        print(text_data)
         json_data = myjson.loads(text_data)
         if "strc_type" in json_data:
             strc = Strc()
@@ -710,7 +709,6 @@ class Data(Chunk):
         poly = []
         frame_times = []
         for frame in self.conversion_class.frames:
-            print(frame)
             poly.append(frame["vbmp_coords"])
             vbmp_names.append(frame["vbmp_name"])
             vbmp_names = list(set(vbmp_names))  # HACK
@@ -894,7 +892,7 @@ class Poo2(Chunk):
 
     def set_binary_data(self, binary_data):
         if len(binary_data) % 12 != 0:
-            print("Poo2.convert_binary_data(): Length of binary data was not a multiple of 12!")
+            logging.error("Poo2.convert_binary_data(): Length of binary data was not a multiple of 12!")
 
         num = int(len(binary_data) / 12)
         poo2_points = []
@@ -1236,7 +1234,7 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             bpp = struct.unpack(unsigned_short_be, f.read(size_of_unsigned_short))[0]
 
             if bpp != 8 or width != 256 or height != 256:
-                print("Bitmap must be 256x256 and using an indexed 8bit color map!\n"
+                print("ERROR: Bitmap must be 256x256 and using an indexed 8bit color map!\n"
                       "Image was: %sw*%sh*%sb" % (str(width), str(height), str(bpp)))
                 raise ValueError("Selected bitmap was not in the correct format.")
 
@@ -1313,8 +1311,6 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
         for chunk in ground_form.sub_chunks:
             mc2.ground.add_chunk(chunk)
 
-    pass
-    # print(mc2.to_json())
     mc2.save_to_file("output/set%i_compiled.bas" % set_number)
 
 
@@ -1357,7 +1353,7 @@ def compile_single_files(set_number=1):
             bpp = struct.unpack(unsigned_short_be, f.read(size_of_unsigned_short))[0]
 
             if bpp != 8 or width != 256 or height != 256:
-                print("Bitmap must be 256x256 and using an indexed 8bit color map!\n"
+                print("ERROR: Bitmap must be 256x256 and using an indexed 8bit color map!\n"
                       "Image was: %sw*%sh*%sb" % (str(width), str(height), str(bpp)))
                 raise ValueError("Selected bitmap was not in the correct format.")
 
