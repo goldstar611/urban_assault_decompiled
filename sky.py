@@ -41,16 +41,21 @@ color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 42829
 def main():
     for sky in glob.glob("sky/*.bas"):
         sky_dir = os.path.splitext(sky)[0]
-        form = compile.Form().load_from_file(r"/home/user/Desktop/urban_assault_decompiled/%s" % sky)
+        form = compile.Form().load_from_file(sky)
         vbmps = form.get_all_form_by_type("VBMP")
-        json = form.to_json()
+        #json = form.to_json()
 
         if not os.path.isdir(sky_dir):
             os.mkdir(sky_dir)
 
         output_file = os.path.join(sky_dir, os.path.basename(sky) + ".json")
-        with open(output_file, "w") as f:
-            f.write(json)
+        #with open(output_file, "w") as f:
+        #    f.write(json)
+
+        embd = compile.Embd()
+        embd.sub_chunks = form.get_single_form_by_type("EMBD").sub_chunks  # HACK
+
+        embd.extract_resources(sky_dir)
 
         for i, vbmp in enumerate(vbmps):
             data = vbmp.get_single_chunk_by_id("BODY").get_data()
@@ -60,7 +65,7 @@ def main():
             image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format_Indexed8)
             image = image.mirrored(mirror_horizontal, mirror_vertical)
             image.setColorTable(color_table)
-            image.save(os.path.join(sky_dir, "image%i.bmp" % i))
+            #image.save(os.path.join(sky_dir, "image%i.bmp" % i))
 
 
 if __name__ == '__main__':

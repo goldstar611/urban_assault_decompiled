@@ -5,7 +5,7 @@ import os
 import struct
 import warnings
 
-from typing import Union
+from typing import Union, Tuple
 
 
 class ConversionClass(object):
@@ -275,7 +275,7 @@ class Form(object):
                 form_size = struct.unpack(">I", bas_data.read(4))[0] - 4
                 form_type = bytes(bas_data.read(4)).decode()
                 form_data_stream = io.BytesIO(bas_data.read(form_size))
-                print("Found Form", form_type, form_size)
+                #print("Found Form", form_type, form_size)
                 ret_chunks.append(Form(form_type, self.parse_stream(form_data_stream)))
                 continue
 
@@ -284,7 +284,7 @@ class Form(object):
                 chunk_data = bas_data.read(chunk_size)
                 if chunk_size % 2:
                     bas_data.read(1)  # Discard pad byte
-                print("Found Chunk", chunk_id, chunk_size)
+                #print("Found Chunk", chunk_id, chunk_size)
                 a = all_ua_python_objects.get(chunk_id, Chunk)
                 ret_chunks.append(a(data=chunk_data))
 
@@ -1024,7 +1024,7 @@ class Otl2(Chunk):
 
 
 class Vbmp(Form):
-    def __init__(self, sub_chunks=list()):
+    def __init__(self, form_type="VBMP", sub_chunks=list()):
         super(Vbmp, self).__init__("VBMP", sub_chunks)
 
     def load_from_ilbm(self, file_name):
@@ -1041,7 +1041,7 @@ class Vbmp(Form):
 
 
 class Embd(Form):
-    def __init__(self, sub_chunks=list()):
+    def __init__(self, form_type="EMBD", sub_chunks=list()):
         super(Embd, self).__init__("EMBD", [Form("ROOT")] + sub_chunks)
 
     def add_emrs_resource(self, class_id, emrs_name, incoming_form):
@@ -1063,9 +1063,24 @@ class Embd(Form):
     def add_vanm(self, file_name, vanm_form):
         self.add_emrs_resource("bmpanim.class", file_name, vanm_form)
 
+    def extract_resources(self, output_location):
+        print("extracting resources")
+
+        asset_name = None
+        for i, chunk in enumerate(self.sub_chunks):  # type: Tuple[int, Union[Chunk, Form]]
+            if i == 0:
+                if not isinstance(chunk, Form) and chunk.form_type == "ROOT":
+                    raise ValueError("Embd().extract_resources() expects first sub_chunk to be Form() with type ROOT")
+            elif (i % 2):
+                # EMRS
+                asset_name = chunk.conversion_class.emrs_name
+            else:
+                # Asset
+                print(asset_name)
+
 
 class Mc2(Form):
-    def __init__(self):
+    def __init__(self, form_type="MC2 "):
         super(Mc2, self).__init__("MC2 ")
         self.embd = Embd()
         self.vehicles = Form("KIDS")
@@ -1455,10 +1470,10 @@ def parse_slurps(set_number=1):
 if __name__ == "__main__":
     set_number = 1
 
-    # compile_single_files(set_number)
+    compile_single_files(set_number)
 
     sdf = parse_set_descriptor(set_number)
     visproto = parse_visproto(set_number)
     slurps = parse_slurps(set_number)
 
-    compile_set_bas(visproto, sdf, slurps, set_number)
+    #compile_set_bas(visproto, sdf, slurps, set_number)
