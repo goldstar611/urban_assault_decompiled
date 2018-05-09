@@ -1123,15 +1123,14 @@ class Embd(Form):
                     image = image.mirrored(mirror_horizontal, mirror_vertical)
                     image.setColorTable(color_table)
                     image.save(os.path.join(output_location, "%s.bmp" % asset_name))
-                elif chunk.form_type == "SKLT":
-                    sklt_name = os.path.basename(asset_name)
-                    with open(os.path.join(output_location, sklt_name + ".json"), "w") as f:
+                elif chunk.form_type == "SKLT" or chunk.form_type == "VANM":
+                    # TODO: Using the base name is not really compatible with MC2 forms which
+                    # TODO:   expect the file name to be Skeleton/blah.sklt
+                    base_name = os.path.basename(asset_name)
+                    with open(os.path.join(output_location, base_name + ".json"), "w") as f:
                         f.write(chunk.to_json())
                 else:
-                    logging.error("extract_resources() unimplemented for %s", chunk.form_type)
                     raise ValueError("extract_resources() unimplemented for %s", chunk.form_type)
-                # TODO ANIM Support, maybe just call to_json???
-
 
 class Mc2(Form):
     def __init__(self):
@@ -1531,5 +1530,3 @@ if __name__ == "__main__":
     slurps = parse_slurps(set_number)
 
     compile_set_bas(visproto, sdf, slurps, set_number)
-
-
