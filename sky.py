@@ -14,6 +14,11 @@ def main():
 
         embd.extract_resources(sky_dir)
 
+        ades = form.get_single_form_by_type("ADES")
+        if ades:
+            with open(os.path.join(sky_dir, "ades.json"), "w") as f:
+                f.write(ades.to_json())
+
 
 if __name__ == '__main__':
     main()
