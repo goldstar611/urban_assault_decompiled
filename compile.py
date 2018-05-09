@@ -8,6 +8,40 @@ import warnings
 from typing import Union, Tuple
 
 
+color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 4282992969, 4278190081, 4288398800,
+               4278203647, 4278190335, 4294901760, 4294945564, 4278245713, 4282795590, 4294967176, 4278225322,
+               4278190081, 4294967295, 4289063167, 4285382071, 4284531364, 4284532626, 4288399276, 4284660169,
+               4284724444, 4284788975, 4291738328, 4292655531, 4294428045, 4294963045, 4294937927, 4294926689,
+               4278190081, 4293848814, 4288338158, 4284854442, 4284069273, 4284070280, 4287674784, 4284198075,
+               4284262605, 4284327135, 4290817481, 4291669151, 4293310339, 4293844830, 4293821250, 4293810778,
+               4278190081, 4292730333, 4287613405, 4284392350, 4283672718, 4283673726, 4287016085, 4283736238,
+               4283800766, 4283865295, 4289896891, 4290683028, 4292258426, 4292726615, 4292704829, 4292695124,
+               4278190081, 4291611852, 4286888396, 4283930514, 4283210627, 4283211636, 4286357385, 4283339936,
+               4283404463, 4283403455, 4288976044, 4289696904, 4291140976, 4291608400, 4291588152, 4291579213,
+               4278190081, 4290493371, 4286163643, 4283402886, 4282814072, 4282814827, 4285632894, 4282877843,
+               4282942625, 4283007407, 4288120990, 4288776061, 4290089063, 4290490186, 4290471732, 4290463559,
+               4278190081, 4289374890, 4285438634, 4282941050, 4282417517, 4282418273, 4284974194, 4282481542,
+               4282546322, 4282545567, 4287200400, 4287789938, 4288971614, 4289371971, 4289355311, 4289347648,
+               4278190081, 4288256409, 4284713881, 4282478957, 4281955426, 4281956183, 4284315495, 4282019704,
+               4282084483, 4282083727, 4286279553, 4286803814, 4287919700, 4288253756, 4288238634, 4288231994,
+               4278190081, 4287137928, 4283988872, 4282016865, 4281558871, 4281559629, 4283591259, 4281623147,
+               4281622645, 4281687423, 4285358963, 4285882971, 4286802251, 4287135541, 4287122213, 4287116083,
+               4278190081, 4286019447, 4283264119, 4281489493, 4281096780, 4281097284, 4282932304, 4281161309,
+               4281226342, 4281225839, 4284503652, 4284896847, 4285750081, 4286017327, 4286005537, 4286000429,
+               4278190081, 4284900966, 4282539110, 4281027401, 4280700225, 4280700730, 4282273604, 4280765008,
+               4280764503, 4280763999, 4283583062, 4283910724, 4284632632, 4284899112, 4284889116, 4284884518,
+               4278190081, 4283782485, 4281814357, 4280565565, 4280303670, 4280304176, 4281549369, 4280302915,
+               4280368201, 4280367695, 4282662472, 4282989881, 4283580719, 4283780897, 4283772695, 4283768864,
+               4278190081, 4282664004, 4281089348, 4280103472, 4279841579, 4279842086, 4280890669, 4279906613,
+               4279906362, 4279905855, 4281741625, 4282003757, 4282463269, 4282662682, 4282656018, 4282652953,
+               4278190081, 4281545523, 4280364595, 4279575844, 4279445024, 4279445277, 4280231714, 4279444776,
+               4279444523, 4279444271, 4280886571, 4281017634, 4281411356, 4281544468, 4281539598, 4281537299,
+               4278190081, 4280427042, 4279639586, 4279114008, 4278982933, 4278983187, 4279507478, 4279048218,
+               4279048221, 4279047967, 4279965724, 4280096790, 4280293906, 4280426253, 4280422921, 4280421388,
+               4278190081, 4279308561, 4278914833, 4278651916, 4278586378, 4278586633, 4278848779, 4278586381,
+               4278586382, 4278586127, 4279045134, 4279110667, 4279241993, 4279308038, 4279306500, 4279305734]
+
+
 class ConversionClass(object):
     pass
 
@@ -1024,7 +1058,7 @@ class Otl2(Chunk):
 
 
 class Vbmp(Form):
-    def __init__(self, form_type="VBMP", sub_chunks=list()):
+    def __init__(self, sub_chunks=list()):
         super(Vbmp, self).__init__("VBMP", sub_chunks)
 
     def load_from_ilbm(self, file_name):
@@ -1041,7 +1075,7 @@ class Vbmp(Form):
 
 
 class Embd(Form):
-    def __init__(self, form_type="EMBD", sub_chunks=list()):
+    def __init__(self, sub_chunks=list()):
         super(Embd, self).__init__("EMBD", [Form("ROOT")] + sub_chunks)
 
     def add_emrs_resource(self, class_id, emrs_name, incoming_form):
@@ -1066,6 +1100,9 @@ class Embd(Form):
     def extract_resources(self, output_location):
         print("extracting resources")
 
+        if not os.path.isdir(output_location):
+            os.mkdir(output_location)
+
         asset_name = None
         for i, chunk in enumerate(self.sub_chunks):  # type: Tuple[int, Union[Chunk, Form]]
             if i == 0:
@@ -1076,11 +1113,28 @@ class Embd(Form):
                 asset_name = chunk.conversion_class.emrs_name
             else:
                 # Asset
-                print(asset_name)
+                if chunk.form_type == "VBMP":
+                    from PyQt5 import QtGui
+                    data = chunk.get_single_chunk_by_id("BODY").get_data()
+
+                    mirror_horizontal = True
+                    mirror_vertical = False
+                    image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format_Indexed8)
+                    image = image.mirrored(mirror_horizontal, mirror_vertical)
+                    image.setColorTable(color_table)
+                    image.save(os.path.join(output_location, "%s.bmp" % asset_name))
+                elif chunk.form_type == "SKLT":
+                    sklt_name = os.path.basename(asset_name)
+                    with open(os.path.join(output_location, sklt_name + ".json"), "w") as f:
+                        f.write(chunk.to_json())
+                else:
+                    logging.error("extract_resources() unimplemented for %s", chunk.form_type)
+                    raise ValueError("extract_resources() unimplemented for %s", chunk.form_type)
+                # TODO ANIM Support, maybe just call to_json???
 
 
 class Mc2(Form):
-    def __init__(self, form_type="MC2 "):
+    def __init__(self):
         super(Mc2, self).__init__("MC2 ")
         self.embd = Embd()
         self.vehicles = Form("KIDS")
@@ -1476,4 +1530,6 @@ if __name__ == "__main__":
     visproto = parse_visproto(set_number)
     slurps = parse_slurps(set_number)
 
-    #compile_set_bas(visproto, sdf, slurps, set_number)
+    compile_set_bas(visproto, sdf, slurps, set_number)
+
+
