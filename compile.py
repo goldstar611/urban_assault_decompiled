@@ -47,9 +47,9 @@ class ConversionClass(object):
 
 
 class Chunk(object):
-    def __init__(self, chunk_id=str(), chunk_data=bytes()):
+    def __init__(self, chunk_id=str(), data=bytes()):
         self.chunk_id = self.validate_id(chunk_id)
-        self.chunk_data = self.validate_data(chunk_data)
+        self.chunk_data = self.validate_data(data)
         self.conversion_class = ConversionClass()
 
     @staticmethod
@@ -310,7 +310,7 @@ class Form(object):
                 form_type = bytes(bas_data.read(4)).decode()
                 form_data_stream = io.BytesIO(bas_data.read(form_size))
                 #print("Found Form", form_type, form_size)
-                ret_chunks.append(Form(form_type, self.parse_stream(form_data_stream)))
+                ret_chunks.append(Form(form_type=form_type, sub_chunks=self.parse_stream(form_data_stream)))
                 continue
 
             if chunk_id != "FORM":
@@ -320,7 +320,7 @@ class Form(object):
                     bas_data.read(1)  # Discard pad byte
                 #print("Found Chunk", chunk_id, chunk_size)
                 a = all_ua_python_objects.get(chunk_id, Chunk)
-                ret_chunks.append(a(data=chunk_data))
+                ret_chunks.append(a(chunk_id=chunk_id, data=chunk_data))
 
         return ret_chunks
 
@@ -329,7 +329,7 @@ class Form(object):
 
 
 class Clid(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="CLID", data=bytes()):
         super(Clid, self).__init__("CLID", data)
         self.conversion_class.class_id = ""
         if data:
@@ -345,7 +345,7 @@ class Clid(Chunk):
 
 
 class Name(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="NAME", data=bytes()):
         super(Name, self).__init__("NAME", data)
         self.conversion_class.zero_terminated = False
         self.conversion_class.name = ""
@@ -368,7 +368,7 @@ class Name(Chunk):
 
 
 class Emrs(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="EMRS", data=bytes()):
         super(Emrs, self).__init__("EMRS", data)
         self.conversion_class.class_id = ""
         self.conversion_class.emrs_name = ""
@@ -387,7 +387,7 @@ class Emrs(Chunk):
 
 
 class Strc(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="STRC", data=bytes()):
         super(Strc, self).__init__("STRC", data)
         self.conversion_class.strc_type = "STRC_UNKNOWN"
 
@@ -432,7 +432,7 @@ class Strc(Chunk):
 
 
 class BaseStrc(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="STRC", data=bytes()):
         super(BaseStrc, self).__init__("STRC", data)
         self.conversion_class.strc_type = "STRC_BASE"
         self.conversion_class.version = 0
@@ -497,7 +497,7 @@ class BaseStrc(Chunk):
 
 
 class AdeStrc(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="STRC", data=bytes()):
         super(AdeStrc, self).__init__("STRC", data)
         self.conversion_class.strc_type = "STRC_ADE "
         self.conversion_class.version = 0
@@ -538,7 +538,7 @@ class AdeStrc(Chunk):
 
 
 class AreaStrc(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="STRC", data=bytes()):
         super(AreaStrc, self).__init__("STRC", data)
         self.conversion_class.strc_type = "STRC_AREA"
         self.conversion_class.version = 0
@@ -583,7 +583,7 @@ class AreaStrc(Chunk):
 
 
 class BaniStrc(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="STRC", data=bytes()):
         super(BaniStrc, self).__init__("STRC", data)
         self.conversion_class.strc_type = "STRC_BANI"
         self.conversion_class.version = 0
@@ -608,7 +608,7 @@ class BaniStrc(Chunk):
                            self.conversion_class.anim_type) + bytes(self.conversion_class.anim_name, "ascii") + b"\x00"
 
 
-def strc_factory(data=bytes()):
+def strc_factory(chunk_id="STRC", data=bytes()):
     binary_data = data
     if not binary_data:
         return Strc(data)
@@ -629,7 +629,7 @@ def strc_factory(data=bytes()):
 
 
 class Nam2(Name):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="NAM2", data=bytes()):
         super(Nam2, self).__init__(data)
         self.chunk_id = "NAM2"
         self.conversion_class.zero_terminated = False
@@ -664,7 +664,7 @@ class Data(Chunk):
     00
     """
 
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="DATA", data=bytes()):
         super(Data, self).__init__("DATA", data)
         self.conversion_class.class_id = ""
         self.conversion_class.frames = []
@@ -765,7 +765,7 @@ class Data(Chunk):
 
 
 class Head(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="HEAD", data=bytes()):
         super(Head, self).__init__("HEAD", data)
         self.conversion_class.width = 0
         self.conversion_class.height = 0
@@ -786,7 +786,7 @@ class Head(Chunk):
 
 
 class Body(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="BODY", data=bytes()):
         super(Body, self).__init__("BODY", data)
         self.conversion_class.file_name = "not_used.vbmp"
         self.data = bytes()
@@ -803,7 +803,7 @@ class Body(Chunk):
 # https://github.com/Marisa-Chan/UA_source/blob/master/src/amesh.cpp#L262
 # Particle.class has its own binary format https://github.com/Marisa-Chan/UA_source/blob/master/src/particle.cpp#L681
 class Atts(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="ATTS", data=bytes()):
         super(Atts, self).__init__("ATTS", data)
         self.conversion_class.atts_entries = []
         self.set_binary_data(data)
@@ -916,7 +916,7 @@ class Atts(Chunk):
 
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/sklt.cpp#L128
 class Poo2(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="POO2", data=bytes()):
         super(Poo2, self).__init__("POO2", data)
         self.conversion_class.points = []
         self.set_binary_data(data)
@@ -952,14 +952,14 @@ class Poo2(Chunk):
 
 
 class Sen2(Poo2):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="SEN2", data=bytes()):
         super(Sen2, self).__init__(data)
         self.chunk_id = "SEN2"
 
 
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/sklt.cpp#L207
 class Pol2(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="POL@", data=bytes()):
         super(Pol2, self).__init__("POL2", data)
         self.conversion_class.edges = []
         if data:
@@ -996,7 +996,7 @@ class Pol2(Chunk):
 
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/amesh.cpp#L301
 class Olpl(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="OLPL", data=bytes()):
         super(Olpl, self).__init__("OLPL", data)
         self.conversion_class.points = []
         self.set_binary_data(data)
@@ -1031,7 +1031,7 @@ class Olpl(Chunk):
 
 
 class Otl2(Chunk):
-    def __init__(self, data=bytes()):
+    def __init__(self, chunk_id="OTL2", data=bytes()):
         super(Otl2, self).__init__("OTL2", data)
         self.conversion_class.points = []
         self.set_binary_data(data)
@@ -1058,7 +1058,7 @@ class Otl2(Chunk):
 
 
 class Vbmp(Form):
-    def __init__(self, sub_chunks=list()):
+    def __init__(self, chunk_id="VBMP", sub_chunks=list()):
         super(Vbmp, self).__init__("VBMP", sub_chunks)
 
     def load_from_ilbm(self, file_name):
@@ -1075,7 +1075,7 @@ class Vbmp(Form):
 
 
 class Embd(Form):
-    def __init__(self, sub_chunks=list()):
+    def __init__(self, form_type="EMBD", sub_chunks=list()):
         super(Embd, self).__init__("EMBD", [Form("ROOT")] + sub_chunks)
 
     def add_emrs_resource(self, class_id, emrs_name, incoming_form):
@@ -1133,7 +1133,7 @@ class Embd(Form):
                     raise ValueError("extract_resources() unimplemented for %s", chunk.form_type)
 
 class Mc2(Form):
-    def __init__(self):
+    def __init__(self, form_type="MC2 "):
         super(Mc2, self).__init__("MC2 ")
         self.embd = Embd()
         self.vehicles = Form("KIDS")
