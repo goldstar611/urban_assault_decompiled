@@ -611,21 +611,21 @@ class BaniStrc(Chunk):
 def strc_factory(chunk_id="STRC", data=bytes()):
     binary_data = data
     if not binary_data:
-        return Strc(data)
+        return Strc(data=data)
     if len(binary_data) == 62:
-        return BaseStrc(data)
+        return BaseStrc(data=data)
     if len(binary_data) == 10:
         version = struct.unpack(">h", binary_data[0:2])[0]
         if version == 1:
-            return AdeStrc(data)
+            return AdeStrc(data=data)
         if version == 256:
-            return AreaStrc(data)
+            return AreaStrc(data=data)
         raise ValueError("strc_factory() received invalid data:", binary_data)
     if binary_data[0:5] == b"\x00\x01\x00\x06\x00":
-        return BaniStrc(data)
+        return BaniStrc(data=data)
 
     warnings.warn("strc_factory() received invalid data: %s" % binary_data)
-    return Strc(data)
+    return Strc(data=data)
 
 
 class Nam2(Name):
@@ -953,7 +953,7 @@ class Poo2(Chunk):
 
 class Sen2(Poo2):
     def __init__(self, chunk_id="SEN2", data=bytes()):
-        super(Sen2, self).__init__(data)
+        super(Sen2, self).__init__(data=data)
         self.chunk_id = "SEN2"
 
 
