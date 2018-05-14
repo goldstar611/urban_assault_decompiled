@@ -136,7 +136,7 @@ class Chunk(object):
         try:
             return myjson.dumps({self.chunk_id: self.conversion_class.__dict__})
         except TypeError:
-            return myjson.dumps({self.chunk_id: {"TypeError": "Cannot Deocde Data"}})
+            return myjson.dumps({self.chunk_id: {"TypeError": "Cannot decode data"}})
 
     def from_json(self, json_dict):
         self.conversion_class.__dict__ = json_dict
@@ -216,7 +216,7 @@ class Form(object):
         if isinstance(json_dict, dict):
             for k, v in json_dict.items():
                 if isinstance(v, list):
-                    return Form(k, self.from_json(v))
+                    return Form(form_type=k, sub_chunks=self.from_json(v))
                 if isinstance(v, dict):
                     # return Chunk(k).from_json(v)
                     return all_ua_python_objects[k]().from_json(v)
@@ -1077,6 +1077,29 @@ class Vbmp(Form):
 class Embd(Form):
     def __init__(self, form_type="EMBD", sub_chunks=list()):
         super(Embd, self).__init__("EMBD", [Form("ROOT")] + sub_chunks)
+        self.emrs_resources = {}
+        self.parse_emrs()
+
+    def parse_emrs(self):
+        emrs_name = None
+        self.emrs_resources = {}
+        for i, chunk in enumerate(self.sub_chunks):
+            if i == 0:
+                if not isinstance(chunk, Form) and chunk.form_type == "ROOT":
+                    raise ValueError("Embd().parse_emrs() expects first sub_chunk to be Form() with type ROOT")
+            elif (i % 2):
+                emrs_name = chunk.conversion_class.emrs_name
+            else:
+                self.emrs_resources[emrs_name] = chunk
+
+    def emrs_index_by_name(self, emrs_name):
+        if not self.emrs_resources:
+            self.parse_emrs()
+
+        if emrs_name not in self.emrs_resources:
+            return None
+
+        return self.sub_chunks.index(self.emrs_resources[emrs_name])
 
     def add_emrs_resource(self, class_id, emrs_name, incoming_form):
         emrs_chunk = Emrs().from_json({"class_id": class_id,
@@ -1084,6 +1107,7 @@ class Embd(Form):
                                        })
         self.add_chunk(emrs_chunk)
         self.add_chunk(incoming_form)
+        self.parse_emrs()
 
     def add_sklt(self, file_name, sklt_form):
         # if not isinstance(sklt_form, Sklt)
@@ -1131,6 +1155,7 @@ class Embd(Form):
                         f.write(chunk.to_json())
                 else:
                     raise ValueError("extract_resources() unimplemented for %s", chunk.form_type)
+
 
 class Mc2(Form):
     def __init__(self, form_type="MC2 "):
