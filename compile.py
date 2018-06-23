@@ -1,9 +1,9 @@
+import base64
 import io
 import logging
 import myjson
 import os
 import struct
-import warnings
 
 from typing import Union, Tuple, List
 
@@ -42,15 +42,10 @@ color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 42829
                4278586382, 4278586127, 4279045134, 4279110667, 4279241993, 4279308038, 4279306500, 4279305734]
 
 
-class ConversionClass(object):
-    pass
-
-
 class Chunk(object):
-    def __init__(self, chunk_id=str(), data=bytes()):
-        self.chunk_id = self.validate_id(chunk_id)
-        self.chunk_data = self.validate_data(data)
-        self.conversion_class = ConversionClass()
+    def __init__(self, chunk_id="?!!?"):
+        self.chunk_id = chunk_id
+        self.data = bytes("", "ascii")
 
     @staticmethod
     def validate_id(chunk_id):
@@ -66,13 +61,16 @@ class Chunk(object):
             raise ValueError("chunk_data must be bytes. Supplied type was %s" % type(chunk_data))
         return chunk_data
 
+    def set_binary_data(self, binary_data):
+        self.data = binary_data
+
     # Returns only chunk data
     def get_data(self):
         """
 
         :rtype: bytes
         """
-        return self.chunk_data
+        return self.data
 
     # Returns chunk_id, size, chunk_data and pad byte
     def full_data(self):
@@ -91,7 +89,7 @@ class Chunk(object):
 
         :rtype: int
         """
-        return len(self.chunk_data)
+        return len(self.data)
 
     def load_data_from_file(self, file_name):
         if not os.path.isfile(file_name):
@@ -101,7 +99,7 @@ class Chunk(object):
             data = f.read()
             if data[0:4] == bytes("FORM", "ascii"):
                 raise ValueError("You shouldn't load a FORM file into a chunk!")
-            self.chunk_data = data
+            self.data = data
 
         return data
 
@@ -118,7 +116,7 @@ class Chunk(object):
             chunk_size = struct.unpack(">I", data[4:8])[0]
             rest_of_file_data = data[8:]
             if chunk_size <= len(rest_of_file_data):
-                self.chunk_data = rest_of_file_data[:chunk_size]
+                self.data = rest_of_file_data[:chunk_size]
                 self.chunk_id = chunk_id
 
             return self
@@ -131,22 +129,51 @@ class Chunk(object):
         with open(file_name, "wb") as f:
             f.write(self.full_data())
 
+    def to_class(self):
+        if self.chunk_id in master_list:
+            o = master_list[self.chunk_id]()
+            o.set_binary_data(self.data)
+            return o
+
+        return ValueError("This class cannot be converted")
+
     def to_json(self):
-        # return myjson.dumps({self.chunk_id: self.conversion_class.__dict__}, sort_keys=True)
-        try:
-            return myjson.dumps({self.chunk_id: self.conversion_class.__dict__})
-        except TypeError:
-            return myjson.dumps({self.chunk_id: {"TypeError": "Cannot decode data"}})
+        if self.chunk_id in master_list:
+            o = master_list[self.chunk_id]()
+            o.set_binary_data(self.data)
+            return myjson.dumps(o.to_json(), indent=1, sort_keys=True)
+        # Generic json support for all IFF chunks
+        return myjson.dumps({self.chunk_id: {"data": base64.b64encode(self.data).decode("ascii")}})
 
     def from_json(self, json_dict):
-        self.conversion_class.__dict__ = json_dict
+        if isinstance(json_dict, str):
+            json_dict = myjson.loads(json_dict)
+        self.chunk_id, attributes_dict = json_dict.popitem()
+        o = master_list[self.chunk_id]()
+        o.from_json_generic({self.chunk_id: attributes_dict})
+        self.set_binary_data(o.get_data())
+        return self
+
+    def from_json_generic(self, json_string):
+        # Generic json support for all IFF chunks
+        if isinstance(json_string, str):
+            json_dict = myjson.loads(json_string)  # type: dict
+        else:
+            json_dict = json_string
+
+        self.chunk_id, attributes_dict = json_dict.popitem()
+        for k, v in attributes_dict.items():
+            setattr(self, k, v)
         return self
 
 
 class Form(object):
-    def __init__(self, form_type: str="", sub_chunks: list=None):
-        self.form_type = self.validate_form_type(form_type)
-        self.sub_chunks = self.validate_sub_chunks(sub_chunks)  # type: List[Union[Form, Chunk]]
+    def __init__(self, form_type="!??!", sub_chunks=None):
+        self.form_type = form_type
+        if sub_chunks is None:
+            self.sub_chunks = []
+        else:
+            self.sub_chunks = sub_chunks  # type: List[Union[Form, Chunk]]
 
     @staticmethod
     def validate_form_type(form_type):
@@ -196,6 +223,7 @@ class Form(object):
         return bytes("FORM", "ascii") + struct.pack(">I", data_length) + data
 
     def to_json(self):
+        # Generic json support for all IFF forms
         children = []
         for child in self.sub_chunks:
             children.append(myjson.loads(child.to_json()))
@@ -203,13 +231,13 @@ class Form(object):
         return myjson.dumps(ret_string, indent=1, sort_keys=True)
 
     def from_json(self, json_dict):
+        # Generic json support for all IFF forms
         if isinstance(json_dict, str):
             json_dict = myjson.loads(json_dict)
 
         if isinstance(json_dict, list):
             ret_list = []
             for child in json_dict:
-                # print(child)
                 ret_list.append(self.from_json(child))
             return ret_list
 
@@ -218,9 +246,10 @@ class Form(object):
                 if isinstance(v, list):
                     return Form(form_type=k, sub_chunks=self.from_json(v))
                 if isinstance(v, dict):
-                    # return Chunk(k).from_json(v)
-                    return all_ua_python_objects[k]().from_json(v)
+                    return Chunk(k).from_json({k: v})
                 raise ValueError("not dict or list :(", k, v)
+
+        raise ValueError("Fall through error. This shouldnt happen on well formed data")
 
     def size(self):
         """
@@ -319,8 +348,9 @@ class Form(object):
                 if chunk_size % 2:
                     bas_data.read(1)  # Discard pad byte
                 #print("Found Chunk", chunk_id, chunk_size)
-                a = all_ua_python_objects.get(chunk_id, Chunk)
-                ret_chunks.append(a(chunk_id=chunk_id, data=chunk_data))
+                c = Chunk(chunk_id)
+                c.set_binary_data(chunk_data)
+                ret_chunks.append(c)
 
         return ret_chunks
 
@@ -328,313 +358,80 @@ class Form(object):
         self.sub_chunks.append(chunk)
 
 
-class Clid(Chunk):
-    def __init__(self, chunk_id="CLID", data=bytes()):
-        super(Clid, self).__init__("CLID", data)
-        self.conversion_class.class_id = ""
-        if data:
-            self.set_binary_data(data)
-
-    def set_binary_data(self, binary_data):
-        # binary_data = b"base.class\x00"
-        self.conversion_class.class_id = bytes(binary_data[:-1]).decode()
-        assert binary_data == self.get_data()
-
-    def get_data(self):
-        return bytes(self.conversion_class.class_id, "ascii") + b"\x00"
-
-
 class Name(Chunk):
-    def __init__(self, chunk_id="NAME", data=bytes()):
-        super(Name, self).__init__("NAME", data)
-        self.conversion_class.zero_terminated = False
-        self.conversion_class.name = ""
-        self.set_binary_data(data)
+    def __init__(self, chunk_id="NAME"):
+        super(Name, self).__init__(chunk_id)
+        self.zero_terminated = False
+        self.name = ""
 
     def set_binary_data(self, binary_data):
         # binary_data = b"Skeleton/DUMMY.sklt\x00"
         # binary_data = b"VPfFLAK2"
         # binary_data = b"joh_mei_2.ade"
-        self.conversion_class.zero_terminated = binary_data[-1:] == b"\x00"
-        self.conversion_class.name = bytes(binary_data.split(b"\x00")[0]).decode()
+        self.zero_terminated = binary_data[-1:] == b"\x00"
+        self.name = bytes(binary_data.split(b"\x00")[0]).decode()
         assert binary_data == self.get_data()
 
     def get_data(self):
-        ret = bytes(self.conversion_class.name, "ascii")
-        if self.conversion_class.zero_terminated:
+        ret = bytes(self.name, "ascii")
+        if self.zero_terminated:
             return ret + b"\x00"
         else:
             return ret
 
+    def to_json(self):
+        return {self.chunk_id: {"zero_terminated": self.zero_terminated,
+                                "name": self.name
+                                }
+                }
+
+
+class Clid(Chunk):
+    def __init__(self, chunk_id="CLID"):
+        super(Clid, self).__init__(chunk_id)
+        self.class_id = ""
+
+    def set_binary_data(self, binary_data):
+        # binary_data = b"base.class\x00"
+        self.class_id = bytes(binary_data[:-1]).decode()
+        assert binary_data == self.get_data()
+
+    def get_data(self):
+        return bytes(self.class_id, "ascii") + b"\x00"
+
+    def to_json(self):
+        return {self.chunk_id: {"class_id": self.class_id,
+                                }
+                }
+
 
 class Emrs(Chunk):
-    def __init__(self, chunk_id="EMRS", data=bytes()):
-        super(Emrs, self).__init__("EMRS", data)
-        self.conversion_class.class_id = ""
-        self.conversion_class.emrs_name = ""
-        self.set_binary_data(data)
+    def __init__(self, chunk_id="EMRS"):
+        super(Emrs, self).__init__(chunk_id)
+        self.class_id = ""
+        self.emrs_name = ""
 
     def set_binary_data(self, binary_data):
         # binary_data = b"sklt.class\x00Skeleton/S00H.sklt\x00\x00"
         if binary_data:
             temp = binary_data.split(b"\x00")
-            self.conversion_class.class_id = bytes(temp[0]).decode()
-            self.conversion_class.emrs_name = bytes(temp[1]).decode()
+            self.class_id = bytes(temp[0]).decode()
+            self.emrs_name = bytes(temp[1]).decode()
             assert binary_data == self.get_data()
 
     def get_data(self):
-        return bytes(self.conversion_class.class_id, "ascii") + b"\x00" + bytes(self.conversion_class.emrs_name, "ascii") + b"\x00\x00"
+        return bytes(self.class_id, "ascii") + b"\x00" + bytes(self.emrs_name, "ascii") + b"\x00\x00"
 
-
-class Strc(Chunk):
-    def __init__(self, chunk_id="STRC", data=bytes()):
-        super(Strc, self).__init__("STRC", data)
-        self.conversion_class.strc_type = "STRC_UNKNOWN"
-
-    def set_text_data(self, text_data):
-        json_data = myjson.loads(text_data)
-        if "strc_type" in json_data:
-            strc = Strc()
-            strc_type = json_data["strc_type"]
-
-            if "STRC_UNKNOWN" == strc_type:
-                return None
-            if "STRC_BASE" == strc_type:
-                strc = BaseStrc()
-            if "STRC_ADE " == strc_type:
-                strc = AdeStrc()
-            if "STRC_AREA" == strc_type:
-                strc = AreaStrc()
-            if "STRC_BANI" == strc_type:
-                strc = BaniStrc()
-
-            strc.from_json(myjson.loads(text_data))
-            self.conversion_class.__dict__ = strc.conversion_class__dict__
-
-    def get_data(self):
-        if "strc_type" in self.conversion_class.__dict__:
-            strc = Strc()
-            if self.conversion_class.__dict__["strc_type"] == "STRC_UNKNOWN":
-                return bytes()
-            if self.conversion_class.__dict__["strc_type"] == "STRC_BASE":
-                strc = BaseStrc()
-            if self.conversion_class.__dict__["strc_type"] == "STRC_ADE ":
-                strc = AdeStrc()
-            if self.conversion_class.__dict__["strc_type"] == "STRC_AREA":
-                strc = AreaStrc()
-            if self.conversion_class.__dict__["strc_type"] == "STRC_BANI":
-                strc = BaniStrc()
-
-            a = self.to_json()
-            b = myjson.loads(a)["STRC"]  # HACK HACK
-            strc.from_json(b)
-            return strc.get_data()
-
-
-class BaseStrc(Chunk):
-    def __init__(self, chunk_id="STRC", data=bytes()):
-        super(BaseStrc, self).__init__("STRC", data)
-        self.conversion_class.strc_type = "STRC_BASE"
-        self.conversion_class.version = 0
-        self.conversion_class.pos = [0.0, 0.0, 0.0]
-        self.conversion_class.vec = [0.0, 0.0, 0.0]
-        self.conversion_class.scale = [0.0, 0.0, 0.0]
-        self.conversion_class.ax = 0
-        self.conversion_class.ay = 0
-        self.conversion_class.az = 0
-        self.conversion_class.rx = 0
-        self.conversion_class.ry = 0
-        self.conversion_class.rz = 0
-        self.conversion_class.att_flags = 0
-        self.conversion_class._un1 = 0
-        self.conversion_class.vis_limit = 0
-        self.conversion_class.ambient_light = 0
-        if data:
-            self.set_binary_data(data)
-
-    def set_binary_data(self, binary_data):
-        if len(binary_data) != 62:
-            raise ValueError("Length of binary_data was not 62 bytes! Not valid for STRC_BASE objects!")
-        # int16_t version;
-        # xyz pos;
-        # xyz vec;
-        # xyz scale;
-        # int16_t ax;
-        # int16_t ay;
-        # int16_t az;
-        # int16_t rx;
-        # int16_t ry;
-        # int16_t rz;
-        # int16_t attFlags;
-        # int16_t _un1;
-        # int32_t visLimit;
-        # int32_t ambientLight;
-        unpacked_data = struct.unpack(">hfffffffffhhhhhhhhll", binary_data)
-        self.conversion_class.version = unpacked_data[0]
-        self.conversion_class.pos = [unpacked_data[1], unpacked_data[2], unpacked_data[3]]
-        self.conversion_class.vec = [unpacked_data[4], unpacked_data[5], unpacked_data[6]]
-        self.conversion_class.scale = [unpacked_data[7], unpacked_data[8], unpacked_data[9]]
-        self.conversion_class.ax = unpacked_data[10]
-        self.conversion_class.ay = unpacked_data[11]
-        self.conversion_class.az = unpacked_data[12]
-        self.conversion_class.rx = unpacked_data[13]
-        self.conversion_class.ry = unpacked_data[14]
-        self.conversion_class.rz = unpacked_data[15]
-        self.conversion_class.att_flags = unpacked_data[16]
-        self.conversion_class._un1 = unpacked_data[17]
-        self.conversion_class.vis_limit = unpacked_data[18]
-        self.conversion_class.ambient_light = unpacked_data[19]
-        assert binary_data == self.get_data()
-
-    def get_data(self):
-        return struct.pack(">hfffffffffhhhhhhhhll",
-                           self.conversion_class.version,
-                           *self.conversion_class.pos, *self.conversion_class.vec, *self.conversion_class.scale,
-                           self.conversion_class.ax, self.conversion_class.ay, self.conversion_class.az,
-                           self.conversion_class.rx, self.conversion_class.ry, self.conversion_class.rz,
-                           self.conversion_class.att_flags, self.conversion_class._un1,
-                           self.conversion_class.vis_limit, self.conversion_class.ambient_light)
-
-
-class AdeStrc(Chunk):
-    def __init__(self, chunk_id="STRC", data=bytes()):
-        super(AdeStrc, self).__init__("STRC", data)
-        self.conversion_class.strc_type = "STRC_ADE "
-        self.conversion_class.version = 0
-        self.conversion_class._nul = 0
-        self.conversion_class.flags = 0
-        self.conversion_class.point = 0
-        self.conversion_class.poly = 0
-        self.conversion_class._nu2 = 0
-        if data:
-            self.set_binary_data(data)
-
-    def set_binary_data(self, binary_data):
-        version = struct.unpack(">h", binary_data[0:2])[0]
-        if len(binary_data) != 10:
-            raise ValueError("Length of binary_data was not 10 bytes! Not valid for STRC_ADE  objects!")
-        if version != 1:
-            raise ValueError("Version of binary_data was not 1! Not valid for STRC_ADE  objects!")
-        # int16_t version;
-        # int8_t _nu1; // Not used
-        # int8_t flags;
-        # int16_t point;
-        # int16_t poly;
-        # int16_t _nu2; // Not used
-        unpacked_data = struct.unpack(">hbbhhh", binary_data)
-        self.conversion_class.version = unpacked_data[0]
-        self.conversion_class._nul = unpacked_data[1]
-        self.conversion_class.flags = unpacked_data[2]
-        self.conversion_class.point = unpacked_data[3]
-        self.conversion_class.poly = unpacked_data[4]
-        self.conversion_class._nu2 = unpacked_data[5]
-        assert binary_data == self.get_data()
-
-    def get_data(self):
-        return struct.pack(">hbbhhh",
-                           self.conversion_class.version,
-                           self.conversion_class._nul, self.conversion_class.flags,
-                           self.conversion_class.point, self.conversion_class.poly, self.conversion_class._nu2)
-
-
-class AreaStrc(Chunk):
-    def __init__(self, chunk_id="STRC", data=bytes()):
-        super(AreaStrc, self).__init__("STRC", data)
-        self.conversion_class.strc_type = "STRC_AREA"
-        self.conversion_class.version = 0
-        self.conversion_class.flags = 0
-        self.conversion_class.polFlags = 0
-        self.conversion_class._un1 = 0
-        self.conversion_class.clrVal = 0
-        self.conversion_class.trcVal = 0
-        self.conversion_class.shdVal = 0
-        if data:
-            self.set_binary_data(data)
-
-    def set_binary_data(self, binary_data):
-        version = struct.unpack(">h", binary_data[0:2])[0]
-        if len(binary_data) != 10:
-            raise ValueError("Length of binary_data was not 10 bytes! Not valid for STRC_AREA objects!")
-        if version != 256:
-            raise ValueError("Version of binary_data was not 256! Not valid for STRC_AREA objects!")
-        # int16_t version;
-        # uint16_t flags;
-        # uint16_t polFlags;
-        # uint8_t _un1;
-        # uint8_t clrVal;
-        # uint8_t trcVal;
-        # uint8_t shdVal;
-        unpacked_data = struct.unpack(">hHHBBBB", binary_data)
-        self.conversion_class.version = unpacked_data[0]
-        self.conversion_class.flags = unpacked_data[1]
-        self.conversion_class.polFlags = unpacked_data[2]
-        self.conversion_class._un1 = unpacked_data[3]
-        self.conversion_class.clrVal = unpacked_data[4]
-        self.conversion_class.trcVal = unpacked_data[5]
-        self.conversion_class.shdVal = unpacked_data[6]
-        assert binary_data == self.get_data()
-
-    def get_data(self):
-        return struct.pack(">hHHBBBB",
-                           self.conversion_class.version,
-                           self.conversion_class.flags, self.conversion_class.polFlags,
-                           self.conversion_class._un1, self.conversion_class.clrVal,
-                           self.conversion_class.trcVal, self.conversion_class.shdVal)
-
-
-class BaniStrc(Chunk):
-    def __init__(self, chunk_id="STRC", data=bytes()):
-        super(BaniStrc, self).__init__("STRC", data)
-        self.conversion_class.strc_type = "STRC_BANI"
-        self.conversion_class.version = 0
-        self.conversion_class.offset = 0
-        self.conversion_class.anim_type = 0
-        self.conversion_class.anim_name = ""
-        if data:
-            self.set_binary_data(data)
-
-    def set_binary_data(self, binary_data):
-        version, offset, anim_type = struct.unpack(">hhh", binary_data[0:6])
-        self.conversion_class.version = version
-        self.conversion_class.offset = offset
-        self.conversion_class.anim_type = anim_type
-        self.conversion_class.anim_name = bytes(binary_data[6:-1]).decode()
-        assert binary_data == self.get_data()
-
-    def get_data(self):
-        return struct.pack(">hhh",
-                           self.conversion_class.version,
-                           self.conversion_class.offset,
-                           self.conversion_class.anim_type) + bytes(self.conversion_class.anim_name, "ascii") + b"\x00"
-
-
-def strc_factory(chunk_id="STRC", data=bytes()):
-    binary_data = data
-    if not binary_data:
-        return Strc(data=data)
-    if len(binary_data) == 62:
-        return BaseStrc(data=data)
-    if len(binary_data) == 10:
-        version = struct.unpack(">h", binary_data[0:2])[0]
-        if version == 1:
-            return AdeStrc(data=data)
-        if version == 256:
-            return AreaStrc(data=data)
-        raise ValueError("strc_factory() received invalid data:", binary_data)
-    if binary_data[0:5] == b"\x00\x01\x00\x06\x00":
-        return BaniStrc(data=data)
-
-    warnings.warn("strc_factory() received invalid data: %s" % binary_data)
-    return Strc(data=data)
+    def to_json(self):
+        return {self.chunk_id: {"class_id": self.class_id,
+                                "emrs_name": self.emrs_name,
+                                }
+                }
 
 
 class Nam2(Name):
-    def __init__(self, chunk_id="NAM2", data=bytes()):
-        super(Nam2, self).__init__(data)
-        self.chunk_id = "NAM2"
-        self.conversion_class.zero_terminated = False
-        self.conversion_class.name = ""
-        self.set_binary_data(data)
+    def __init__(self, chunk_id="NAM2"):
+        super(Nam2, self).__init__(chunk_id)
 
 
 class Data(Chunk):
@@ -664,12 +461,10 @@ class Data(Chunk):
     00
     """
 
-    def __init__(self, chunk_id="DATA", data=bytes()):
-        super(Data, self).__init__("DATA", data)
-        self.conversion_class.class_id = ""
-        self.conversion_class.frames = []
-        if data:
-            self.set_binary_data(data)
+    def __init__(self, chunk_id="DATA"):
+        super(Data, self).__init__(chunk_id)
+        self.class_id = ""
+        self.frames = []
 
     def set_binary_data(self, binary_data):
         vanm_data = binary_data
@@ -679,7 +474,7 @@ class Data(Chunk):
         # Handle the source class ID, it's safer than just stepping +13
         source_class_id_len = struct.unpack(">H", vanm_data[idx:idx + 2])[0]
         idx += 2
-        self.conversion_class.class_id = bytes(vanm_data[idx:idx + source_class_id_len].strip(b"\x00")).decode()
+        self.class_id = bytes(vanm_data[idx:idx + source_class_id_len].strip(b"\x00")).decode()
         idx += source_class_id_len
 
         # Get length of VBMP file names (ALL names)
@@ -733,16 +528,16 @@ class Data(Chunk):
                            "vbmp_coords": vanm_polygons[temp_frame_polygon_idx],
                            }
 
-            self.conversion_class.frames.append(temp_vframe)
+            self.frames.append(temp_vframe)
 
         return None
 
     def get_data(self):
-        class_id = self.conversion_class.class_id + "\x00"
+        class_id = self.class_id + "\x00"
         vbmp_names = []
         poly = []
         frame_times = []
-        for frame in self.conversion_class.frames:
+        for frame in self.frames:
             poly.append(frame["vbmp_coords"])
             vbmp_names.append(frame["vbmp_name"])
             vbmp_names = list(set(vbmp_names))  # HACK
@@ -763,34 +558,45 @@ class Data(Chunk):
         a = struct.pack(">H", len(class_id)) + bytes(class_id, "ascii") + struct.pack(">H", len(vbmp_names_bytes)) + vbmp_names_bytes + struct.pack(">H", int(len(poly_bytes) / 2)) + poly_bytes + struct.pack(">H", len(frame_times)) + frame_times_bytes
         return a
 
+    def to_json(self):
+        return {self.chunk_id: {"class_id": self.class_id,
+                                "frames": self.frames,
+                                }
+                }
+
 
 class Head(Chunk):
-    def __init__(self, chunk_id="HEAD", data=bytes()):
-        super(Head, self).__init__("HEAD", data)
-        self.conversion_class.width = 0
-        self.conversion_class.height = 0
-        self.conversion_class.flags = 0
-        self.set_binary_data(data)
+    def __init__(self, chunk_id="HEAD"):
+        super(Head, self).__init__(chunk_id)
+        self.width = 0
+        self.height = 0
+        self.flags = 0
 
     def set_binary_data(self, binary_data):
         if binary_data:
             width, height, flags = struct.unpack(">HHH", binary_data)
-            self.conversion_class.width = width
-            self.conversion_class.height = height
-            self.conversion_class.flags = flags
+            self.width = width
+            self.height = height
+            self.flags = flags
             assert binary_data == self.get_data()
 
     def get_data(self):
         return struct.pack(">HHH",
-                           self.conversion_class.width, self.conversion_class.height, self.conversion_class.flags)
+                           self.width, self.height, self.flags)
+
+    def to_json(self):
+        return {self.chunk_id: {"width": self.width,
+                                "height": self.height,
+                                "flags": self.flags,
+                                }
+                }
 
 
 class Body(Chunk):
-    def __init__(self, chunk_id="BODY", data=bytes()):
-        super(Body, self).__init__("BODY", data)
-        self.conversion_class.file_name = "not_used.vbmp"
+    def __init__(self, chunk_id="BODY"):
+        super(Body, self).__init__(chunk_id)
+        self.file_name = "not_used.vbmp"  # TODO USE THIS
         self.data = bytes()
-        self.set_binary_data(data)
 
     def set_binary_data(self, binary_data):
         self.data = binary_data
@@ -803,10 +609,10 @@ class Body(Chunk):
 # https://github.com/Marisa-Chan/UA_source/blob/master/src/amesh.cpp#L262
 # Particle.class has its own binary format https://github.com/Marisa-Chan/UA_source/blob/master/src/particle.cpp#L681
 class Atts(Chunk):
-    def __init__(self, chunk_id="ATTS", data=bytes()):
-        super(Atts, self).__init__("ATTS", data)
-        self.conversion_class.atts_entries = []
-        self.set_binary_data(data)
+    def __init__(self, chunk_id="ATTS"):
+        super(Atts, self).__init__(chunk_id)
+        self.is_ptcl_atts = False
+        self.atts_entries = []
 
     @staticmethod
     def atts_entry(poly_id=0, color_val=0, shade_val=0, tracy_val=0, pad=0):
@@ -818,8 +624,7 @@ class Atts(Chunk):
                 }
 
     def _set_binary_data_particle(self, binary_data):
-        if hasattr(self.conversion_class, "atts_entries"):  # HACK
-            del self.conversion_class.atts_entries
+        self.is_ptcl_atts = True
         (version,
          accel_start_x, accel_start_y, accel_start_z,
          accel_end_x, accel_end_y, accel_end_z,
@@ -831,39 +636,41 @@ class Atts(Chunk):
          gen_rate, lifetime,
          start_size, end_size, noise) = struct.unpack(">hfffffffffffflllllllllll", binary_data)
 
-        self.conversion_class.version = version
-        self.conversion_class.accel_start_x = accel_start_x
-        self.conversion_class.accel_start_y = accel_start_y
-        self.conversion_class.accel_start_z = accel_start_z
-        self.conversion_class.accel_end_x = accel_end_x
-        self.conversion_class.accel_end_y = accel_end_y
-        self.conversion_class.accel_end_z = accel_end_z
-        self.conversion_class.magnify_start_x = magnify_start_x
-        self.conversion_class.magnify_start_y = magnify_start_y
-        self.conversion_class.magnify_start_z = magnify_start_z
-        self.conversion_class.magnify_end_x = magnify_end_x
-        self.conversion_class.magnify_end_y = magnify_end_y
-        self.conversion_class.magnify_end_z = magnify_end_z
-        self.conversion_class.collide = collide
-        self.conversion_class.start_speed = start_speed
-        self.conversion_class.context_number = context_number
-        self.conversion_class.context_life_time = context_life_time
-        self.conversion_class.context_start_gen = context_start_gen
-        self.conversion_class.context_stop_gen = context_stop_gen
-        self.conversion_class.gen_rate = gen_rate
-        self.conversion_class.lifetime = lifetime
-        self.conversion_class.start_size = start_size
-        self.conversion_class.end_size = end_size
-        self.conversion_class.noise = noise
+        self.version = version
+        self.accel_start_x = accel_start_x
+        self.accel_start_y = accel_start_y
+        self.accel_start_z = accel_start_z
+        self.accel_end_x = accel_end_x
+        self.accel_end_y = accel_end_y
+        self.accel_end_z = accel_end_z
+        self.magnify_start_x = magnify_start_x
+        self.magnify_start_y = magnify_start_y
+        self.magnify_start_z = magnify_start_z
+        self.magnify_end_x = magnify_end_x
+        self.magnify_end_y = magnify_end_y
+        self.magnify_end_z = magnify_end_z
+        self.collide = collide
+        self.start_speed = start_speed
+        self.context_number = context_number
+        self.context_life_time = context_life_time
+        self.context_start_gen = context_start_gen
+        self.context_stop_gen = context_stop_gen
+        self.gen_rate = gen_rate
+        self.lifetime = lifetime
+        self.start_size = start_size
+        self.end_size = end_size
+        self.noise = noise
 
     def set_binary_data(self, binary_data):
         if len(binary_data) == 94:
             self._set_binary_data_particle(binary_data)
+            assert binary_data[0:len(self.get_data())] == self.get_data()
             return
 
         if len(binary_data) % 6 != 0:
             logging.error("Atts.convert_binary_data(): Length of binary data was not a multiple of 6! Size: %i" % len(binary_data))
 
+        self.is_ptcl_atts = False
         poly_cnt = int(len(binary_data) / 6)
         atts_entries = []
 
@@ -875,37 +682,37 @@ class Atts(Chunk):
             new_atts_entry = self.atts_entry(poly_id, color_val, shade_val, tracy_val, pad)
             atts_entries.append(new_atts_entry)
 
-        self.conversion_class.atts_entries = atts_entries
+        self.atts_entries = atts_entries
         assert binary_data[0:len(self.get_data())] == self.get_data()
 
     def _get_data_particle(self):
         return struct.pack(">hfffffffffffflllllllllll",
-                           self.conversion_class.version,
-                           self.conversion_class.accel_start_x,
-                           self.conversion_class.accel_start_y,
-                           self.conversion_class.accel_start_z,
-                           self.conversion_class.accel_end_x,
-                           self.conversion_class.accel_end_y,
-                           self.conversion_class.accel_end_z,
-                           self.conversion_class.magnify_start_x,
-                           self.conversion_class.magnify_start_y,
-                           self.conversion_class.magnify_start_z,
-                           self.conversion_class.magnify_end_x,
-                           self.conversion_class.magnify_end_y,
-                           self.conversion_class.magnify_end_z,
-                           self.conversion_class.collide, self.conversion_class.start_speed,
-                           self.conversion_class.context_number, self.conversion_class.context_life_time,
-                           self.conversion_class.context_start_gen, self.conversion_class.context_stop_gen,
-                           self.conversion_class.gen_rate, self.conversion_class.lifetime,
-                           self.conversion_class.start_size, self.conversion_class.end_size,
-                           self.conversion_class.noise)
+                           self.version,
+                           self.accel_start_x,
+                           self.accel_start_y,
+                           self.accel_start_z,
+                           self.accel_end_x,
+                           self.accel_end_y,
+                           self.accel_end_z,
+                           self.magnify_start_x,
+                           self.magnify_start_y,
+                           self.magnify_start_z,
+                           self.magnify_end_x,
+                           self.magnify_end_y,
+                           self.magnify_end_z,
+                           self.collide, self.start_speed,
+                           self.context_number, self.context_life_time,
+                           self.context_start_gen, self.context_stop_gen,
+                           self.gen_rate, self.lifetime,
+                           self.start_size, self.end_size,
+                           self.noise)
 
     def get_data(self):
-        if not hasattr(self.conversion_class, "atts_entries"):  # HACK, although its a lot better than how STRC is doing
+        if self.is_ptcl_atts or hasattr(self, "context_life_time"):  # TODO: REMOVE HACK: After all ptcl_atts JSON files are updated with is_ptcl_atts value
             return self._get_data_particle()
 
         ret = bytes()
-        for atts in self.conversion_class.atts_entries:
+        for atts in self.atts_entries:
             ret += struct.pack(">hBBBB",
                                atts["poly_id"],
                                atts["color_val"], atts["shade_val"],
@@ -913,16 +720,56 @@ class Atts(Chunk):
 
         return ret
 
+    def _to_json_particle(self):
+        return {self.chunk_id: {"is_particle_atts": self.is_ptcl_atts,
+                                "version": self.version,
+                                "accel_start_x": self.accel_start_x,
+                                "accel_start_y": self.accel_start_y,
+                                "accel_start_z": self.accel_start_z,
+                                "accel_end_x": self.accel_end_x,
+                                "accel_end_y": self.accel_end_y,
+                                "accel_end_z": self.accel_end_z,
+                                "magnify_start_x": self.magnify_start_x,
+                                "magnify_start_y": self.magnify_start_y,
+                                "magnify_start_z": self.magnify_start_z,
+                                "magnify_end_x": self.magnify_end_x,
+                                "magnify_end_y": self.magnify_end_y,
+                                "magnify_end_z": self.magnify_end_z,
+                                "collide": self.collide,
+                                "start_speed": self.start_speed,
+                                "context_number": self.context_number,
+                                "context_life_time": self.context_life_time,
+                                "context_start_gen": self.context_start_gen,
+                                "context_stop_gen": self.context_stop_gen,
+                                "gen_rate": self.gen_rate,
+                                "lifetime": self.lifetime,
+                                "start_size": self.start_size,
+                                "end_size": self.end_size,
+                                "noise": self.noise,
+                                }
+                }
+
+    def _to_json_generic(self):
+        return {self.chunk_id: {"is_particle_atts": self.is_ptcl_atts,
+                                "atts_entries": self.atts_entries,
+                                }
+                }
+
+    def to_json(self):
+        if self.is_ptcl_atts:
+            return self._to_json_particle()
+
+        return self._to_json_generic()
+
 
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/sklt.cpp#L128
 class Poo2(Chunk):
-    def __init__(self, chunk_id="POO2", data=bytes()):
-        super(Poo2, self).__init__("POO2", data)
-        self.conversion_class.points = []
-        self.set_binary_data(data)
+    def __init__(self, chunk_id="POO2"):
+        super(Poo2, self).__init__(chunk_id)
+        self.points = []
 
     def points_as_list(self):
-        return [[point["x"], point["y"], point["z"]] for point in self.conversion_class.points]
+        return [[point["x"], point["y"], point["z"]] for point in self.points]
 
     def set_binary_data(self, binary_data):
         if len(binary_data) % 12 != 0:
@@ -940,30 +787,32 @@ class Poo2(Chunk):
                               "z": z}
             poo2_points.append(new_poo2_point)
 
-            self.conversion_class.points = poo2_points
+            self.points = poo2_points
         assert binary_data == self.get_data()
 
     def get_data(self):
         ret = bytes()
-        for point in self.conversion_class.points:
+        for point in self.points:
             ret += struct.pack(">fff", point["x"], point["y"], point["z"])
 
         return ret
 
+    def to_json(self):
+        return {self.chunk_id: {"points": self.points,
+                                }
+                }
+
 
 class Sen2(Poo2):
-    def __init__(self, chunk_id="SEN2", data=bytes()):
-        super(Sen2, self).__init__(data=data)
-        self.chunk_id = "SEN2"
+    def __init__(self, chunk_id="SEN2"):
+        super(Sen2, self).__init__(chunk_id)
 
 
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/sklt.cpp#L207
 class Pol2(Chunk):
-    def __init__(self, chunk_id="POL2", data=bytes()):
-        super(Pol2, self).__init__("POL2", data)
-        self.conversion_class.edges = []
-        if data:
-            self.set_binary_data(data)
+    def __init__(self, chunk_id="POL2"):
+        super(Pol2, self).__init__(chunk_id)
+        self.edges = []
 
     def set_binary_data(self, binary_data):
         offset = 0
@@ -981,25 +830,29 @@ class Pol2(Chunk):
                 offset += 2
             pol2_edges.append(new_vertex)
 
-        self.conversion_class.edges = pol2_edges
+        self.edges = pol2_edges
         assert binary_data == self.get_data()
 
     def get_data(self):
-        ret = struct.pack(">I", len(self.conversion_class.edges))
-        for pol2 in self.conversion_class.edges:
+        ret = struct.pack(">I", len(self.edges))
+        for pol2 in self.edges:
             ret += struct.pack(">H", len(pol2))
             for coordinate in pol2:
                 ret += struct.pack(">H", coordinate)
 
         return ret
 
+    def to_json(self):
+        return {self.chunk_id: {"edges": self.edges,
+                                }
+                }
+
 
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/amesh.cpp#L301
 class Olpl(Chunk):
-    def __init__(self, chunk_id="OLPL", data=bytes()):
-        super(Olpl, self).__init__("OLPL", data)
-        self.conversion_class.points = []
-        self.set_binary_data(data)
+    def __init__(self, chunk_id="OLPL"):
+        super(Olpl, self).__init__(chunk_id)
+        self.points = []
 
     def set_binary_data(self, binary_data):
         offset = 0
@@ -1017,24 +870,28 @@ class Olpl(Chunk):
 
             olpl_entries.append(poly)
 
-        self.conversion_class.points = olpl_entries
+        self.points = olpl_entries
         assert binary_data == self.get_data()
 
     def get_data(self):
         ret = bytes()
-        for olpl_entry in self.conversion_class.points:
+        for olpl_entry in self.points:
             ret += struct.pack(">H", len(olpl_entry))
             for coordinates in olpl_entry:
                 ret += struct.pack(">BB", *coordinates)
 
         return ret
 
+    def to_json(self):
+        return {self.chunk_id: {"points": self.points,
+                                }
+                }
+
 
 class Otl2(Chunk):
-    def __init__(self, chunk_id="OTL2", data=bytes()):
-        super(Otl2, self).__init__("OTL2", data)
-        self.conversion_class.points = []
-        self.set_binary_data(data)
+    def __init__(self, chunk_id="OTL2"):
+        super(Otl2, self).__init__(chunk_id)
+        self.points = []
 
     def set_binary_data(self, binary_data):
         offset = 0
@@ -1046,20 +903,25 @@ class Otl2(Chunk):
             offset += 2
             poly.append([x, y])
 
-        self.conversion_class.points = poly
+        self.points = poly
         assert binary_data == self.get_data()
 
     def get_data(self):
         ret = bytes()
-        for point in self.conversion_class.points:
+        for point in self.points:
             ret += struct.pack(">BB", *point)
 
         return ret
 
+    def to_json(self):
+        return {self.chunk_id: {"points": self.points,
+                                }
+                }
+
 
 class Vbmp(Form):
     def __init__(self, chunk_id="VBMP", sub_chunks=list()):
-        super(Vbmp, self).__init__("VBMP", sub_chunks)
+        super(Vbmp, self).__init__(chunk_id, sub_chunks)
 
     def load_from_ilbm(self, file_name):
         pass
@@ -1076,7 +938,7 @@ class Vbmp(Form):
 
 class Embd(Form):
     def __init__(self, form_type="EMBD", sub_chunks=list()):
-        super(Embd, self).__init__("EMBD", [Form("ROOT")] + sub_chunks)
+        super(Embd, self).__init__(form_type, [Form("ROOT")] + sub_chunks)
         self.emrs_resources = {}
         self.parse_emrs()
 
@@ -1087,8 +949,8 @@ class Embd(Form):
             if i == 0:
                 if not isinstance(chunk, Form) and chunk.form_type == "ROOT":
                     raise ValueError("Embd().parse_emrs() expects first sub_chunk to be Form() with type ROOT")
-            elif (i % 2):
-                emrs_name = chunk.conversion_class.emrs_name
+            elif i % 2:
+                emrs_name = chunk.to_class().emrs_name
             else:
                 self.emrs_resources[emrs_name] = chunk
 
@@ -1102,9 +964,9 @@ class Embd(Form):
         return self.sub_chunks.index(self.emrs_resources[emrs_name])
 
     def add_emrs_resource(self, class_id, emrs_name, incoming_form):
-        emrs_chunk = Emrs().from_json({"class_id": class_id,
+        emrs_chunk = Chunk().from_json({"EMRS": {"class_id": class_id,
                                        "emrs_name": emrs_name
-                                       })
+                                       }})
         self.add_chunk(emrs_chunk)
         self.add_chunk(incoming_form)
         self.parse_emrs()
@@ -1132,9 +994,9 @@ class Embd(Form):
             if i == 0:
                 if not isinstance(chunk, Form) and chunk.form_type == "ROOT":
                     raise ValueError("Embd().extract_resources() expects first sub_chunk to be Form() with type ROOT")
-            elif (i % 2):
+            elif i % 2:
                 # EMRS
-                asset_name = chunk.conversion_class.emrs_name
+                asset_name = chunk.to_class().emrs_name
             else:
                 # Asset
                 if chunk.form_type == "VBMP":
@@ -1159,17 +1021,18 @@ class Embd(Form):
 
 class Mc2(Form):
     def __init__(self, form_type="MC2 "):
-        super(Mc2, self).__init__("MC2 ")
+        super(Mc2, self).__init__(form_type)
         self.embd = Embd()
         self.vehicles = Form("KIDS")
         self.buildings = Form("KIDS")
         self.ground = Form("KIDS")
-        self.init_mc2()
 
         # Add convenience functions
         self.add_sklt = self.embd.add_sklt
         self.add_vbmp = self.embd.add_vbmp
         self.add_vanm = self.embd.add_vanm
+
+        self.init_mc2()
 
     def init_mc2(self):
         # Populate MC2 /OBJT
@@ -1177,7 +1040,7 @@ class Mc2(Form):
         self.add_chunk(mc2_objt)
 
         # Populate MC2 /OBJT/CLID
-        mc2_objt_clid = Clid().from_json(myjson.loads("""{ "class_id": "base.class" }"""))
+        mc2_objt_clid = Chunk().from_json(myjson.loads("""{"CLID": {"class_id": "base.class" }}"""))
         mc2_objt.add_chunk(mc2_objt_clid)
 
         # Populate MC2 /OBJT/BASE and
@@ -1190,7 +1053,7 @@ class Mc2(Form):
         mc2_objt_base.add_chunk(mc2_objt_base_objt)
 
         # Populate MC2 /OBJT/BASE/OBJT/CLID
-        mc2_objt_base_objt_clid = Clid().from_json(myjson.loads("""{ "class_id": "embed.class" }"""))
+        mc2_objt_base_objt_clid = Chunk().from_json(myjson.loads("""{"CLID": { "class_id": "embed.class" }}"""))
         mc2_objt_base_objt.add_chunk(mc2_objt_base_objt_clid)
 
         # Populate MC2 /OBJT/BASE/OBJT/EMBD
@@ -1198,7 +1061,7 @@ class Mc2(Form):
         mc2_objt_base_objt.add_chunk(mc2_objt_base_objt_embd)
 
         # Populate MC2 /OBJT/BASE/STRC
-        mc2_objt_base_strc = Strc().from_json(myjson.loads("""{
+        mc2_objt_base_strc = Chunk().from_json(myjson.loads("""{"STRC": {
                                                             "_un1": 0,
                                                             "ambient_light": 255,
                                                             "att_flags": 72,
@@ -1214,7 +1077,7 @@ class Mc2(Form):
                                                             "vec": [ 0.0, 0.0, 0.0 ],
                                                             "version": 1,
                                                             "vis_limit": 4096
-                                                        }"""))
+                                                        }}"""))
         mc2_objt_base.add_chunk(mc2_objt_base_strc)
 
         # Populate MC2 /OBJT/BASE/KIDS
@@ -1222,7 +1085,7 @@ class Mc2(Form):
         mc2_objt_base.add_chunk(mc2_objt_base_kids)
 
         # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT
-        clid_base = Clid().from_json(myjson.loads("""{ "class_id": "base.class" }"""))
+        clid_base = Chunk().from_json(myjson.loads("""{"CLID": {"class_id": "base.class" }}"""))
         mc2_objt_base_kids_objt0 = Form("OBJT", [clid_base, Form("BASE", [Form("ROOT")])])
         mc2_objt_base_kids_objt1 = Form("OBJT", [clid_base, Form("BASE", [Form("ROOT")])])
         mc2_objt_base_kids_objt2 = Form("OBJT", [clid_base, Form("BASE", [Form("ROOT")])])
@@ -1230,7 +1093,7 @@ class Mc2(Form):
         mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt1)
         mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt2)
 
-        base_strc = Strc().from_json(myjson.loads("""{
+        base_strc = Chunk().from_json(myjson.loads("""{"STRC": {
                                                     "_un1": 0,
                                                     "ambient_light": 255,
                                                     "att_flags": 72,
@@ -1246,7 +1109,7 @@ class Mc2(Form):
                                                     "vec": [ 0.0, 0.0, 0.0 ],
                                                     "version": 1,
                                                     "vis_limit": 4096
-                                                }"""))
+                                                }}"""))
 
         # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT/STRC
         mc2_objt_base_kids_objt0.sub_chunks[1].add_chunk(base_strc)  # Hack with sub_chunks[1]
@@ -1259,7 +1122,259 @@ class Mc2(Form):
         mc2_objt_base_kids_objt2.sub_chunks[1].add_chunk(self.ground)  # Hack with sub_chunks[1]
 
 
-all_ua_python_objects = {
+class Strc(Chunk):
+    STRC_ADE = "STRC_ADE "
+    STRC_AREA = "STRC_AREA"
+    STRC_BANI = "STRC_BANI"
+    STRC_BASE = "STRC_BASE"
+    STRC_UNKNOWN = "STRC_UNKNOWN"
+
+    def __init__(self, chunk_id="STRC"):
+        super(Strc, self).__init__(chunk_id)
+        # BASE STRC
+        self.strc_type = Strc.STRC_BASE
+        self.version = 0
+        self.pos = [0.0, 0.0, 0.0]
+        self.vec = [0.0, 0.0, 0.0]
+        self.scale = [0.0, 0.0, 0.0]
+        self.ax = 0
+        self.ay = 0
+        self.az = 0
+        self.rx = 0
+        self.ry = 0
+        self.rz = 0
+        self.att_flags = 0
+        self._un1 = 0
+        self.vis_limit = 0
+        self.ambient_light = 0
+        # ADE STRC
+        self.strc_type = Strc.STRC_ADE
+        self.version = 0
+        self._nul = 0
+        self.flags = 0
+        self.point = 0
+        self.poly = 0
+        self._nu2 = 0
+        # AREA STRC
+        self.strc_type = Strc.STRC_AREA
+        self.version = 0
+        self.flags = 0
+        self.polFlags = 0
+        self._un1 = 0
+        self.clrVal = 0
+        self.trcVal = 0
+        self.shdVal = 0
+        # BANI STRC
+        self.strc_type = Strc.STRC_BANI
+        self.version = 0
+        self.offset = 0
+        self.anim_type = 0
+        self.anim_name = ""
+        # GENERIC STRC
+        self.strc_type = Strc.STRC_UNKNOWN
+
+    def set_binary_data(self, binary_data):
+        if len(binary_data) == 62:
+            # BASE STRC
+            return self._set_binary_data_base(binary_data)
+        if len(binary_data) == 10:
+            version = struct.unpack(">h", binary_data[0:2])[0]
+            if version == 1:
+                # ADE STRC
+                return self._set_binary_data_ade(binary_data)
+            if version == 256:
+                # AREA STRC
+                return self._set_binary_data_area(binary_data)
+            raise ValueError("strc_factory() received invalid data:", binary_data)
+        if binary_data[0:5] == b"\x00\x01\x00\x06\x00":
+            # BANI STRC
+            return self._set_binary_data_bani(binary_data)
+
+        raise ValueError("Strc().set_data() received invalid data: %s" % binary_data)
+
+    def get_data(self):
+        if self.strc_type == Strc.STRC_BASE:
+            return self._get_data_base()
+        if self.strc_type == Strc.STRC_ADE:
+            return self._get_data_ade()
+        if self.strc_type == Strc.STRC_AREA:
+            return self._get_data_area()
+        if self.strc_type == Strc.STRC_BANI:
+            return self._get_data_bani()
+
+        raise ValueError("Can't get_data() from strc_type STRC_UNKNOWN!!")
+
+    def _set_binary_data_base(self, binary_data):
+        if len(binary_data) != 62:
+            raise ValueError("Length of binary_data was not 62 bytes! Not valid for STRC_BASE objects!")
+        # int16_t version;
+        # xyz pos;
+        # xyz vec;
+        # xyz scale;
+        # int16_t ax;
+        # int16_t ay;
+        # int16_t az;
+        # int16_t rx;
+        # int16_t ry;
+        # int16_t rz;
+        # int16_t attFlags;
+        # int16_t _un1;
+        # int32_t visLimit;
+        # int32_t ambientLight;
+        unpacked_data = struct.unpack(">hfffffffffhhhhhhhhll", binary_data)
+        self.version = unpacked_data[0]
+        self.pos = [unpacked_data[1], unpacked_data[2], unpacked_data[3]]
+        self.vec = [unpacked_data[4], unpacked_data[5], unpacked_data[6]]
+        self.scale = [unpacked_data[7], unpacked_data[8], unpacked_data[9]]
+        self.ax = unpacked_data[10]
+        self.ay = unpacked_data[11]
+        self.az = unpacked_data[12]
+        self.rx = unpacked_data[13]
+        self.ry = unpacked_data[14]
+        self.rz = unpacked_data[15]
+        self.att_flags = unpacked_data[16]
+        self._un1 = unpacked_data[17]
+        self.vis_limit = unpacked_data[18]
+        self.ambient_light = unpacked_data[19]
+        self.strc_type = "STRC_BASE"
+        assert binary_data == self.get_data()
+
+    def _get_data_base(self):
+        return struct.pack(">hfffffffffhhhhhhhhll",
+                           self.version,
+                           *self.pos, *self.vec, *self.scale,
+                           self.ax, self.ay, self.az,
+                           self.rx, self.ry, self.rz,
+                           self.att_flags, self._un1,
+                           self.vis_limit, self.ambient_light)
+
+    def _set_binary_data_ade(self, binary_data):
+        version = struct.unpack(">h", binary_data[0:2])[0]
+        if len(binary_data) != 10:
+            raise ValueError("Length of binary_data was not 10 bytes! Not valid for STRC_ADE objects!")
+        if version != 1:
+            raise ValueError("Version of binary_data was not 1! Not valid for STRC_ADE objects!")
+        # int16_t version;
+        # int8_t _nu1; // Not used
+        # int8_t flags;
+        # int16_t point;
+        # int16_t poly;
+        # int16_t _nu2; // Not used
+        unpacked_data = struct.unpack(">hbbhhh", binary_data)
+        self.version = unpacked_data[0]
+        self._nul = unpacked_data[1]
+        self.flags = unpacked_data[2]
+        self.point = unpacked_data[3]
+        self.poly = unpacked_data[4]
+        self._nu2 = unpacked_data[5]
+        self.strc_type = "STRC_ADE "
+        assert binary_data == self.get_data()
+
+    def _get_data_ade(self):
+        return struct.pack(">hbbhhh",
+                           self.version,
+                           self._nul, self.flags,
+                           self.point, self.poly, self._nu2)
+
+    def _set_binary_data_area(self, binary_data):
+        version = struct.unpack(">h", binary_data[0:2])[0]
+        if len(binary_data) != 10:
+            raise ValueError("Length of binary_data was not 10 bytes! Not valid for STRC_AREA objects!")
+        if version != 256:
+            raise ValueError("Version of binary_data was not 256! Not valid for STRC_AREA objects!")
+        # int16_t version;
+        # uint16_t flags;
+        # uint16_t polFlags;
+        # uint8_t _un1;
+        # uint8_t clrVal;
+        # uint8_t trcVal;
+        # uint8_t shdVal;
+        unpacked_data = struct.unpack(">hHHBBBB", binary_data)
+        self.version = unpacked_data[0]
+        self.flags = unpacked_data[1]
+        self.polFlags = unpacked_data[2]
+        self._un1 = unpacked_data[3]
+        self.clrVal = unpacked_data[4]
+        self.trcVal = unpacked_data[5]
+        self.shdVal = unpacked_data[6]
+        self.strc_type = "STRC_AREA"
+        assert binary_data == self.get_data()
+
+    def _get_data_area(self):
+        return struct.pack(">hHHBBBB",
+                           self.version,
+                           self.flags, self.polFlags,
+                           self._un1, self.clrVal,
+                           self.trcVal, self.shdVal)
+
+    def _set_binary_data_bani(self, binary_data):
+        version, offset, anim_type = struct.unpack(">hhh", binary_data[0:6])
+        self.version = version
+        self.offset = offset
+        self.anim_type = anim_type
+        self.anim_name = bytes(binary_data[6:-1]).decode()
+        self.strc_type = "STRC_BANI"
+        assert binary_data == self.get_data()
+
+    def _get_data_bani(self):
+        return struct.pack(">hhh",
+                           self.version,
+                           self.offset,
+                           self.anim_type) + bytes(self.anim_name, "ascii") + b"\x00"
+
+    def to_json(self):
+        if self.strc_type == Strc.STRC_BASE:
+            return {self.chunk_id: {"strc_type": self.strc_type,
+                                    "version": self.version,
+                                    "pos": self.pos,
+                                    "vec": self.vec,
+                                    "scale": self.scale,
+                                    "ax": self.ax,
+                                    "ay": self.ay,
+                                    "az": self.az,
+                                    "rx": self.rx,
+                                    "ry": self.ry,
+                                    "rz": self.rz,
+                                    "att_flags": self.att_flags,
+                                    "_un1": self._un1,
+                                    "vis_limit": self.vis_limit,
+                                    "ambient_light": self.ambient_light,
+                                }
+                }
+        if self.strc_type == Strc.STRC_ADE:
+            return {self.chunk_id: {"strc_type": self.strc_type,
+                                    "version": self.version,
+                                    "_nul": self._nul,
+                                    "flags": self.flags,
+                                    "point": self.point,
+                                    "poly": self.poly,
+                                    "_nu2": self._nu2,
+                                }
+                }
+        if self.strc_type == Strc.STRC_AREA:
+            return {self.chunk_id: {"strc_type": self.strc_type,
+                                    "version": self.version,
+                                    "flags": self.flags,
+                                    "polFlags": self.polFlags,
+                                    "_un1": self._un1,
+                                    "clrVal": self.clrVal,
+                                    "trcVal": self.trcVal,
+                                    "shdVal": self.shdVal,
+                                }
+                }
+        if self.strc_type == Strc.STRC_BANI:
+            return {self.chunk_id: {"strc_type": self.strc_type,
+                                    "version": self.version,
+                                    "offset": self.offset,
+                                    "anim_type": self.anim_type,
+                                    "anim_name": self.anim_name,
+                                    }
+                    }
+
+        raise ValueError("STRC().to_json() Can't get json for unknown STRC!")
+
+
+master_list = {
     "ADE ": Form,
     "ADES": Form,
     "AMSH": Form,
@@ -1276,7 +1391,7 @@ all_ua_python_objects = {
     "SKLC": Form,
     "SKLT": Form,
     "VANM": Form,
-    "VBMP": Vbmp,  # TODO Needs abstraction to load from and save to VBMP/FORM or BMP
+    "VBMP": Vbmp,
     "ATTS": Atts,
     "BODY": Body,
     "CLID": Clid,
@@ -1290,8 +1405,9 @@ all_ua_python_objects = {
     "POL2": Pol2,
     "POO2": Poo2,
     "SEN2": Sen2,
-    "STRC": strc_factory,
+    "STRC": Strc,
 }
+
 
 
 import glob
@@ -1343,10 +1459,10 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
             ptr_image_data.setsize(image.byteCount())
             bitmap_data = ptr_image_data.asstring()
 
-            new_vbmp_head = Head().from_json(myjson.loads("""{ "flags": 0, "height": 256, "width": 256 }"""))
+            new_vbmp_head = Form().from_json(myjson.loads("""{"HEAD": { "flags": 0, "height": 256, "width": 256 }}"""))
             new_vbmp_body = Body()
             new_vbmp_body.set_binary_data(bitmap_data)
-            new_vbmp = Vbmp([new_vbmp_head, new_vbmp_body])
+            new_vbmp = Vbmp(sub_chunks=[new_vbmp_head, new_vbmp_body])
             embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
 
     # TODO Skeleton functions (in Embd class)
@@ -1462,10 +1578,10 @@ def compile_single_files(set_number=1):
             ptr_image_data.setsize(image.byteCount())
             bitmap_data = ptr_image_data.asstring()
 
-            new_vbmp_head = Head().from_json(myjson.loads("""{ "flags": 0, "height": 256, "width": 256 }"""))
+            new_vbmp_head = Form().from_json(myjson.loads("""{"HEAD": { "flags": 0, "height": 256, "width": 256 }}"""))
             new_vbmp_body = Body()
             new_vbmp_body.set_binary_data(bitmap_data)
-            new_vbmp = Vbmp([new_vbmp_head, new_vbmp_body])
+            new_vbmp = Vbmp(sub_chunks=[new_vbmp_head, new_vbmp_body])
             new_vbmp.save_to_file("output/data/set/" + os.path.splitext(os.path.basename(bitmap))[0])
 
     # Compile animations
