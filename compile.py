@@ -5,7 +5,7 @@ import os
 import struct
 import warnings
 
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 
 color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 4282992969, 4278190081, 4288398800,
@@ -146,7 +146,7 @@ class Chunk(object):
 class Form(object):
     def __init__(self, form_type: str="", sub_chunks: list=None):
         self.form_type = self.validate_form_type(form_type)
-        self.sub_chunks = self.validate_sub_chunks(sub_chunks)
+        self.sub_chunks = self.validate_sub_chunks(sub_chunks)  # type: List[Union[Form, Chunk]]
 
     @staticmethod
     def validate_form_type(form_type):
@@ -1128,7 +1128,7 @@ class Embd(Form):
             os.mkdir(output_location)
 
         asset_name = None
-        for i, chunk in enumerate(self.sub_chunks):  # type: Tuple[int, Union[Chunk, Form]]
+        for i, chunk in enumerate(self.sub_chunks):
             if i == 0:
                 if not isinstance(chunk, Form) and chunk.form_type == "ROOT":
                     raise ValueError("Embd().extract_resources() expects first sub_chunk to be Form() with type ROOT")
