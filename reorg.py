@@ -654,6 +654,7 @@ class Atts(Chunk):
     def set_binary_data(self, binary_data):
         if len(binary_data) == 94:
             self._set_binary_data_particle(binary_data)
+            assert binary_data[0:len(self.get_data())] == self.get_data()
             return
 
         if len(binary_data) % 6 != 0:
@@ -697,7 +698,7 @@ class Atts(Chunk):
                            self.noise)
 
     def get_data(self):
-        if self.is_ptcl_atts:
+        if self.is_ptcl_atts or hasattr(self, "context_life_time"):  # TODO: REMOVE HACK: After all ptcl_atts JSON files are updated with is_ptcl_atts value
             return self._get_data_particle()
 
         ret = bytes()
@@ -1317,4 +1318,9 @@ import glob
 
 for json_file in glob.glob("/home/user/Desktop/urban_assault_decompiled/set1/**/*.json", recursive=True):
     f = Form().from_json(open(json_file, "rt").read())
-    print(json_file, f.to_json())
+    with open(json_file.replace(".json", ""), "rb") as a:
+        b = a.read()
+        print(json_file)
+        print(b)
+        print(f.full_data())
+        assert b == f.full_data()
