@@ -179,7 +179,8 @@
                 "poly_id": 26,
                 "shade_val": 0,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {
@@ -322,7 +323,8 @@
                 "poly_id": 7,
                 "shade_val": 43,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {
@@ -454,7 +456,8 @@
                 "poly_id": 13,
                 "shade_val": 0,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {
@@ -580,7 +583,8 @@
                 "poly_id": 17,
                 "shade_val": 55,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {
@@ -698,7 +702,8 @@
                 "poly_id": 25,
                 "shade_val": 10,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {

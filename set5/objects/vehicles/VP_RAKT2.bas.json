@@ -97,6 +97,7 @@
               "context_stop_gen": 4000,
               "end_size": 1,
               "gen_rate": 30,
+              "is_particle_atts": true,
               "lifetime": 1000,
               "magnify_end_x": 0.0,
               "magnify_end_y": 0.0,
@@ -596,7 +597,8 @@
                 "poly_id": 3,
                 "shade_val": 0,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {

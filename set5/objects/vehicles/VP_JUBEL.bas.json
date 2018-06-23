@@ -97,6 +97,7 @@
               "context_stop_gen": 200,
               "end_size": 2,
               "gen_rate": 50,
+              "is_particle_atts": true,
               "lifetime": 1000,
               "magnify_end_x": 0.0,
               "magnify_end_y": -1.0,

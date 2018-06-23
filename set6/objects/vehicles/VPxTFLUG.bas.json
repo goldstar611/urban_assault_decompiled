@@ -97,6 +97,7 @@
               "context_stop_gen": 500,
               "end_size": 20,
               "gen_rate": 20,
+              "is_particle_atts": true,
               "lifetime": 1200,
               "magnify_end_x": 5.0,
               "magnify_end_y": -3.0,
@@ -219,6 +220,7 @@
               "context_stop_gen": 7000,
               "end_size": 80,
               "gen_rate": 9,
+              "is_particle_atts": true,
               "lifetime": 1900,
               "magnify_end_x": 0.0,
               "magnify_end_y": -3.0,
@@ -605,6 +607,7 @@
               "context_stop_gen": 900,
               "end_size": 50,
               "gen_rate": 14,
+              "is_particle_atts": true,
               "lifetime": 1200,
               "magnify_end_x": 0.0,
               "magnify_end_y": -1.0,
@@ -925,6 +928,7 @@
               "context_stop_gen": 5000,
               "end_size": 40,
               "gen_rate": 10,
+              "is_particle_atts": true,
               "lifetime": 1200,
               "magnify_end_x": 0.0,
               "magnify_end_y": -1.0,
@@ -1377,6 +1381,7 @@
               "context_stop_gen": 7000,
               "end_size": 70,
               "gen_rate": 3,
+              "is_particle_atts": true,
               "lifetime": 1500,
               "magnify_end_x": 0.0,
               "magnify_end_y": -3.0,
@@ -1810,7 +1815,8 @@
                 "poly_id": 3,
                 "shade_val": 30,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {
@@ -1897,7 +1903,8 @@
                 "poly_id": 11,
                 "shade_val": 0,
                 "tracy_val": 0
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             } ]
           } ]
@@ -2004,7 +2011,8 @@
                 "poly_id": 10,
                 "shade_val": 132,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {

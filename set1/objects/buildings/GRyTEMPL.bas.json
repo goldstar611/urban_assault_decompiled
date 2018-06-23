@@ -221,7 +221,8 @@
                 "poly_id": 27,
                 "shade_val": 10,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {
@@ -427,7 +428,8 @@
                 "poly_id": 35,
                 "shade_val": 32,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {
@@ -618,7 +620,8 @@
                 "poly_id": 22,
                 "shade_val": 0,
                 "tracy_val": 128
-               } ]
+               } ],
+              "is_particle_atts": false
              }
             }, 
             {
