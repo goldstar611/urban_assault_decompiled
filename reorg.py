@@ -5,7 +5,7 @@ import myjson
 import os
 import struct
 
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 
 color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 4282992969, 4278190081, 4288398800,
@@ -129,15 +129,25 @@ class Chunk(object):
         with open(file_name, "wb") as f:
             f.write(self.full_data())
 
+    def to_class(self):
+        if self.chunk_id in master_list:
+            o = master_list[self.chunk_id]()
+            o.set_binary_data(self.data)
+            return o
+
+        return ValueError("This class cannot be converted")
+
     def to_json(self):
         if self.chunk_id in master_list:
             o = master_list[self.chunk_id]()
             o.set_binary_data(self.data)
-            return myjson.dumps(o.to_json())
+            return myjson.dumps(o.to_json(), indent=1, sort_keys=True)
         # Generic json support for all IFF chunks
         return myjson.dumps({self.chunk_id: {"data": base64.b64encode(self.data).decode("ascii")}})
 
     def from_json(self, json_dict):
+        if isinstance(json_dict, str):
+            json_dict = myjson.loads(json_dict)
         self.chunk_id, attributes_dict = json_dict.popitem()
         o = master_list[self.chunk_id]()
         o.from_json_generic({self.chunk_id: attributes_dict})
@@ -163,7 +173,7 @@ class Form(object):
         if sub_chunks is None:
             self.sub_chunks = []
         else:
-            self.sub_chunks = sub_chunks
+            self.sub_chunks = sub_chunks  # type: List[Union[Form, Chunk]]
 
     @staticmethod
     def validate_form_type(form_type):
@@ -218,7 +228,7 @@ class Form(object):
         for child in self.sub_chunks:
             children.append(myjson.loads(child.to_json()))
         ret_string = {self.form_type: children}
-        return myjson.dumps(ret_string)
+        return myjson.dumps(ret_string, indent=1, sort_keys=True)
 
     def from_json(self, json_dict):
         # Generic json support for all IFF forms
@@ -980,13 +990,13 @@ class Embd(Form):
             os.mkdir(output_location)
 
         asset_name = None
-        for i, chunk in enumerate(self.sub_chunks):  # type: Tuple[int, Union[Chunk, Form]]
+        for i, chunk in enumerate(self.sub_chunks):
             if i == 0:
                 if not isinstance(chunk, Form) and chunk.form_type == "ROOT":
                     raise ValueError("Embd().extract_resources() expects first sub_chunk to be Form() with type ROOT")
             elif i % 2:
                 # EMRS
-                asset_name = chunk.emrs_name
+                asset_name = chunk.to_class().emrs_name
             else:
                 # Asset
                 if chunk.form_type == "VBMP":
