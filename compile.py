@@ -148,7 +148,10 @@ class Chunk(object):
         if isinstance(json_dict, str):
             json_dict = myjson.loads(json_dict)
         self.chunk_id, attributes_dict = json_dict.popitem()
-        o = master_list[self.chunk_id]()
+        if self.chunk_id in master_list:
+            o = master_list[self.chunk_id]()
+        else:
+            raise ValueError("Cant call from_json() on unknown Chunk type")
         o.from_json_generic({self.chunk_id: attributes_dict})
         self.set_binary_data(o.get_data())
         return self
@@ -603,6 +606,15 @@ class Body(Chunk):
 
     def get_data(self):
         return self.data
+
+    def to_json(self):
+        return {self.chunk_id: {"data": base64.b64encode(self.get_data()).decode("ascii")}}
+
+    def from_json_generic(self, json_string):
+        if isinstance(json_string, str):
+            json_string = myjson.loads(json_string)
+        self.chunk_id, attributes_dict = json_string.popitem()
+        self.data = base64.b64decode(attributes_dict["data"])
 
 
 # https://github.com/Marisa-Chan/UA_source/blob/master/src/amesh.cpp#L262
