@@ -959,7 +959,7 @@ class Sen2(Poo2):
 
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/sklt.cpp#L207
 class Pol2(Chunk):
-    def __init__(self, chunk_id="POL@", data=bytes()):
+    def __init__(self, chunk_id="POL2", data=bytes()):
         super(Pol2, self).__init__("POL2", data)
         self.conversion_class.edges = []
         if data:
