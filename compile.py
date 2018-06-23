@@ -7,7 +7,6 @@ import struct
 
 from typing import Union, Tuple, List
 
-
 color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 4282992969, 4278190081, 4288398800,
                4278203647, 4278190335, 4294901760, 4294945564, 4278245713, 4282795590, 4294967176, 4278225322,
                4278190081, 4294967295, 4289063167, 4285382071, 4284531364, 4284532626, 4288399276, 4284660169,
@@ -338,7 +337,7 @@ class Form(object):
                 form_size = struct.unpack(">I", bas_data.read(4))[0] - 4
                 form_type = bytes(bas_data.read(4)).decode()
                 form_data_stream = io.BytesIO(bas_data.read(form_size))
-                #print("Found Form", form_type, form_size)
+                # print("Found Form", form_type, form_size)
                 ret_chunks.append(Form(form_type=form_type, sub_chunks=self.parse_stream(form_data_stream)))
                 continue
 
@@ -347,7 +346,7 @@ class Form(object):
                 chunk_data = bas_data.read(chunk_size)
                 if chunk_size % 2:
                     bas_data.read(1)  # Discard pad byte
-                #print("Found Chunk", chunk_id, chunk_size)
+                # print("Found Chunk", chunk_id, chunk_size)
                 c = Chunk(chunk_id)
                 c.set_binary_data(chunk_data)
                 ret_chunks.append(c)
@@ -668,7 +667,9 @@ class Atts(Chunk):
             return
 
         if len(binary_data) % 6 != 0:
-            logging.error("Atts.convert_binary_data(): Length of binary data was not a multiple of 6! Size: %i" % len(binary_data))
+            logging.error("Atts.convert_binary_data(): "
+                          "Length of binary data was not a multiple of 6! "
+                          "Size: %i" % len(binary_data))
 
         self.is_ptcl_atts = False
         poly_cnt = int(len(binary_data) / 6)
@@ -708,7 +709,7 @@ class Atts(Chunk):
                            self.noise)
 
     def get_data(self):
-        if self.is_ptcl_atts or hasattr(self, "context_life_time"):  # TODO: REMOVE HACK: After all ptcl_atts JSON files are updated with is_ptcl_atts value
+        if self.is_ptcl_atts or hasattr(self, "context_life_time"):  # TODO: REMOVE HACK: After JSON files are updated
             return self._get_data_particle()
 
         ret = bytes()
@@ -965,8 +966,8 @@ class Embd(Form):
 
     def add_emrs_resource(self, class_id, emrs_name, incoming_form):
         emrs_chunk = Chunk().from_json({"EMRS": {"class_id": class_id,
-                                       "emrs_name": emrs_name
-                                       }})
+                                                 "emrs_name": emrs_name
+                                                 }})
         self.add_chunk(emrs_chunk)
         self.add_chunk(incoming_form)
         self.parse_emrs()
@@ -1339,8 +1340,8 @@ class Strc(Chunk):
                                     "_un1": self._un1,
                                     "vis_limit": self.vis_limit,
                                     "ambient_light": self.ambient_light,
-                                }
-                }
+                                    }
+                    }
         if self.strc_type == Strc.STRC_ADE:
             return {self.chunk_id: {"strc_type": self.strc_type,
                                     "version": self.version,
@@ -1349,8 +1350,8 @@ class Strc(Chunk):
                                     "point": self.point,
                                     "poly": self.poly,
                                     "_nu2": self._nu2,
-                                }
-                }
+                                    }
+                    }
         if self.strc_type == Strc.STRC_AREA:
             return {self.chunk_id: {"strc_type": self.strc_type,
                                     "version": self.version,
@@ -1360,8 +1361,8 @@ class Strc(Chunk):
                                     "clrVal": self.clrVal,
                                     "trcVal": self.trcVal,
                                     "shdVal": self.shdVal,
-                                }
-                }
+                                    }
+                    }
         if self.strc_type == Strc.STRC_BANI:
             return {self.chunk_id: {"strc_type": self.strc_type,
                                     "version": self.version,
@@ -1407,8 +1408,6 @@ master_list = {
     "SEN2": Sen2,
     "STRC": Strc,
 }
-
-
 
 import glob
 import struct
