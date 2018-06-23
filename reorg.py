@@ -1318,22 +1318,3 @@ master_list = {
     "SEN2": Sen2,
     "STRC": Strc,
 }
-
-
-import glob
-
-#for bas_file in glob.glob("/home/user/Desktop/urban_assault_decompiled/set1/**/*.bas", recursive=True):
-#    f = Form().load_from_file(bas_file)
-#    print(f.to_json())
-
-for json_file in glob.glob("/home/user/Desktop/urban_assault_decompiled/set1/**/*.json", recursive=True):
-    f = Form().from_json(open(json_file, "rt").read())
-    with open(json_file.replace(".json", ""), "rb") as a:
-        b = a.read()
-        print(json_file)
-        print(b)
-        print(f.full_data())
-        if f.form_type == "VANM":
-            print("skipping vanm check")
-        else:
-            assert b == f.full_data()
