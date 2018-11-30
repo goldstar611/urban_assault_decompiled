@@ -933,7 +933,9 @@ class Otl2(Chunk):
 
 
 class Vbmp(Form):
-    def __init__(self, chunk_id="VBMP", sub_chunks=list()):
+    def __init__(self, chunk_id="VBMP", sub_chunks=None):
+        if sub_chunks is None:
+            sub_chunks = list()
         super(Vbmp, self).__init__(chunk_id, sub_chunks)
 
     def load_from_ilbm(self, file_name):
@@ -950,7 +952,9 @@ class Vbmp(Form):
 
 
 class Embd(Form):
-    def __init__(self, form_type="EMBD", sub_chunks=list()):
+    def __init__(self, form_type="EMBD", sub_chunks=None):
+        if sub_chunks is None:
+            sub_chunks = list()
         super(Embd, self).__init__(form_type, [Form("ROOT")] + sub_chunks)
         self.emrs_resources = {}
         self.parse_emrs()
@@ -1481,6 +1485,7 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
 
     # Add skeletons to Embd
     for skeleton in skeletons:
+        print(skeleton)
         resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0] + "t"  # HACK make .sklt
 
         with open(skeleton, "r") as f:
@@ -1492,6 +1497,7 @@ def compile_set_bas(visproto, sdf, slurps, set_number=1):
 
     # Add animations to Embd
     for animation in animations:
+        print(animation)
         resource_name = os.path.splitext(os.path.basename(animation))[0]
 
         with open(animation, "r") as f:
@@ -1597,6 +1603,7 @@ def compile_single_files(set_number=1):
 
     # Compile animations
     for animation in glob.glob("set%i/rsrcpool/*.json" % set_number):
+        print(animation)
         resource_name = os.path.splitext(os.path.basename(animation))[0]
 
         with open(animation, "r") as f:
@@ -1605,6 +1612,7 @@ def compile_single_files(set_number=1):
 
     # Compile skeletons
     for skeleton in glob.glob("set%i/Skeleton/*.json" % set_number):
+        print(skeleton)
         resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0]
 
         with open(skeleton, "r") as f:
@@ -1613,6 +1621,7 @@ def compile_single_files(set_number=1):
 
     # Compile vehicles (Inside MC2 class)
     for vehicle in glob.glob("set%i/objects/vehicles/*.json" % set_number):
+        print(vehicle)
         resource_name = os.path.splitext(os.path.basename(vehicle))[0]
 
         with open(vehicle, "r") as f:
@@ -1621,6 +1630,7 @@ def compile_single_files(set_number=1):
 
     # Compile buildings (Inside MC2 class)
     for building in glob.glob("set%i/objects/buildings/*.json" % set_number):
+        print(building)
         resource_name = os.path.splitext(os.path.basename(building))[0]
 
         with open(building, "r") as f:
@@ -1629,6 +1639,7 @@ def compile_single_files(set_number=1):
 
     # Compile ground (Inside MC2 class)
     for ground in glob.glob("set%i/objects/ground/*.json" % set_number):
+        print(ground)
         resource_name = os.path.splitext(os.path.basename(ground))[0]
 
         with open(ground, "r") as f:
