@@ -89,6 +89,24 @@ class TestForm(unittest.TestCase):
     def test_finish_me(self):
         self.assertTrue(True)
 
+    # TODO test_init x2
+    # TODO validate_form_type x4
+    # TODO validate_sub_chunks x3
+    # TODO child
+    # TODO get_data
+    # TODO full_data
+    # TODO to_class x2
+    # TODO to_json
+    # TODO from_json x4
+    # TODO size
+    # TODO get_all_form_by_type
+    # TODO get_all_chunks_by_id
+    # TODO get_single_form_by_type x2
+    # TODO get_single_chunk_by_id x2
+    # TODO load_from_file x2
+    # TODO save_to_file
+    # TODO parse_stream
+    # TODO add_chunk
 
 if __name__ == "__main__":
     unittest.main()
