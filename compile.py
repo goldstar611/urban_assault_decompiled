@@ -224,6 +224,16 @@ class Form(object):
         data_length = len(data)
         return bytes("FORM", "ascii") + struct.pack(">I", data_length) + data
 
+    def to_class(self):
+        if self.form_type in master_list:
+            o = master_list[self.form_type]()
+            parsed_bas = Form().parse_stream(io.BytesIO(self.full_data()))[0]
+            o.sub_chunks = parsed_bas.sub_chunks
+            o.form_type = parsed_bas.form_type
+            return o
+
+        return ValueError("This class cannot be converted")
+
     def to_json(self):
         # Generic json support for all IFF forms
         children = []
