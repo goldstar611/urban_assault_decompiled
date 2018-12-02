@@ -86,13 +86,63 @@ class TestChunk(unittest.TestCase):
 
 class TestForm(unittest.TestCase):
 
-    def test_finish_me(self):
-        self.assertTrue(True)
+    def test_init_1(self):
+        form_type = "TEST"
+        f = compile.Form(form_type)
+        self.assertEqual(f.form_type, form_type)
+        self.assertEqual(f.sub_chunks, [])
 
-    # TODO test_init x2
-    # TODO validate_form_type x4
-    # TODO validate_sub_chunks x3
-    # TODO child
+    def test_init_2(self):
+        form_type = "TEST"
+        sc = compile.Chunk()
+        f = compile.Form(form_type, [sc])
+        self.assertEqual(f.form_type, form_type)
+        self.assertEqual(f.sub_chunks, [sc])
+
+    def test_validate_form_type_1(self):
+        f = compile.Form()
+        with self.assertRaises(ValueError) as context:
+            f.validate_form_type(b"BYTE")
+
+    def test_validate_form_type_2(self):
+        f = compile.Form()
+        with self.assertRaises(ValueError) as context:
+            f.validate_form_type("FORM")
+
+    def test_validate_form_type_3(self):
+        f = compile.Form()
+        with self.assertRaises(ValueError) as context:
+            f.validate_form_type("TOOLONG")
+
+    def test_validate_form_type_4(self):
+        f = compile.Form()
+        f.validate_form_type("GOOD")
+
+    def test_validate_sub_chunks_1(self):
+        f = compile.Form()
+        sc = compile.Chunk()
+        self.assertEqual(f.validate_sub_chunks([sc]), [sc])
+
+    def test_validate_sub_chunks_2(self):
+        f = compile.Form()
+        self.assertEqual(f.validate_sub_chunks(None), [])
+
+    def test_validate_sub_chunks_3(self):
+        f = compile.Form()
+        sc = compile.Chunk()
+        with self.assertRaises(ValueError) as context:
+            f.validate_sub_chunks(sc)
+        self.assertTrue("must be a list" in str(context.exception))
+
+    def test_child(self):
+        c1 = compile.Chunk()
+        c2 = compile.Chunk()
+        c3 = compile.Chunk()
+        f = compile.Form("TEST", [c1, c2, c3])
+        self.assertEqual(f.child(0), c1)
+        self.assertEqual(f.child(1), c2)
+        self.assertEqual(f.child(2), c3)
+
     # TODO get_data
     # TODO full_data
     # TODO to_class x2
@@ -107,6 +157,7 @@ class TestForm(unittest.TestCase):
     # TODO save_to_file
     # TODO parse_stream
     # TODO add_chunk
+
 
 if __name__ == "__main__":
     unittest.main()
