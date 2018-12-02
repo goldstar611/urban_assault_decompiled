@@ -81,7 +81,7 @@ class TestChunk(unittest.TestCase):
     # TODO save_data_to_file
     # TODO save_to_file
 
-    def test_save_to_class(self):
+    def test_to_class(self):
         c = compile.Chunk()
         c.chunk_id = "NAME"
         c.data = b"TEST\x00"
@@ -89,6 +89,8 @@ class TestChunk(unittest.TestCase):
         self.assertTrue(isinstance(cl, compile.Name))
         self.assertTrue(cl.zero_terminated)
         self.assertEqual(cl.full_data(), b'NAME\x00\x00\x00\x05TEST\x00\x00')
+
+    # TODO to_class (error condition)
 
     def test_to_json(self):
         c = compile.Chunk()
@@ -161,9 +163,29 @@ class TestForm(unittest.TestCase):
         self.assertEqual(f.child(1), c2)
         self.assertEqual(f.child(2), c3)
 
-    # TODO get_data
-    # TODO full_data
-    # TODO to_class x2
+    def test_get_data(self):
+        c = compile.Chunk("CHNK")
+        c.data = b"TEST CHUNK DATA"
+        f = compile.Form("TFRM", [c])
+        self.assertEqual(f.get_data(), b"TFRMCHNK\x00\x00\x00\x0fTEST CHUNK DATA\x00")
+
+    def test_full_data(self):
+        c = compile.Chunk("CHNK")
+        c.data = b"TEST CHUNK DATA"
+        f = compile.Form("TFRM", [c])
+        self.assertEqual(f.full_data(), b"FORM\x00\x00\x00\x1cTFRMCHNK\x00\x00\x00\x0fTEST CHUNK DATA\x00")
+
+    def test_to_class_1(self):
+        c = compile.Chunk()
+        c.chunk_id = "NAME"
+        c.data = b"TEST\x00"
+        f = compile.Form("VBMP", [c])
+        cl = f.to_class()
+        self.assertTrue(isinstance(cl, compile.Vbmp))
+        self.assertTrue(isinstance(cl.child(0).to_class(), compile.Name))
+
+    # TODO to_class (error condition)
+
     # TODO to_json
     # TODO from_json x4
     # TODO size
