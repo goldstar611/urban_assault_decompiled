@@ -67,14 +67,14 @@ class TestChunk(unittest.TestCase):
     def test_load_data_from_file_2(self):
         c = compile.Chunk()
         with self.assertRaises(ValueError) as context:
-            c.load_data_from_file("test/test_form.bin")
+            c.load_data_from_file("test/bin/test_form.bin")
         self.assertTrue("FORM file into a chunk" in str(context.exception))
 
     def test_load_data_from_file_3(self):
         c = compile.Chunk()
         data_bytes = b"This is bytes"
         c.set_binary_data(data_bytes)
-        c.load_data_from_file("test/test_chunk.bin")
+        c.load_data_from_file("test/bin/test_chunk.bin")
         self.assertNotEqual(c.get_data(), data_bytes)
         self.assertNotEqual(c.data, data_bytes)
 
@@ -102,6 +102,24 @@ class TestChunk(unittest.TestCase):
 
     # TODO from_json
     # TODO from_json_generic
+
+    def test_chunk_classes(self):
+        import glob
+        chunks = glob.glob("test/bin/chunks/*.bin")
+        for chunk in chunks:
+            c = compile.Chunk().load_from_file(chunk)
+            cl = c.to_class()
+            fd = cl.full_data()
+            j = cl.to_json()
+
+    def test_form_classes(self):
+        import glob
+        chunks = glob.glob("test/bin/forms/*.bin")
+        for chunk in chunks:
+            c = compile.Form().load_from_file(chunk)
+            cl = c.to_class()
+            fd = cl.full_data()
+            j = cl.to_json()
 
 
 class TestForm(unittest.TestCase):
@@ -267,7 +285,7 @@ class TestForm(unittest.TestCase):
 
     def test_load_from_file_2(self):
         f = compile.Form("TEST")
-        f.load_from_file("test/test_form.bin")
+        f.load_from_file("test/bin/test_form.bin")
         self.assertNotEqual(f.sub_chunks, [])
         self.assertNotEqual(f.form_type, "TEST")
 
