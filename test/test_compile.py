@@ -186,10 +186,30 @@ class TestForm(unittest.TestCase):
 
     # TODO to_class (error condition)
 
-    # TODO to_json
+    def test_to_json(self):
+        c = compile.Chunk("NAME")
+        c.data = b"this_is_name\x00"
+        f = compile.Form("TFRM", [c])
+        j = f.to_json()
+        j_mod = j.replace("\n", "").replace(" ", "")
+        self.assertEqual(j_mod, '{"TFRM":[{"NAME":{"name":"this_is_name","zero_terminated":true}}]}')
+
     # TODO from_json x4
-    # TODO size
-    # TODO get_all_form_by_type
+
+    def test_size(self):
+        c = compile.Chunk("CHNK")
+        c.data = b"TEST CHUNK DATA"
+        f = compile.Form("TFRM", [c])
+        self.assertEqual(f.size(), len(b'TFRMCHNK\x00\x00\x00\x0fTEST CHUNK DATA\x00'))
+
+    def test_get_all_form_by_type_1(self):
+        m = compile.Mc2()
+        v = compile.Vbmp()
+        s = compile.Strc()
+        f = compile.Form("SKLT", [m, v, s])
+        self.assertEqual(f.get_all_form_by_type("MC2 "), [m])
+        self.assertEqual(f.get_all_form_by_type("NONE"), [])
+
     # TODO get_all_chunks_by_id
     # TODO get_single_form_by_type x2
     # TODO get_single_chunk_by_id x2
