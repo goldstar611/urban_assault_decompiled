@@ -78,8 +78,8 @@ class TestChunk(unittest.TestCase):
         self.assertNotEqual(c.get_data(), data_bytes)
         self.assertNotEqual(c.data, data_bytes)
 
-    # TODO save_data_to_file
-    # TODO save_to_file
+    # TODO save_data_to_file (Can use io.BytesIO to provide a fake file stream)
+    # TODO save_to_file (Can use io.BytesIO to provide a fake file stream)
 
     def test_to_class(self):
         c = compile.Chunk()
@@ -210,13 +210,78 @@ class TestForm(unittest.TestCase):
         self.assertEqual(f.get_all_form_by_type("MC2 "), [m])
         self.assertEqual(f.get_all_form_by_type("NONE"), [])
 
-    # TODO get_all_chunks_by_id
-    # TODO get_single_form_by_type x2
-    # TODO get_single_chunk_by_id x2
-    # TODO load_from_file x2
-    # TODO save_to_file
+    def test_get_all_chunks_by_id_1(self):
+        c1 = compile.Chunk("TEST")
+        c2 = compile.Chunk("TEST")
+        c3 = compile.Form("TEST")  # This is a Form() and should not be returned
+        c4 = compile.Chunk("NEXT")
+        c5 = compile.Chunk("TEXT")
+        f = compile.Form("ABCD", [c1, c2, c3, c4, c5])
+        # https://stackoverflow.com/questions/8866652/determine-if-2-lists-have-the-same-elements-regardless-of-order
+        import collections
+        l1 = collections.Counter(f.get_all_chunks_by_id("TEST"))
+        l2 = collections.Counter([c1, c2])
+        self.assertEqual(l1, l2)
+
+    def test_get_all_chunks_by_id_2(self):
+        c1 = compile.Chunk("TEST")
+        c2 = compile.Chunk("TEST")
+        c3 = compile.Chunk("NEXT")
+        c4 = compile.Chunk("TEXT")
+        c5 = compile.Form("XYZZ")  # This is a Form() and should not be returned
+        f = compile.Form("ABCD", [c1, c2, c3, c4, c5])
+        l1 = f.get_all_chunks_by_id("XYZZ")
+        self.assertEqual(l1, [])
+
+    def test_get_single_form_by_type_1(self):
+        c1 = compile.Form("ABC1")
+        c2 = compile.Form("ABC2")
+        c3 = compile.Form("ABC3")
+        f = compile.Form("TEST", [c1, c2, c3])
+        self.assertEqual(f.get_single_form_by_type("ABCD"), None)
+        self.assertEqual(f.get_single_form_by_type("ABC3"), c3)
+
+    def test_get_single_form_by_type_2(self):
+        c = compile.Chunk("ABCD")
+        f = compile.Form("TEST", [c])
+        self.assertEqual(f.get_single_form_by_type("ABCD"), None)
+
+    def test_get_single_chunk_by_id_1(self):
+        c1 = compile.Chunk("ABC1")
+        c2 = compile.Chunk("ABC2")
+        c3 = compile.Chunk("ABC3")
+        f = compile.Form("TEST", [c1, c2, c3])
+        self.assertEqual(f.get_single_chunk_by_id("ABCD"), None)
+        self.assertEqual(f.get_single_chunk_by_id("ABC3"), c3)
+
+    def test_get_single_chunk_by_id_2(self):
+        c = compile.Form("ABCD")
+        f = compile.Form("TEST", [c])
+        self.assertEqual(f.get_single_chunk_by_id("ABCD"), None)
+
+    def test_load_from_file_1(self):
+        f = compile.Form()
+        with self.assertRaises(FileNotFoundError) as context:
+            f.load_from_file("not_a_file")
+        self.assertTrue("file could not be found" in str(context.exception))
+
+    def test_load_from_file_2(self):
+        f = compile.Form("TEST")
+        f.load_from_file("test/test_form.bin")
+        self.assertNotEqual(f.sub_chunks, [])
+        self.assertNotEqual(f.form_type, "TEST")
+
+    # TODO save_to_file (Can use io.BytesIO to provide a fake file stream)
     # TODO parse_stream
-    # TODO add_chunk
+
+    def test_add_chunk(self):
+        c1 = compile.Chunk()
+        c2 = compile.Chunk()
+        f = compile.Form()
+        f.add_chunk(c1)
+        f.add_chunk(c2)
+        self.assertEqual(f.child(0), c1)
+        self.assertEqual(f.child(1), c2)
 
 
 if __name__ == "__main__":
