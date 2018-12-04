@@ -1444,7 +1444,46 @@ unsigned_short_be = "<H"
 size_of_unsigned_short = 2
 
 
-def compile_set_bas(visproto, sdf, slurps, set_number=1):
+def parse_set_descriptor(set_number=1):
+    sdf = []
+    with open(os.path.join("set%i" % set_number, "scripts", "set.sdf"), "rb") as f:
+        for line in f:
+            if b">" in line:
+                break
+            base = line.split(b" ")[0].decode("ascii")
+            sdf.append(base)
+    print("sdf:", sdf)
+    return sdf
+
+
+def parse_visproto(set_number=1):
+    visproto = []
+    with open(os.path.join("set%i" % set_number, "scripts", "visproto.lst"), "rb") as f:
+        for line in f:
+            if b">" in line:
+                break
+            base = line.split(b";")[0].decode("ascii").strip()
+            visproto.append(base)
+    print("visproto:", visproto)
+    return visproto
+
+
+def parse_slurps(set_number=1):
+    slurps = []
+    with open(os.path.join("set%i" % set_number, "scripts", "slurps.lst"), "rb") as f:
+        for line in f:
+            if b">" in line:
+                break
+            base = line.split(b";")[0].decode("ascii").strip()
+            slurps.append(base)
+    print("slurps:", slurps)
+    return slurps
+
+
+def compile_set_bas(set_number=1):
+    sdf = parse_set_descriptor(set_number)
+    visproto = parse_visproto(set_number)
+    slurps = parse_slurps(set_number)
     mc2 = Mc2()
 
     embd = mc2.embd
@@ -1657,49 +1696,8 @@ def compile_single_files(set_number=1):
             sklt_form.save_to_file("output/data/set/objects/" + resource_name)
 
 
-def parse_set_descriptor(set_number=1):
-    sdf = []
-    with open(os.path.join("set%i" % set_number, "scripts", "set.sdf"), "rb") as f:
-        for line in f:
-            if b">" in line:
-                break
-            base = line.split(b" ")[0].decode("ascii")
-            sdf.append(base)
-    print("sdf:", sdf)
-    return sdf
-
-
-def parse_visproto(set_number=1):
-    visproto = []
-    with open(os.path.join("set%i" % set_number, "scripts", "visproto.lst"), "rb") as f:
-        for line in f:
-            if b">" in line:
-                break
-            base = line.split(b";")[0].decode("ascii").strip()
-            visproto.append(base)
-    print("visproto:", visproto)
-    return visproto
-
-
-def parse_slurps(set_number=1):
-    slurps = []
-    with open(os.path.join("set%i" % set_number, "scripts", "slurps.lst"), "rb") as f:
-        for line in f:
-            if b">" in line:
-                break
-            base = line.split(b";")[0].decode("ascii").strip()
-            slurps.append(base)
-    print("slurps:", slurps)
-    return slurps
-
-
 if __name__ == "__main__":
     set_number = 1
 
     compile_single_files(set_number)
-
-    sdf = parse_set_descriptor(set_number)
-    visproto = parse_visproto(set_number)
-    slurps = parse_slurps(set_number)
-
-    compile_set_bas(visproto, sdf, slurps, set_number)
+    compile_set_bas(set_number)
