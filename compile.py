@@ -104,12 +104,12 @@ class Chunk(object):
 
     def load_from_file(self, file_name):
         if not os.path.isfile(file_name):
-            raise FileNotFoundError("The specified file could not be found: %s" % file_name)
+            raise FileNotFoundError("The specified file could not be found: %s" % file_name)  # No Test Coverage
 
         with open(file_name, "rb") as f:
             data = f.read()
             if data[0:4] == bytes("FORM", "ascii"):
-                raise ValueError("You shouldn't load a FORM file into a chunk!")
+                raise ValueError("You shouldn't load a FORM file into a chunk!")  # No Test Coverage
 
             chunk_id = bytes(data[0:4]).decode()
             chunk_size = struct.unpack(">I", data[4:8])[0]
@@ -134,7 +134,7 @@ class Chunk(object):
             o.set_binary_data(self.data)
             return o
 
-        return ValueError("This class cannot be converted")
+        return ValueError("This class cannot be converted")  # No Test Coverage
 
     def to_json(self):
         if self.chunk_id in master_list:
@@ -142,16 +142,16 @@ class Chunk(object):
             o.set_binary_data(self.data)
             return myjson.dumps(o.to_json(), indent=1, sort_keys=True)
         # Generic json support for all IFF chunks
-        return myjson.dumps({self.chunk_id: {"data": base64.b64encode(self.data).decode("ascii")}})
+        return myjson.dumps({self.chunk_id: {"data": base64.b64encode(self.data).decode("ascii")}})  # No Test Coverage
 
     def from_json(self, json_dict):
         if isinstance(json_dict, str):
-            json_dict = myjson.loads(json_dict)
+            json_dict = myjson.loads(json_dict)  # No Test Coverage
         self.chunk_id, attributes_dict = json_dict.popitem()
         if self.chunk_id in master_list:
             o = master_list[self.chunk_id]()
         else:
-            raise ValueError("Cant call from_json() on unknown Chunk type")
+            raise ValueError("Cant call from_json() on unknown Chunk type")  # No Test Coverage
         o.from_json_generic({self.chunk_id: attributes_dict})
         self.set_binary_data(o.get_data())
         return self
@@ -159,7 +159,7 @@ class Chunk(object):
     def from_json_generic(self, json_string):
         # Generic json support for all IFF chunks
         if isinstance(json_string, str):
-            json_dict = myjson.loads(json_string)  # type: dict
+            json_dict = myjson.loads(json_string)  # type: dict  # No Test Coverage
         else:
             json_dict = json_string
 
@@ -232,7 +232,7 @@ class Form(object):
             o.form_type = parsed_bas.form_type
             return o
 
-        return ValueError("This class cannot be converted")
+        return ValueError("This class cannot be converted")  # No Test Coverage
 
     def to_json(self):
         # Generic json support for all IFF forms
@@ -245,7 +245,7 @@ class Form(object):
     def from_json(self, json_dict):
         # Generic json support for all IFF forms
         if isinstance(json_dict, str):
-            json_dict = myjson.loads(json_dict)
+            json_dict = myjson.loads(json_dict)  # No Test Coverage
 
         if isinstance(json_dict, list):
             ret_list = []
@@ -259,9 +259,9 @@ class Form(object):
                     return Form(form_type=k, sub_chunks=self.from_json(v))
                 if isinstance(v, dict):
                     return Chunk(k).from_json({k: v})
-                raise ValueError("not dict or list :(", k, v)
+                raise ValueError("not dict or list :(", k, v)  # No Test Coverage
 
-        raise ValueError("Fall through error. This shouldnt happen on well formed data")
+        raise ValueError("Fall through error. This shouldnt happen on well formed data")  # No Test Coverage
 
     def size(self):
         """
@@ -622,9 +622,9 @@ class Body(Chunk):
 
     def from_json_generic(self, json_string):
         if isinstance(json_string, str):
-            json_string = myjson.loads(json_string)
-        self.chunk_id, attributes_dict = json_string.popitem()
-        self.data = base64.b64decode(attributes_dict["data"])
+            json_string = myjson.loads(json_string)  # No Test Coverage
+        self.chunk_id, attributes_dict = json_string.popitem()  # No Test Coverage
+        self.data = base64.b64decode(attributes_dict["data"])  # No Test Coverage
 
 
 # https://github.com/Marisa-Chan/UA_source/blob/master/src/amesh.cpp#L262
@@ -690,7 +690,7 @@ class Atts(Chunk):
 
         if len(binary_data) % 6 != 0:
             logging.error("Atts.convert_binary_data(): "
-                          "Length of binary data was not a multiple of 6! "
+                          "Length of binary data was not a multiple of 6! "  # No Test Coverage
                           "Size: %i" % len(binary_data))
 
         self.is_ptcl_atts = False
@@ -792,10 +792,10 @@ class Poo2(Chunk):
         self.points = []
 
     def points_as_list(self):
-        return [[point["x"], point["y"], point["z"]] for point in self.points]
+        return [[point["x"], point["y"], point["z"]] for point in self.points]  # No Test Coverage
 
     def set_binary_data(self, binary_data):
-        if len(binary_data) % 12 != 0:
+        if len(binary_data) % 12 != 0:  # No Test Coverage
             logging.error("Poo2.convert_binary_data(): Length of binary data was not a multiple of 12!")
 
         num = int(len(binary_data) / 12)
@@ -974,7 +974,7 @@ class Embd(Form):
         self.emrs_resources = {}
         for i, chunk in enumerate(self.sub_chunks):
             if i == 0:
-                if not isinstance(chunk, Form) and chunk.form_type == "ROOT":
+                if not isinstance(chunk, Form) and chunk.form_type == "ROOT":  # No Test Coverage
                     raise ValueError("Embd().parse_emrs() expects first sub_chunk to be Form() with type ROOT")
             elif i % 2:
                 emrs_name = chunk.to_class().emrs_name
@@ -1004,7 +1004,7 @@ class Embd(Form):
 
     def add_vbmp(self, file_name, vbmp_form):
         if not isinstance(vbmp_form, Vbmp):
-            logging.warning("Adding non-vbmp instance to Embd!")
+            logging.warning("Adding non-vbmp instance to Embd!")  # No Test Coverage
         self.add_emrs_resource("ilbm.class", file_name, vbmp_form)
 
     def add_vanm(self, file_name, vanm_form):
@@ -1212,12 +1212,12 @@ class Strc(Chunk):
             if version == 256:
                 # AREA STRC
                 return self._set_binary_data_area(binary_data)
-            raise ValueError("strc_factory() received invalid data:", binary_data)
+            raise ValueError("strc_factory() received invalid data:", binary_data)  # No Test Coverage
         if binary_data[0:5] == b"\x00\x01\x00\x06\x00":
             # BANI STRC
             return self._set_binary_data_bani(binary_data)
 
-        raise ValueError("Strc().set_data() received invalid data: %s" % binary_data)
+        raise ValueError("Strc().set_data() received invalid data: %s" % binary_data)  # No Test Coverage
 
     def get_data(self):
         if self.strc_type == Strc.STRC_BASE:
@@ -1229,10 +1229,11 @@ class Strc(Chunk):
         if self.strc_type == Strc.STRC_BANI:
             return self._get_data_bani()
 
-        raise ValueError("Can't get_data() from strc_type STRC_UNKNOWN!!")
+        raise ValueError("Can't get_data() from strc_type STRC_UNKNOWN!!")  # No Test Coverage
 
     def _set_binary_data_base(self, binary_data):
         if len(binary_data) != 62:
+            # No Test Coverage
             raise ValueError("Length of binary_data was not 62 bytes! Not valid for STRC_BASE objects!")
         # int16_t version;
         # xyz pos;
@@ -1278,9 +1279,10 @@ class Strc(Chunk):
     def _set_binary_data_ade(self, binary_data):
         version = struct.unpack(">h", binary_data[0:2])[0]
         if len(binary_data) != 10:
+            # No Test Coverage
             raise ValueError("Length of binary_data was not 10 bytes! Not valid for STRC_ADE objects!")
         if version != 1:
-            raise ValueError("Version of binary_data was not 1! Not valid for STRC_ADE objects!")
+            raise ValueError("Version of binary_data was not 1! Not valid for STRC_ADE objects!")  # No Test Coverage
         # int16_t version;
         # int8_t _nu1; // Not used
         # int8_t flags;
@@ -1306,8 +1308,10 @@ class Strc(Chunk):
     def _set_binary_data_area(self, binary_data):
         version = struct.unpack(">h", binary_data[0:2])[0]
         if len(binary_data) != 10:
+            # No Test Coverage
             raise ValueError("Length of binary_data was not 10 bytes! Not valid for STRC_AREA objects!")
         if version != 256:
+            # No Test Coverage
             raise ValueError("Version of binary_data was not 256! Not valid for STRC_AREA objects!")
         # int16_t version;
         # uint16_t flags;
@@ -1398,7 +1402,7 @@ class Strc(Chunk):
                                     }
                     }
 
-        raise ValueError("STRC().to_json() Can't get json for unknown STRC!")
+        raise ValueError("STRC().to_json() Can't get json for unknown STRC!")  # No Test Coverage
 
 
 master_list = {
@@ -1507,7 +1511,7 @@ def compile_set_bas(set_number=1):
             bpp = struct.unpack(unsigned_short_be, f.read(size_of_unsigned_short))[0]
 
             if bpp != 8 or width != 256 or height != 256:
-                print("ERROR: Bitmap must be 256x256 and using an indexed 8bit color map!\n"
+                print("ERROR: Bitmap must be 256x256 and using an indexed 8bit color map!\n"  # No Test Coverage
                       "Image was: %sw*%sh*%sb" % (str(width), str(height), str(bpp)))
                 raise ValueError("Selected bitmap was not in the correct format.")
 
@@ -1628,7 +1632,7 @@ def compile_single_files(set_number=1):
             bpp = struct.unpack(unsigned_short_be, f.read(size_of_unsigned_short))[0]
 
             if bpp != 8 or width != 256 or height != 256:
-                print("ERROR: Bitmap must be 256x256 and using an indexed 8bit color map!\n"
+                print("ERROR: Bitmap must be 256x256 and using an indexed 8bit color map!\n"  # No Test Coverage
                       "Image was: %sw*%sh*%sb" % (str(width), str(height), str(bpp)))
                 raise ValueError("Selected bitmap was not in the correct format.")
 
