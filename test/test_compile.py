@@ -302,5 +302,13 @@ class TestForm(unittest.TestCase):
         self.assertEqual(f.child(1), c2)
 
 
+class TestMain(unittest.TestCase):
+
+    def test_main(self):
+        set_number = 1
+        compile.compile_single_files(set_number)
+        compile.compile_set_bas(set_number)
+
+
 if __name__ == "__main__":
     unittest.main()
