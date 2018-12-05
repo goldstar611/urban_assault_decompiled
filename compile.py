@@ -261,7 +261,8 @@ class Form(object):
                     return Chunk(k).from_json({k: v})
                 raise ValueError("not dict or list :(", k, v)  # No Test Coverage
 
-        raise ValueError("Fall through error. This shouldnt happen on well formed data")  # No Test Coverage
+        raise ValueError("Fall through error. This shouldnt happen on well formed data "
+                         "Check that you didn't send bytes to this function")  # No Test Coverage
 
     def size(self):
         """
