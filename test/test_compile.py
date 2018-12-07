@@ -114,6 +114,9 @@ class TestChunk(unittest.TestCase):
             cl = c.to_class()
             fd = cl.full_data()
             j = cl.to_json()
+            if c.chunk_id != "DATA":
+                # DATA is a special case because we are free to order the ILBM references in any order
+                self.assertEqual(c.full_data(), cl.full_data())
 
     def test_form_classes(self):
         import glob
@@ -123,6 +126,7 @@ class TestChunk(unittest.TestCase):
             cl = c.to_class()
             fd = cl.full_data()
             j = cl.to_json()
+            self.assertEqual(c.full_data(), cl.full_data())
 
 
 class TestForm(unittest.TestCase):
@@ -304,6 +308,31 @@ class TestForm(unittest.TestCase):
         f.add_chunk(c2)
         self.assertEqual(f.child(0), c1)
         self.assertEqual(f.child(1), c2)
+
+
+class TestClasses(unittest.TestCase):
+    # TODO Atts
+    # TODO Atts (particle)
+    # TODO Body
+    # TODO Clid
+    # TODO Data
+    # TODO Emrs
+    # TODO Head
+    # TODO Nam2
+    # TODO Name
+    # TODO Olpl
+    # TODO Otl2
+    # TODO Pol2
+    # TODO Poo2
+    # TODO Sen2
+    # TODO Strc (ADE)
+    # TODO Strc (AREA)
+    # TODO Strc (BANI)
+    # TODO Strc (BASE)
+    # TODO Strc (Unknown)
+
+    def test_todo(self):
+        pass
 
 
 class TestMain(unittest.TestCase):
