@@ -956,7 +956,42 @@ class Vbmp(Form):
         pass
 
     def load_from_bmp(self, file_name):
-        pass
+        with open(file_name, "rb") as f:
+            f.seek(10)
+            data_offset = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
+
+            f.seek(18)
+            width = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
+            height = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
+
+            f.seek(28)
+            bpp = struct.unpack(unsigned_short_be, f.read(size_of_unsigned_short))[0]
+
+            if bpp != 8 or width != 256 or height != 256:
+                print("ERROR: Bitmap must be 256x256 and using an indexed 8bit color map!\n"  # No Test Coverage
+                      "Image was: %sw*%sh*%sb" % (str(width), str(height), str(bpp)))
+                raise ValueError("Selected bitmap was not in the correct format.")
+
+            f.seek(data_offset)
+            bitmap_data = f.read(65536)
+
+        from PyQt5 import QtGui  # TODO REMOVE DUPLICATED CODE
+        mirror_horizontal = False
+        mirror_vertical = True
+        image = QtGui.QImage(bitmap_data, width, height, QtGui.QImage.Format_Indexed8)
+        image = image.mirrored(mirror_horizontal, mirror_vertical)
+        ptr_image_data = image.bits()
+        ptr_image_data.setsize(image.byteCount())
+        bitmap_data = ptr_image_data.asstring()
+
+        new_vbmp_head = Form().from_json(myjson.loads("""{"HEAD": { "flags": 0, "height": 256, "width": 256 }}"""))
+        new_vbmp_body = Body()
+        new_vbmp_body.set_binary_data(bitmap_data)
+        self.sub_chunks = []
+        self.add_chunk(new_vbmp_head)
+        self.add_chunk(new_vbmp_body)
+
+        return self
 
     def save_to_bmp(self, file_name):
         pass
@@ -1500,39 +1535,8 @@ def compile_set_bas(set_number=1):
     for bitmap in bitmaps:
         print(bitmap)
 
-        with open(bitmap, "rb") as f:
-            f.seek(10)
-            data_offset = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
-
-            f.seek(18)
-            width = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
-            height = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
-
-            f.seek(28)
-            bpp = struct.unpack(unsigned_short_be, f.read(size_of_unsigned_short))[0]
-
-            if bpp != 8 or width != 256 or height != 256:
-                print("ERROR: Bitmap must be 256x256 and using an indexed 8bit color map!\n"  # No Test Coverage
-                      "Image was: %sw*%sh*%sb" % (str(width), str(height), str(bpp)))
-                raise ValueError("Selected bitmap was not in the correct format.")
-
-            f.seek(data_offset)
-            bitmap_data = f.read(65536)
-
-            from PyQt5 import QtGui  # TODO REMOVE DUPLICATED CODE
-            mirror_horizontal = False
-            mirror_vertical = True
-            image = QtGui.QImage(bitmap_data, width, height, QtGui.QImage.Format_Indexed8)
-            image = image.mirrored(mirror_horizontal, mirror_vertical)
-            ptr_image_data = image.bits()
-            ptr_image_data.setsize(image.byteCount())
-            bitmap_data = ptr_image_data.asstring()
-
-            new_vbmp_head = Form().from_json(myjson.loads("""{"HEAD": { "flags": 0, "height": 256, "width": 256 }}"""))
-            new_vbmp_body = Body()
-            new_vbmp_body.set_binary_data(bitmap_data)
-            new_vbmp = Vbmp(sub_chunks=[new_vbmp_head, new_vbmp_body])
-            embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
+        new_vbmp = Vbmp().load_from_bmp(bitmap)
+        embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
 
     # TODO Skeleton functions (in Embd class)
     skeletons = glob.glob("set%i/Skeleton/*.json" % set_number)
@@ -1621,39 +1625,8 @@ def compile_single_files(set_number=1):
     for bitmap in glob.glob("set%i/*.bmp" % set_number):
         print(bitmap)
 
-        with open(bitmap, "rb") as f:
-            f.seek(10)
-            data_offset = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
-
-            f.seek(18)
-            width = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
-            height = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
-
-            f.seek(28)
-            bpp = struct.unpack(unsigned_short_be, f.read(size_of_unsigned_short))[0]
-
-            if bpp != 8 or width != 256 or height != 256:
-                print("ERROR: Bitmap must be 256x256 and using an indexed 8bit color map!\n"  # No Test Coverage
-                      "Image was: %sw*%sh*%sb" % (str(width), str(height), str(bpp)))
-                raise ValueError("Selected bitmap was not in the correct format.")
-
-            f.seek(data_offset)
-            bitmap_data = f.read(65536)
-
-            from PyQt5 import QtGui  # TODO REMOVE DUPLICATED CODE
-            mirror_horizontal = False
-            mirror_vertical = True
-            image = QtGui.QImage(bitmap_data, width, height, QtGui.QImage.Format_Indexed8)
-            image = image.mirrored(mirror_horizontal, mirror_vertical)
-            ptr_image_data = image.bits()
-            ptr_image_data.setsize(image.byteCount())
-            bitmap_data = ptr_image_data.asstring()
-
-            new_vbmp_head = Form().from_json(myjson.loads("""{"HEAD": { "flags": 0, "height": 256, "width": 256 }}"""))
-            new_vbmp_body = Body()
-            new_vbmp_body.set_binary_data(bitmap_data)
-            new_vbmp = Vbmp(sub_chunks=[new_vbmp_head, new_vbmp_body])
-            new_vbmp.save_to_file("output/data/set/" + os.path.splitext(os.path.basename(bitmap))[0])
+        new_vbmp = Vbmp().load_from_bmp(bitmap)
+        new_vbmp.save_to_file("output/data/set/" + os.path.splitext(os.path.basename(bitmap))[0])
 
     # Compile animations
     for animation in glob.glob("set%i/rsrcpool/*.json" % set_number):
