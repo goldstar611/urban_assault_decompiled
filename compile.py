@@ -264,6 +264,10 @@ class Form(object):
         raise ValueError("Fall through error. This shouldnt happen on well formed data "
                          "Check that you didn't send bytes to this function")  # No Test Coverage
 
+    def from_json_file(self, file_name):
+        with open(file_name, "r") as f:
+            return self.from_json(myjson.loads(f.read()))
+
     def size(self):
         """
 
@@ -984,7 +988,9 @@ class Vbmp(Form):
         ptr_image_data.setsize(image.byteCount())
         bitmap_data = ptr_image_data.asstring()
 
-        new_vbmp_head = Form().from_json(myjson.loads("""{"HEAD": { "flags": 0, "height": 256, "width": 256 }}"""))
+        new_vbmp_head = Head()
+        new_vbmp_head.height = 256
+        new_vbmp_head.width = 256
         new_vbmp_body = Body()
         new_vbmp_body.set_binary_data(bitmap_data)
         self.sub_chunks = []
@@ -1027,9 +1033,10 @@ class Embd(Form):
         return self.sub_chunks.index(self.emrs_resources[emrs_name])
 
     def add_emrs_resource(self, class_id, emrs_name, incoming_form):
-        emrs_chunk = Chunk().from_json({"EMRS": {"class_id": class_id,
-                                                 "emrs_name": emrs_name
-                                                 }})
+        emrs_chunk = Emrs()
+        emrs_chunk.class_id = class_id
+        emrs_chunk.emrs_name = emrs_name
+
         self.add_chunk(emrs_chunk)
         self.add_chunk(incoming_form)
         self.parse_emrs()
@@ -1103,7 +1110,8 @@ class Mc2(Form):
         self.add_chunk(mc2_objt)
 
         # Populate MC2 /OBJT/CLID
-        mc2_objt_clid = Chunk().from_json(myjson.loads("""{"CLID": {"class_id": "base.class" }}"""))
+        mc2_objt_clid = Clid()
+        mc2_objt_clid.class_id = "base.class"
         mc2_objt.add_chunk(mc2_objt_clid)
 
         # Populate MC2 /OBJT/BASE and
@@ -1116,7 +1124,8 @@ class Mc2(Form):
         mc2_objt_base.add_chunk(mc2_objt_base_objt)
 
         # Populate MC2 /OBJT/BASE/OBJT/CLID
-        mc2_objt_base_objt_clid = Chunk().from_json(myjson.loads("""{"CLID": { "class_id": "embed.class" }}"""))
+        mc2_objt_base_objt_clid = Clid()
+        mc2_objt_base_objt_clid.class_id = "embed.class"
         mc2_objt_base_objt.add_chunk(mc2_objt_base_objt_clid)
 
         # Populate MC2 /OBJT/BASE/OBJT/EMBD
@@ -1124,23 +1133,13 @@ class Mc2(Form):
         mc2_objt_base_objt.add_chunk(mc2_objt_base_objt_embd)
 
         # Populate MC2 /OBJT/BASE/STRC
-        mc2_objt_base_strc = Chunk().from_json(myjson.loads("""{"STRC": {
-                                                            "_un1": 0,
-                                                            "ambient_light": 255,
-                                                            "att_flags": 72,
-                                                            "ax": 0,
-                                                            "ay": 0,
-                                                            "az": 0,
-                                                            "pos": [ 0.0, 0.0, 0.0 ],
-                                                            "rx": 0,
-                                                            "ry": 0,
-                                                            "rz": 0,
-                                                            "scale": [ 1.0, 1.0, 1.0 ],
-                                                            "strc_type": "STRC_BASE",
-                                                            "vec": [ 0.0, 0.0, 0.0 ],
-                                                            "version": 1,
-                                                            "vis_limit": 4096
-                                                        }}"""))
+        mc2_objt_base_strc = Strc()
+        mc2_objt_base_strc.ambient_light = 255
+        mc2_objt_base_strc.att_flags = 72
+        mc2_objt_base_strc.scale = [1.0, 1.0, 1.0]
+        mc2_objt_base_strc.strc_type = "STRC_BASE"
+        mc2_objt_base_strc.version = 1
+        mc2_objt_base_strc.vis_limit = 4096
         mc2_objt_base.add_chunk(mc2_objt_base_strc)
 
         # Populate MC2 /OBJT/BASE/KIDS
@@ -1148,7 +1147,8 @@ class Mc2(Form):
         mc2_objt_base.add_chunk(mc2_objt_base_kids)
 
         # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT
-        clid_base = Chunk().from_json(myjson.loads("""{"CLID": {"class_id": "base.class" }}"""))
+        clid_base = Clid()
+        clid_base.class_id = "base.class"
         mc2_objt_base_kids_objt0 = Form("OBJT", [clid_base, Form("BASE", [Form("ROOT")])])
         mc2_objt_base_kids_objt1 = Form("OBJT", [clid_base, Form("BASE", [Form("ROOT")])])
         mc2_objt_base_kids_objt2 = Form("OBJT", [clid_base, Form("BASE", [Form("ROOT")])])
@@ -1156,23 +1156,13 @@ class Mc2(Form):
         mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt1)
         mc2_objt_base_kids.add_chunk(mc2_objt_base_kids_objt2)
 
-        base_strc = Chunk().from_json(myjson.loads("""{"STRC": {
-                                                    "_un1": 0,
-                                                    "ambient_light": 255,
-                                                    "att_flags": 72,
-                                                    "ax": 0,
-                                                    "ay": 0,
-                                                    "az": 0,
-                                                    "pos": [ 0.0, 0.0, 0.0 ],
-                                                    "rx": 0,
-                                                    "ry": 0,
-                                                    "rz": 0,
-                                                    "scale": [ 1.0, 1.0, 1.0 ],
-                                                    "strc_type": "STRC_BASE",
-                                                    "vec": [ 0.0, 0.0, 0.0 ],
-                                                    "version": 1,
-                                                    "vis_limit": 4096
-                                                }}"""))
+        base_strc = Strc()
+        base_strc.ambient_light = 255
+        base_strc.att_flags = 72
+        base_strc.scale = [1.0, 1.0, 1.0]
+        base_strc.strc_type = "STRC_BASE"
+        base_strc.version = 1
+        base_strc.vis_limit = 4096
 
         # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT/STRC
         mc2_objt_base_kids_objt0.sub_chunks[1].add_chunk(base_strc)  # Hack with sub_chunks[1]
@@ -1530,6 +1520,7 @@ def compile_set_bas(set_number=1):
 
     # TODO Bitmap function (in Embd class)
     bitmaps = glob.glob("set%i/*.bmp" % set_number)
+    bitmaps.sort()
 
     # Add bitmaps to Embd
     for bitmap in bitmaps:
@@ -1540,35 +1531,34 @@ def compile_set_bas(set_number=1):
 
     # TODO Skeleton functions (in Embd class)
     skeletons = glob.glob("set%i/Skeleton/*.json" % set_number)
+    skeletons.sort()
 
     # Add skeletons to Embd
     for skeleton in skeletons:
         print(skeleton)
         resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0] + "t"  # HACK make .sklt
 
-        with open(skeleton, "r") as f:
-            sklt_form = Form().from_json(myjson.loads(f.read()))
-            embd.add_sklt(resource_name, sklt_form)
+        sklt_form = Form().from_json_file(skeleton)
+        embd.add_sklt(resource_name, sklt_form)
 
     # TODO Animation functions (in Embd class)
     animations = glob.glob("set%i/rsrcpool/*.json" % set_number)
+    animations.sort()
 
     # Add animations to Embd
     for animation in animations:
         print(animation)
         resource_name = os.path.splitext(os.path.basename(animation))[0]
 
-        with open(animation, "r") as f:
-            vanm_form = Form().from_json(myjson.loads(f.read()))
-            embd.add_vanm(resource_name, vanm_form)
+        vanm_form = Form().from_json_file(animation)
+        embd.add_vanm(resource_name, vanm_form)
 
     # TODO Move vehicles functions to MC2 object
     vehicles = ["set%i/objects/vehicles/%s.json" % (set_number, x.replace("base", "bas")) for x in visproto]
 
     for vehicle in vehicles:
         print(vehicle)
-        with open(vehicle, "r") as f:
-            vehicle_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
+        vehicle_form = Form().from_json_file(vehicle)
 
         for chunk in vehicle_form.sub_chunks:
             mc2.vehicles.add_chunk(chunk)
@@ -1578,8 +1568,7 @@ def compile_set_bas(set_number=1):
 
     for building in buildings:
         print(building)
-        with open(building, "r") as f:
-            building_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
+        building_form = Form().from_json_file(building)
 
         for chunk in building_form.sub_chunks:
             mc2.buildings.add_chunk(chunk)
@@ -1589,8 +1578,7 @@ def compile_set_bas(set_number=1):
 
     for ground in grounds:
         print(ground)
-        with open(ground, "r") as f:
-            ground_form = Form().from_json(myjson.loads(f.read()))  # TODO Eliminate junk code like this
+        ground_form = Form().from_json_file(ground)
 
         for chunk in ground_form.sub_chunks:
             mc2.ground.add_chunk(chunk)
@@ -1622,56 +1610,69 @@ def compile_single_files(set_number=1):
     shutil.copy(os.getcwd() + "/set%i/objects/beebox.bas" % set_number, os.getcwd() + "/output/data/set/objects/beebox.bas")
 
     # Compile images
-    for bitmap in glob.glob("set%i/*.bmp" % set_number):
+    bitmaps = glob.glob("set%i/*.bmp" % set_number)
+    bitmaps.sort()
+
+    for bitmap in bitmaps:
         print(bitmap)
 
         new_vbmp = Vbmp().load_from_bmp(bitmap)
         new_vbmp.save_to_file("output/data/set/" + os.path.splitext(os.path.basename(bitmap))[0])
 
     # Compile animations
-    for animation in glob.glob("set%i/rsrcpool/*.json" % set_number):
+    animations = glob.glob("set%i/rsrcpool/*.json" % set_number)
+    animations.sort()
+
+    for animation in animations:
         print(animation)
         resource_name = os.path.splitext(os.path.basename(animation))[0]
 
-        with open(animation, "r") as f:
-            vanm_form = Form().from_json(myjson.loads(f.read()))
-            vanm_form.save_to_file("output/data/set/rsrcpool/" + resource_name)
+        vanm_form = Form().from_json_file(animation)
+        vanm_form.save_to_file("output/data/set/rsrcpool/" + resource_name)
 
     # Compile skeletons
-    for skeleton in glob.glob("set%i/Skeleton/*.json" % set_number):
+    skeletons = glob.glob("set%i/Skeleton/*.json" % set_number)
+    skeletons.sort()
+
+    for skeleton in skeletons:
         print(skeleton)
         resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0]
 
-        with open(skeleton, "r") as f:
-            sklt_form = Form().from_json(myjson.loads(f.read()))
-            sklt_form.save_to_file("output/data/set/" + resource_name)
+        sklt_form = Form().from_json_file(skeleton)
+        sklt_form.save_to_file("output/data/set/" + resource_name)
 
     # Compile vehicles (Inside MC2 class)
-    for vehicle in glob.glob("set%i/objects/vehicles/*.json" % set_number):
+    vehicles = glob.glob("set%i/objects/vehicles/*.json" % set_number)
+    vehicles.sort()
+
+    for vehicle in vehicles:
         print(vehicle)
         resource_name = os.path.splitext(os.path.basename(vehicle))[0]
 
-        with open(vehicle, "r") as f:
-            sklt_form = Form().from_json(myjson.loads(f.read()))
-            sklt_form.save_to_file("output/data/set/objects/" + resource_name)
+        sklt_form = Form().from_json_file(vehicle)
+        sklt_form.save_to_file("output/data/set/objects/" + resource_name)
 
     # Compile buildings (Inside MC2 class)
-    for building in glob.glob("set%i/objects/buildings/*.json" % set_number):
+    buildings = glob.glob("set%i/objects/buildings/*.json" % set_number)
+    buildings.sort()
+
+    for building in buildings:
         print(building)
         resource_name = os.path.splitext(os.path.basename(building))[0]
 
-        with open(building, "r") as f:
-            sklt_form = Form().from_json(myjson.loads(f.read()))
-            sklt_form.save_to_file("output/data/set/objects/" + resource_name)
+        sklt_form = Form().from_json_file(building)
+        sklt_form.save_to_file("output/data/set/objects/" + resource_name)
 
     # Compile ground (Inside MC2 class)
-    for ground in glob.glob("set%i/objects/ground/*.json" % set_number):
+    grounds = glob.glob("set%i/objects/ground/*.json" % set_number)
+    grounds.sort()
+
+    for ground in grounds:
         print(ground)
         resource_name = os.path.splitext(os.path.basename(ground))[0]
 
-        with open(ground, "r") as f:
-            sklt_form = Form().from_json(myjson.loads(f.read()))
-            sklt_form.save_to_file("output/data/set/objects/" + resource_name)
+        sklt_form = Form().from_json_file(ground)
+        sklt_form.save_to_file("output/data/set/objects/" + resource_name)
 
 
 if __name__ == "__main__":
