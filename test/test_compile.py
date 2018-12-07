@@ -1,4 +1,5 @@
 import compile
+import os
 import unittest
 
 
@@ -67,14 +68,16 @@ class TestChunk(unittest.TestCase):
     def test_load_data_from_file_2(self):
         c = compile.Chunk()
         with self.assertRaises(ValueError) as context:
-            c.load_data_from_file("test/bin/test_form.bin")
+            data_file = os.path.join("test", "bin", "test_form.bin")
+            c.load_data_from_file(data_file)
         self.assertTrue("FORM file into a chunk" in str(context.exception))
 
     def test_load_data_from_file_3(self):
         c = compile.Chunk()
         data_bytes = b"This is bytes"
         c.set_binary_data(data_bytes)
-        c.load_data_from_file("test/bin/test_chunk.bin")
+        data_file = os.path.join("test", "bin", "test_chunk.bin")
+        c.load_data_from_file(data_file)
         self.assertNotEqual(c.get_data(), data_bytes)
         self.assertNotEqual(c.data, data_bytes)
 
@@ -285,7 +288,8 @@ class TestForm(unittest.TestCase):
 
     def test_load_from_file_2(self):
         f = compile.Form("TEST")
-        f.load_from_file("test/bin/test_form.bin")
+        data_file = os.path.join("test", "bin", "test_form.bin")
+        f.load_from_file(data_file)
         self.assertNotEqual(f.sub_chunks, [])
         self.assertNotEqual(f.form_type, "TEST")
 
