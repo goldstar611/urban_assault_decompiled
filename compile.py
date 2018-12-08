@@ -261,7 +261,7 @@ class Form(object):
                 if isinstance(v, list):
                     return Form(form_type=k, sub_chunks=self.from_json(v))
                 if isinstance(v, dict):
-                    return Chunk(k).from_json({k: v})
+                    return Chunk(chunk_id=k).from_json({k: v})
                 raise ValueError("not dict or list :(", k, v)  # No Test Coverage
 
         raise ValueError("Fall through error. This shouldnt happen on well formed data "
@@ -350,11 +350,11 @@ class Form(object):
         """
         ret_chunks = []
         while True:
-            chunk_id = bytes(bas_data.read(4)).decode()
-            if not chunk_id:
+            magic = bytes(bas_data.read(4)).decode()
+            if not magic:
                 break
 
-            if chunk_id == "FORM":
+            if magic == "FORM":
                 form_size = struct.unpack(">I", bas_data.read(4))[0] - 4
                 form_type = bytes(bas_data.read(4)).decode()
                 form_data_stream = io.BytesIO(bas_data.read(form_size))
@@ -362,8 +362,9 @@ class Form(object):
                 ret_chunks.append(Form(form_type=form_type, sub_chunks=self.parse_stream(form_data_stream)))
                 continue
 
-            if chunk_id != "FORM":
+            if magic != "FORM":
                 chunk_size = struct.unpack(">I", bas_data.read(4))[0]
+                chunk_id = magic
                 chunk_data = bas_data.read(chunk_size)
                 if chunk_size % 2:
                     bas_data.read(1)  # Discard pad byte
