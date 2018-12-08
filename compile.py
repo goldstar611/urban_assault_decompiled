@@ -616,7 +616,6 @@ class Head(Chunk):
 class Body(Chunk):
     def __init__(self, chunk_id="BODY"):
         super(Body, self).__init__(chunk_id)
-        self.file_name = "not_used.vbmp"  # TODO USE THIS
         self.data = bytes()
 
     def set_binary_data(self, binary_data):
@@ -954,6 +953,7 @@ class Otl2(Chunk):
 class Vbmp(Form):
     def __init__(self, chunk_id="VBMP", sub_chunks=None):
         super(Vbmp, self).__init__(chunk_id, sub_chunks)
+        self.file_name = "not_used.vbmp"  # TODO USE THIS
 
     def load_from_ilbm(self, file_name):
         pass
@@ -998,6 +998,9 @@ class Vbmp(Form):
         self.sub_chunks = []
         self.add_chunk(new_vbmp_head)
         self.add_chunk(new_vbmp_body)
+
+        # set self.file_name = "new_sky.ilbm" chopping off ".bmp"
+        self.file_name = os.path.splitext(os.path.basename(file_name))[0]
 
         return self
 
