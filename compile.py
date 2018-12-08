@@ -979,7 +979,7 @@ class Vbmp(Form):
             f.seek(data_offset)
             bitmap_data = f.read(65536)
 
-        from PyQt5 import QtGui  # TODO REMOVE DUPLICATED CODE
+        from PyQt5 import QtGui
         mirror_horizontal = False
         mirror_vertical = True
         image = QtGui.QImage(bitmap_data, width, height, QtGui.QImage.Format_Indexed8)
@@ -1000,7 +1000,15 @@ class Vbmp(Form):
         return self
 
     def save_to_bmp(self, file_name):
-        pass
+        from PyQt5 import QtGui
+        data = self.get_data()
+
+        mirror_horizontal = True
+        mirror_vertical = False
+        image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format_Indexed8)
+        image = image.mirrored(mirror_horizontal, mirror_vertical)
+        image.setColorTable(color_table)
+        image.save(file_name)
 
 
 class Embd(Form):
@@ -1070,15 +1078,7 @@ class Embd(Form):
             else:
                 # Asset
                 if chunk.form_type == "VBMP":
-                    from PyQt5 import QtGui
-                    data = chunk.get_single_chunk_by_id("BODY").get_data()
-
-                    mirror_horizontal = True
-                    mirror_vertical = False
-                    image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format_Indexed8)
-                    image = image.mirrored(mirror_horizontal, mirror_vertical)
-                    image.setColorTable(color_table)
-                    image.save(os.path.join(output_location, "%s.bmp" % asset_name))
+                    chunk.to_class().save_to_bmp(os.path.join(output_location, "%s.bmp" % asset_name))
                 elif chunk.form_type == "SKLT" or chunk.form_type == "VANM":
                     # TODO: Using the base name is not really compatible with MC2 forms which
                     # TODO:   expect the file name to be Skeleton/blah.sklt
@@ -1518,7 +1518,6 @@ def compile_set_bas(set_number=1):
 
     embd = mc2.embd
 
-    # TODO Bitmap function (in Embd class)
     bitmaps = glob.glob("set%i/*.bmp" % set_number)
     bitmaps.sort()
 
