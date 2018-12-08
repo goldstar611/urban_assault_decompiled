@@ -230,9 +230,9 @@ class Form(object):
     def to_class(self):
         if self.form_type in master_list:
             o = master_list[self.form_type]()
-            parsed_bas = Form().parse_stream(io.BytesIO(self.full_data()))[0]
-            o.sub_chunks = parsed_bas.sub_chunks
-            o.form_type = parsed_bas.form_type
+            # parsed_bas = Form().parse_stream(io.BytesIO(self.full_data()))[0]
+            o.sub_chunks = self.sub_chunks
+            o.form_type = self.form_type
             return o
 
         return ValueError("This class cannot be converted")  # No Test Coverage
