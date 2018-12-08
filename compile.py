@@ -173,9 +173,12 @@ class Form(object):
     def __init__(self, form_type="!??!", sub_chunks=None):
         self.form_type = form_type
         if sub_chunks is None:
-            self.sub_chunks = []
-        else:
-            self.sub_chunks = sub_chunks  # type: List[Union[Form, Chunk]]
+            sub_chunks = []
+
+        if not isinstance(sub_chunks, list):
+            raise ValueError("sub_chunks must be a list. Supplied type was %s" % type(sub_chunks))
+
+        self.sub_chunks = sub_chunks  # type: List[Union[Form, Chunk]]
 
     @staticmethod
     def validate_form_type(form_type):
@@ -949,8 +952,6 @@ class Otl2(Chunk):
 
 class Vbmp(Form):
     def __init__(self, chunk_id="VBMP", sub_chunks=None):
-        if sub_chunks is None:
-            sub_chunks = list()
         super(Vbmp, self).__init__(chunk_id, sub_chunks)
 
     def load_from_ilbm(self, file_name):
@@ -1015,21 +1016,21 @@ class Embd(Form):
     def __init__(self, form_type="EMBD", sub_chunks=None):
         if sub_chunks is None:
             sub_chunks = list()
-        super(Embd, self).__init__(form_type, [Form("ROOT")] + sub_chunks)
+        super(Embd, self).__init__(form_type, [Root()] + sub_chunks)
         self.emrs_resources = {}
         self.parse_emrs()
 
     def parse_emrs(self):
         emrs_name = None
         self.emrs_resources = {}
-        for i, chunk in enumerate(self.sub_chunks):
+        for i, sub_chunk in enumerate(self.sub_chunks):
             if i == 0:
-                if not isinstance(chunk, Form) and chunk.form_type == "ROOT":  # No Test Coverage
+                if not isinstance(sub_chunk, Form) and sub_chunk.form_type == "ROOT":  # No Test Coverage
                     raise ValueError("Embd().parse_emrs() expects first sub_chunk to be Form() with type ROOT")
             elif i % 2:
-                emrs_name = chunk.to_class().emrs_name
+                emrs_name = sub_chunk.to_class().emrs_name
             else:
-                self.emrs_resources[emrs_name] = chunk
+                self.emrs_resources[emrs_name] = sub_chunk
 
     def emrs_index_by_name(self, emrs_name):
         if not self.emrs_resources:
@@ -1068,34 +1069,34 @@ class Embd(Form):
             os.mkdir(output_location)
 
         asset_name = None
-        for i, chunk in enumerate(self.sub_chunks):
+        for i, sub_chunk in enumerate(self.sub_chunks):
             if i == 0:
-                if not isinstance(chunk, Form) and chunk.form_type == "ROOT":
+                if not isinstance(sub_chunk, Form) and sub_chunk.form_type == "ROOT":
                     raise ValueError("Embd().extract_resources() expects first sub_chunk to be Form() with type ROOT")
             elif i % 2:
                 # EMRS
-                asset_name = chunk.to_class().emrs_name
+                asset_name = sub_chunk.to_class().emrs_name
             else:
                 # Asset
-                if chunk.form_type == "VBMP":
-                    chunk.to_class().save_to_bmp(os.path.join(output_location, "%s.bmp" % asset_name))
-                elif chunk.form_type == "SKLT" or chunk.form_type == "VANM":
+                if sub_chunk.form_type == "VBMP":
+                    sub_chunk.to_class().save_to_bmp(os.path.join(output_location, "%s.bmp" % asset_name))
+                elif sub_chunk.form_type == "SKLT" or sub_chunk.form_type == "VANM":
                     # TODO: Using the base name is not really compatible with MC2 forms which
                     # TODO:   expect the file name to be Skeleton/blah.sklt
                     base_name = os.path.basename(asset_name)
                     with open(os.path.join(output_location, base_name + ".json"), "w") as f:
-                        f.write(chunk.to_json())
+                        f.write(sub_chunk.to_json())
                 else:
-                    raise ValueError("extract_resources() unimplemented for %s", chunk.form_type)
+                    raise ValueError("extract_resources() unimplemented for %s", sub_chunk.form_type)
 
 
 class Mc2(Form):
     def __init__(self, form_type="MC2 "):
         super(Mc2, self).__init__(form_type)
         self.embd = Embd()
-        self.vehicles = Form("KIDS")
-        self.buildings = Form("KIDS")
-        self.ground = Form("KIDS")
+        self.vehicles = Kids()
+        self.buildings = Kids()
+        self.ground = Kids()
 
         # Add convenience functions
         self.add_sklt = self.embd.add_sklt
@@ -1106,7 +1107,7 @@ class Mc2(Form):
 
     def init_mc2(self):
         # Populate MC2 /OBJT
-        mc2_objt = Form("OBJT")
+        mc2_objt = Objt()
         self.add_chunk(mc2_objt)
 
         # Populate MC2 /OBJT/CLID
@@ -1120,7 +1121,7 @@ class Mc2(Form):
         mc2_objt.add_chunk(mc2_objt_base)
 
         # Populate MC2 /OBJT/BASE/OBJT
-        mc2_objt_base_objt = Form("OBJT")
+        mc2_objt_base_objt = Objt()
         mc2_objt_base.add_chunk(mc2_objt_base_objt)
 
         # Populate MC2 /OBJT/BASE/OBJT/CLID
@@ -1143,7 +1144,7 @@ class Mc2(Form):
         mc2_objt_base.add_chunk(mc2_objt_base_strc)
 
         # Populate MC2 /OBJT/BASE/KIDS
-        mc2_objt_base_kids = Form("KIDS")
+        mc2_objt_base_kids = Kids()
         mc2_objt_base.add_chunk(mc2_objt_base_kids)
 
         # Populate MC2 /OBJT/BASE/KIDS/OBJT {0,1,2}/BASE/ROOT
@@ -1431,6 +1432,26 @@ class Strc(Chunk):
         raise ValueError("STRC().to_json() Can't get json for unknown STRC!")  # No Test Coverage
 
 
+class Root(Form):
+    def __init__(self, form_type="ROOT", sub_chunks=None):
+        super(Root, self).__init__(form_type, sub_chunks)
+
+
+class Kids(Form):
+    def __init__(self, form_type="KIDS", sub_chunks=None):
+        super(Kids, self).__init__(form_type, sub_chunks)
+
+
+class Objt(Form):
+    def __init__(self, form_type="OBJT", sub_chunks=None):
+        super(Objt, self).__init__(form_type, sub_chunks)
+
+
+class Base(Form):
+    def __init__(self, form_type="BASE", sub_chunks=None):
+        super(Base, self).__init__(form_type, sub_chunks)
+
+
 master_list = {
     "ADE ": Form,
     "ADES": Form,
@@ -1559,8 +1580,8 @@ def compile_set_bas(set_number=1):
         print(vehicle)
         vehicle_form = Form().from_json_file(vehicle)
 
-        for chunk in vehicle_form.sub_chunks:
-            mc2.vehicles.add_chunk(chunk)
+        for sub_chunk in vehicle_form.sub_chunks:
+            mc2.vehicles.add_chunk(sub_chunk)
 
     # TODO Move buildings functions to MC2 object
     buildings = ["set%i/objects/buildings/%s.json" % (set_number, x.replace("base", "bas")) for x in sdf]
@@ -1569,8 +1590,8 @@ def compile_set_bas(set_number=1):
         print(building)
         building_form = Form().from_json_file(building)
 
-        for chunk in building_form.sub_chunks:
-            mc2.buildings.add_chunk(chunk)
+        for sub_chunk in building_form.sub_chunks:
+            mc2.buildings.add_chunk(sub_chunk)
 
     # TODO Move ground functions to MC2 object
     grounds = ["set%i/objects/ground/%s.json" % (set_number, x.replace("base", "bas")) for x in slurps]
@@ -1579,8 +1600,8 @@ def compile_set_bas(set_number=1):
         print(ground)
         ground_form = Form().from_json_file(ground)
 
-        for chunk in ground_form.sub_chunks:
-            mc2.ground.add_chunk(chunk)
+        for sub_chunk in ground_form.sub_chunks:
+            mc2.ground.add_chunk(sub_chunk)
 
     mc2.save_to_file("output/set%i_compiled.bas" % set_number)
 
