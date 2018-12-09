@@ -1579,7 +1579,7 @@ def compile_set_bas(set_number=1):
 
     # TODO Move vehicles functions to MC2 object
     vehicles = ["set%i/objects/vehicles/%s.json" % (set_number, x.replace("base", "bas")) for x in visproto]
-    vehicles.sort()
+    # vehicles.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for vehicle in vehicles:
         print(vehicle)
@@ -1590,7 +1590,7 @@ def compile_set_bas(set_number=1):
 
     # TODO Move buildings functions to MC2 object
     buildings = ["set%i/objects/buildings/%s.json" % (set_number, x.replace("base", "bas")) for x in sdf]
-    buildings.sort()
+    # buildings.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for building in buildings:
         print(building)
@@ -1601,7 +1601,7 @@ def compile_set_bas(set_number=1):
 
     # TODO Move ground functions to MC2 object
     grounds = ["set%i/objects/ground/%s.json" % (set_number, x.replace("base", "bas")) for x in slurps]
-    grounds.sort()
+    # grounds.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for ground in grounds:
         print(ground)
