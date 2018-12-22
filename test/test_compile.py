@@ -227,62 +227,44 @@ class TestForm(unittest.TestCase):
         f = compile.Form("TFRM", [c])
         self.assertEqual(f.size(), len(b'TFRMCHNK\x00\x00\x00\x0fTEST CHUNK DATA\x00'))
 
-    def test_get_all_form_by_type_1(self):
+    def test_get_all_1(self):
         m = compile.Mc2()
         v = compile.Vbmp()
         s = compile.Strc()
         f = compile.Form("SKLT", [m, v, s])
-        self.assertEqual(f.get_all_form_by_type("MC2 "), [m])
-        self.assertEqual(f.get_all_form_by_type("NONE"), [])
+        self.assertEqual(f.get_all("MC2 "), [m])
+        self.assertEqual(f.get_all("NONE"), [])
 
-    def test_get_all_chunks_by_id_1(self):
+    def test_get_all_2(self):
         c1 = compile.Chunk("TEST")
         c2 = compile.Chunk("TEST")
-        c3 = compile.Form("TEST")  # This is a Form() and should not be returned
+        c3 = compile.Form("TEST")
         c4 = compile.Chunk("NEXT")
         c5 = compile.Chunk("TEXT")
         f = compile.Form("ABCD", [c1, c2, c3, c4, c5])
         # https://stackoverflow.com/questions/8866652/determine-if-2-lists-have-the-same-elements-regardless-of-order
         import collections
-        l1 = collections.Counter(f.get_all_chunks_by_id("TEST"))
-        l2 = collections.Counter([c1, c2])
+        l1 = collections.Counter(f.get_all("TEST"))
+        l2 = collections.Counter([c1, c2, c3])
         self.assertEqual(l1, l2)
 
-    def test_get_all_chunks_by_id_2(self):
-        c1 = compile.Chunk("TEST")
-        c2 = compile.Chunk("TEST")
-        c3 = compile.Chunk("NEXT")
-        c4 = compile.Chunk("TEXT")
-        c5 = compile.Form("XYZZ")  # This is a Form() and should not be returned
-        f = compile.Form("ABCD", [c1, c2, c3, c4, c5])
-        l1 = f.get_all_chunks_by_id("XYZZ")
-        self.assertEqual(l1, [])
-
-    def test_get_single_form_by_type_1(self):
+    def test_get_single_1(self):
         c1 = compile.Form("ABC1")
         c2 = compile.Form("ABC2")
         c3 = compile.Form("ABC3")
-        f = compile.Form("TEST", [c1, c2, c3])
-        self.assertEqual(f.get_single_form_by_type("ABCD"), None)
-        self.assertEqual(f.get_single_form_by_type("ABC3"), c3)
+        c4 = compile.Form("ABC3")  # c4 comes after c3 and so it should not get returned
+        f = compile.Form("TEST", [c1, c2, c3, c4])
+        self.assertEqual(f.get_single("ABCD"), None)
+        self.assertEqual(f.get_single("ABC3"), c3)
 
-    def test_get_single_form_by_type_2(self):
-        c = compile.Chunk("ABCD")
-        f = compile.Form("TEST", [c])
-        self.assertEqual(f.get_single_form_by_type("ABCD"), None)
-
-    def test_get_single_chunk_by_id_1(self):
+    def test_get_single_2(self):
         c1 = compile.Chunk("ABC1")
         c2 = compile.Chunk("ABC2")
         c3 = compile.Chunk("ABC3")
-        f = compile.Form("TEST", [c1, c2, c3])
-        self.assertEqual(f.get_single_chunk_by_id("ABCD"), None)
-        self.assertEqual(f.get_single_chunk_by_id("ABC3"), c3)
-
-    def test_get_single_chunk_by_id_2(self):
-        c = compile.Form("ABCD")
-        f = compile.Form("TEST", [c])
-        self.assertEqual(f.get_single_chunk_by_id("ABCD"), None)
+        c4 = compile.Chunk("ABC3")  # c4 comes after c3 and so it should not get returned
+        f = compile.Form("TEST", [c1, c2, c3, c4])
+        self.assertEqual(f.get_single("ABCD"), None)
+        self.assertEqual(f.get_single("ABC3"), c3)
 
     def test_load_from_file_1(self):
         f = compile.Form()

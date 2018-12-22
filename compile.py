@@ -278,55 +278,46 @@ class Form(object):
         """
         return len(self.get_data())
 
-    def get_all_form_by_type(self, form_type, max_count=9999):
+    def get_all(self, ckid, max_count=9999):
         """
-
-        :rtype: list[Form]
-        """
-        ret_chunks = []
-        for child in self.sub_chunks:
-            if isinstance(child, Form):
-                if child.form_type == form_type:
-                    ret_chunks.append(child)
-                if len(ret_chunks) >= max_count:
-                    break
-                ret_chunks.extend(child.get_all_form_by_type(form_type, max_count - len(ret_chunks)))
-        return ret_chunks
-
-    def get_all_chunks_by_id(self, chunk_id, max_count=9999):
-        """
-
-        :rtype: list[Chunk]
+        :rtype: list[Union[Form,Chunk]]
         """
         ret_chunks = []
         for child in self.sub_chunks:
-            if isinstance(child, Chunk) and child.chunk_id == chunk_id:
+            if len(ret_chunks) >= max_count:
+                break
+            if isinstance(child, Chunk) and child.chunk_id == ckid:
                 ret_chunks.append(child)
-                if len(ret_chunks) >= max_count:
-                    break
             if isinstance(child, Form):
-                ret_chunks.extend(child.get_all_chunks_by_id(chunk_id, max_count - len(ret_chunks)))
+                if child.form_type == ckid:
+                    ret_chunks.append(child)
+                ret_chunks.extend(child.get_all(ckid, max_count - len(ret_chunks)))
         return ret_chunks
 
-    def get_single_form_by_type(self, form_type):
+    def get_single(self, ckid):
         """
-
-        :rtype: Form
+        :rtype: Union[Form,Chunk]
         """
-        ret_form = self.get_all_form_by_type(form_type, max_count=1)
+        ret_form = self.get_all(ckid, max_count=1)
         if ret_form:
             return ret_form[0]
         return None
 
-    def get_single_chunk_by_id(self, chunk_id):
-        """
+    def get_all_form_by_type(self, form_type, max_count=9999):
+        print("get_all_form_by_type() is deprecated")
+        return self.get_all(form_type, max_count)
 
-        :rtype: Chunk
-        """
-        ret_chunk = self.get_all_chunks_by_id(chunk_id, max_count=1)
-        if ret_chunk:
-            return ret_chunk[0]
-        return None
+    def get_all_chunks_by_id(self, chunk_id, max_count=9999):
+        print("get_all_chunks_by_id() is deprecated")
+        return self.get_all(chunk_id, max_count)
+
+    def get_single_form_by_type(self, form_type):
+        print("get_single_form_by_type() is deprecated")
+        return self.get_single(form_type)
+
+    def get_single_chunk_by_id(self, chunk_id):
+        print("get_single_chunk_by_id() is deprecated")
+        return self.get_single(chunk_id)
 
     def load_from_file(self, file_name):
         if not os.path.isfile(file_name):

@@ -10,11 +10,11 @@ def decompile_sky():
         form = compile.Form().load_from_file(sky)
 
         embd = compile.Embd()
-        embd.sub_chunks = form.get_single_form_by_type("EMBD").sub_chunks  # HACK
+        embd.sub_chunks = form.get_single("EMBD").sub_chunks  # HACK
 
         embd.extract_resources(sky_dir)
 
-        ades = form.get_single_form_by_type("ADES")
+        ades = form.get_single("ADES")
         if ades:
             with open(os.path.join(sky_dir, "ades.json"), "w") as f:
                 f.write(ades.to_json())
@@ -28,23 +28,24 @@ def compile_sky():
         print(sky)
 
         generic_sky = compile.Form().from_json(generic_sky_json)
-        embd = generic_sky.get_single_form_by_type("EMBD").to_class()  # to_class() makes this a new object. Not part of generic_sky object anymore
-        name = generic_sky.get_single_chunk_by_id("NAME").to_class()  # to_class() makes this a new object. Not part of generic_sky object anymore
+        embd = generic_sky.get_single("EMBD").to_class()  # to_class() makes this a new object. Not part of generic_sky object anymore
+        name = generic_sky.get_single("NAME").to_class()  # to_class() makes this a new object. Not part of generic_sky object anymore
         sky_dir = os.path.basename(sky)
 
-        json_files = glob.glob(os.path.join(sky, "[!ades]*.json"))
+        json_files = glob.glob(os.path.join(sky, "*.sklt.json"))
         bmp_files = glob.glob(os.path.join(sky, "*.bmp"))
         ades_file = os.path.join(sky, "ades.json")
 
         for bmp_file in bmp_files:
             print(bmp_file)
             vbmp = compile.Vbmp().load_from_bmp(bmp_file)
-            embd.add_vbmp(bmp_file, vbmp)
+            embd.add_vbmp(vbmp.file_name, vbmp)
         for json_file in json_files:
             print(json_file)
-            with open(json_file, "rt") as f:
-                sklt = compile.Form().from_json(f.read())
-            embd.add_sklt(json_file, sklt)
+            sklt = compile.Form().from_json_file(json_file)
+
+            resource_name = os.path.splitext(os.path.basename(json_file))[0]
+            embd.add_sklt(resource_name, sklt)
         if os.path.isfile(ades_file):
             print(ades_file)
 
