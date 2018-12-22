@@ -885,6 +885,16 @@ class Olpl(Chunk):
         super(Olpl, self).__init__(chunk_id)
         self.points = []
 
+    def _int_to_float(self, inp):
+        if isinstance(inp, int):
+            return float(inp) / float(255)
+        if isinstance(inp, list):
+            return [self._int_to_float(x) for x in inp]
+        raise ValueError("int_to_float(): Invalid data type")
+
+    def as_floats(self):
+        return self._int_to_float(self.points)
+
     def set_binary_data(self, binary_data):
         offset = 0
         olpl_entries = []
