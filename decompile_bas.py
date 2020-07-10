@@ -36,7 +36,7 @@ def main():
         print("file:", file)
         vbmp = compile.Vbmp()
         vbmp.load_from_ilbm(file)
-        vbmp.save_to_bmp(file + ".ILB.bmp")
+        vbmp.save_to_bmp(file + ".bmp")
 
 
     for file in glob.glob("sky/*.bas", recursive=True):
