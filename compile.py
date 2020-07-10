@@ -1502,7 +1502,7 @@ size_of_unsigned_short = 2
 
 def parse_set_descriptor(set_number=1):
     sdf = []
-    with open(os.path.join("set%i" % set_number, "scripts", "set.sdf"), "rb") as f:
+    with open(os.path.join("set{}".format(set_number), "scripts", "set.sdf"), "rb") as f:
         for line in f:
             if b">" in line:
                 break
@@ -1514,7 +1514,7 @@ def parse_set_descriptor(set_number=1):
 
 def parse_visproto(set_number=1):
     visproto = []
-    with open(os.path.join("set%i" % set_number, "scripts", "visproto.lst"), "rb") as f:
+    with open(os.path.join("set{}".format(set_number), "scripts", "visproto.lst"), "rb") as f:
         for line in f:
             if b">" in line:
                 break
@@ -1526,7 +1526,7 @@ def parse_visproto(set_number=1):
 
 def parse_slurps(set_number=1):
     slurps = []
-    with open(os.path.join("set%i" % set_number, "scripts", "slurps.lst"), "rb") as f:
+    with open(os.path.join("set{}".format(set_number), "scripts", "slurps.lst"), "rb") as f:
         for line in f:
             if b">" in line:
                 break
@@ -1544,7 +1544,7 @@ def compile_set_bas(set_number=1):
 
     embd = mc2.embd
 
-    bitmaps = glob.glob("set%i/*.bmp" % set_number)
+    bitmaps = glob.glob("set{}/*.bmp".format(set_number))
     bitmaps.sort()
 
     # Add bitmaps to Embd
@@ -1555,7 +1555,7 @@ def compile_set_bas(set_number=1):
         embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
 
     # TODO Skeleton functions (in Embd class)
-    skeletons = glob.glob("set%i/Skeleton/*.json" % set_number)
+    skeletons = glob.glob("set{}/Skeleton/*.json".format(set_number))
     skeletons.sort()
 
     # Add skeletons to Embd
@@ -1567,7 +1567,7 @@ def compile_set_bas(set_number=1):
         embd.add_sklt(resource_name, sklt_form)
 
     # TODO Animation functions (in Embd class)
-    animations = glob.glob("set%i/rsrcpool/*.json" % set_number)
+    animations = glob.glob("set{}/rsrcpool/*.json".format(set_number))
     animations.sort()
 
     # Add animations to Embd
@@ -1579,7 +1579,7 @@ def compile_set_bas(set_number=1):
         embd.add_vanm(resource_name, vanm_form)
 
     # TODO Move vehicles functions to MC2 object
-    vehicles = ["set%i/objects/vehicles/%s.json" % (set_number, x.replace("base", "bas")) for x in visproto]
+    vehicles = ["set{}/objects/vehicles/{}.json".format(set_number, x.replace("base", "bas")) for x in visproto]
     # vehicles.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for vehicle in vehicles:
@@ -1590,7 +1590,7 @@ def compile_set_bas(set_number=1):
             mc2.vehicles.add_chunk(sub_chunk)
 
     # TODO Move buildings functions to MC2 object
-    buildings = ["set%i/objects/buildings/%s.json" % (set_number, x.replace("base", "bas")) for x in sdf]
+    buildings = ["set{}/objects/buildings/{}.json".format(set_number, x.replace("base", "bas")) for x in sdf]
     # buildings.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for building in buildings:
@@ -1601,7 +1601,7 @@ def compile_set_bas(set_number=1):
             mc2.buildings.add_chunk(sub_chunk)
 
     # TODO Move ground functions to MC2 object
-    grounds = ["set%i/objects/ground/%s.json" % (set_number, x.replace("base", "bas")) for x in slurps]
+    grounds = ["set{}/objects/ground/{}.json".format(set_number, x.replace("base", "bas")) for x in slurps]
     # grounds.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for ground in grounds:
@@ -1611,7 +1611,7 @@ def compile_set_bas(set_number=1):
         for sub_chunk in ground_form.sub_chunks:
             mc2.ground.add_chunk(sub_chunk)
 
-    mc2.save_to_file("output/set%i_compiled.bas" % set_number)
+    mc2.save_to_file("output/set{}_compiled.bas".format(set_number))
 
 
 def compile_single_files(set_number=1):
@@ -1631,14 +1631,14 @@ def compile_single_files(set_number=1):
 
     # Copy static files
     shutil.copytree(os.getcwd() + "/mc2res", os.getcwd() + "/output/data/mc2res")
-    shutil.copytree(os.getcwd() + "/set%i/hi" % set_number, os.getcwd() + "/output/data/set/hi")
-    shutil.copytree(os.getcwd() + "/set%i/palette" % set_number, os.getcwd() + "/output/data/set/palette")
-    shutil.copytree(os.getcwd() + "/set%i/remap" % set_number, os.getcwd() + "/output/data/set/remap")
-    shutil.copytree(os.getcwd() + "/set%i/scripts" % set_number, os.getcwd() + "/output/data/set/scripts")
-    shutil.copy(os.getcwd() + "/set%i/objects/beebox.bas" % set_number, os.getcwd() + "/output/data/set/objects/beebox.bas")
+    shutil.copytree(os.getcwd() + "/set{}/hi".format(set_number), os.getcwd() + "/output/data/set/hi")
+    shutil.copytree(os.getcwd() + "/set{}/palette".format(set_number), os.getcwd() + "/output/data/set/palette")
+    shutil.copytree(os.getcwd() + "/set{}/remap".format(set_number), os.getcwd() + "/output/data/set/remap")
+    shutil.copytree(os.getcwd() + "/set{}/scripts".format(set_number), os.getcwd() + "/output/data/set/scripts")
+    shutil.copy(os.getcwd() + "/set{}/objects/beebox.bas".format(set_number), os.getcwd() + "/output/data/set/objects/beebox.bas")
 
     # Compile images
-    bitmaps = glob.glob("set%i/*.bmp" % set_number)
+    bitmaps = glob.glob("set{}/*.bmp".format(set_number))
     bitmaps.sort()
 
     for bitmap in bitmaps:
@@ -1648,7 +1648,7 @@ def compile_single_files(set_number=1):
         new_vbmp.save_to_file("output/data/set/" + os.path.splitext(os.path.basename(bitmap))[0])
 
     # Compile animations
-    animations = glob.glob("set%i/rsrcpool/*.json" % set_number)
+    animations = glob.glob("set{}/rsrcpool/*.json".format(set_number))
     animations.sort()
 
     for animation in animations:
@@ -1659,7 +1659,7 @@ def compile_single_files(set_number=1):
         vanm_form.save_to_file("output/data/set/rsrcpool/" + resource_name)
 
     # Compile skeletons
-    skeletons = glob.glob("set%i/Skeleton/*.json" % set_number)
+    skeletons = glob.glob("set{}/Skeleton/*.json".format(set_number))
     skeletons.sort()
 
     for skeleton in skeletons:
@@ -1670,7 +1670,7 @@ def compile_single_files(set_number=1):
         sklt_form.save_to_file("output/data/set/" + resource_name)
 
     # Compile vehicles (Inside MC2 class)
-    vehicles = glob.glob("set%i/objects/vehicles/*.json" % set_number)
+    vehicles = glob.glob("set{}/objects/vehicles/*.json".format(set_number))
     vehicles.sort()
 
     for vehicle in vehicles:
@@ -1681,7 +1681,7 @@ def compile_single_files(set_number=1):
         sklt_form.save_to_file("output/data/set/objects/" + resource_name)
 
     # Compile buildings (Inside MC2 class)
-    buildings = glob.glob("set%i/objects/buildings/*.json" % set_number)
+    buildings = glob.glob("set{}/objects/buildings/*.json".format(set_number))
     buildings.sort()
 
     for building in buildings:
@@ -1692,7 +1692,7 @@ def compile_single_files(set_number=1):
         sklt_form.save_to_file("output/data/set/objects/" + resource_name)
 
     # Compile ground (Inside MC2 class)
-    grounds = glob.glob("set%i/objects/ground/*.json" % set_number)
+    grounds = glob.glob("set{}/objects/ground/*.json".format(set_number))
     grounds.sort()
 
     for ground in grounds:
@@ -1704,7 +1704,7 @@ def compile_single_files(set_number=1):
 
 
 if __name__ == "__main__":
-    set_number = 1
+    set_number = "1"
 
     compile_single_files(set_number)
     compile_set_bas(set_number)
