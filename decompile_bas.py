@@ -34,9 +34,9 @@ def main():
     files = glob.glob("set*/*.ILB", recursive=True)
     for file in files:
         print("file:", file)
-        with open(file, "rb") as f:
-            form = compile.Vbmp().load_from_file(file)
-            form.save_to_bmp(file + ".ILB.bmp")
+        vbmp = compile.Vbmp()
+        vbmp.load_from_ilbm(file)
+        vbmp.save_to_bmp(file + ".ILB.bmp")
 
 
     for file in glob.glob("sky/*.bas", recursive=True):

@@ -957,7 +957,17 @@ class Vbmp(Form):
         self.file_name = "not_used.vbmp"  # TODO USE THIS
 
     def load_from_ilbm(self, file_name):
-        pass
+        form = Form().load_from_file(file_name)
+            
+        new_vbmp_head = Head()
+        new_vbmp_head.set_binary_data(form.sub_chunks[0].get_data())
+        new_vbmp_body = Body()
+        new_vbmp_body.set_binary_data(form.sub_chunks[1].get_data())
+        self.sub_chunks = []
+        self.add_chunk(new_vbmp_head)
+        self.add_chunk(new_vbmp_body)
+        
+        return self
 
     def save_to_ilbm(self, file_name):
         pass
@@ -1007,9 +1017,9 @@ class Vbmp(Form):
 
     def save_to_bmp(self, file_name):
         from PyQt5 import QtGui
-        data = self.get_data()
+        data = self.sub_chunks[1].get_data()
 
-        mirror_horizontal = True
+        mirror_horizontal = False
         mirror_vertical = False
         image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format_Indexed8)
         image = image.mirrored(mirror_horizontal, mirror_vertical)
@@ -1704,7 +1714,7 @@ def compile_single_files(set_number=1):
 
 
 if __name__ == "__main__":
-    set_number = "1"
+    set_number = "1_xp"
 
     compile_single_files(set_number)
     compile_set_bas(set_number)
