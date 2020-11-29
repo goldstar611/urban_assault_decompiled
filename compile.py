@@ -3,6 +3,7 @@ import io
 import logging
 import os
 import shutil
+import sys
 from typing import Union, List
 
 import myjson
@@ -1733,7 +1734,18 @@ def compile_single_files(set_number="1"):
 
 
 if __name__ == "__main__":
-    set_number = "1_xp"
+    if len(sys.argv) > 1:
+        set_number = sys.argv[1]
+    else:
+        set_number = "1_xp"
+
+    # Remove leading "set" if found
+    if set_number.startswith("set"):
+        set_number = set_number[3:]
+
+    # Remove trailing slash if found
+    if set_number.endswith("/") or set_number.endswith("\\"):
+        set_number = set_number[:-1]
 
     compile_single_files(set_number)
     compile_set_bas(set_number)
