@@ -1,11 +1,11 @@
 import base64
 import io
 import logging
-import myjson
 import os
-import struct
+import shutil
+from typing import Union, List
 
-from typing import Union, Tuple, List
+import myjson
 
 color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 4282992969, 4278190081, 4288398800,
                4278203647, 4278190335, 4294901760, 4294945564, 4278245713, 4282795590, 4294967176, 4278225322,
@@ -1510,7 +1510,7 @@ unsigned_short_be = "<H"
 size_of_unsigned_short = 2
 
 
-def parse_set_descriptor(set_number=1):
+def parse_set_descriptor(set_number="1"):
     sdf = []
     with open(os.path.join("set{}".format(set_number), "scripts", "set.sdf"), "rb") as f:
         for line in f:
@@ -1522,7 +1522,7 @@ def parse_set_descriptor(set_number=1):
     return sdf
 
 
-def parse_visproto(set_number=1):
+def parse_visproto(set_number="1"):
     visproto = []
     with open(os.path.join("set{}".format(set_number), "scripts", "visproto.lst"), "rb") as f:
         for line in f:
@@ -1534,7 +1534,7 @@ def parse_visproto(set_number=1):
     return visproto
 
 
-def parse_slurps(set_number=1):
+def parse_slurps(set_number="1"):
     slurps = []
     with open(os.path.join("set{}".format(set_number), "scripts", "slurps.lst"), "rb") as f:
         for line in f:
@@ -1546,7 +1546,7 @@ def parse_slurps(set_number=1):
     return slurps
 
 
-def compile_set_bas(set_number=1):
+def compile_set_bas(set_number="1"):
     sdf = parse_set_descriptor(set_number)
     visproto = parse_visproto(set_number)
     slurps = parse_slurps(set_number)
@@ -1624,8 +1624,12 @@ def compile_set_bas(set_number=1):
     mc2.save_to_file("output/set{}_compiled.bas".format(set_number))
 
 
-def compile_single_files(set_number=1):
-    import shutil
+def compile_bee_box(set_number="1"):
+    bee_box = Mc2().from_json_file(os.getcwd() + "/set{}/objects/beebox.bas.json".format(set_number))
+    bee_box.save_to_file(os.getcwd() + "/output/data/set/objects/beebox.bas")
+
+
+def compile_single_files(set_number="1"):
     # Delete output folder if it exists
     if os.path.exists(os.getcwd() + "/output"):
         shutil.rmtree(os.getcwd() + "/output")
@@ -1645,7 +1649,9 @@ def compile_single_files(set_number=1):
     shutil.copytree(os.getcwd() + "/set{}/palette".format(set_number), os.getcwd() + "/output/data/set/palette")
     shutil.copytree(os.getcwd() + "/set{}/remap".format(set_number), os.getcwd() + "/output/data/set/remap")
     shutil.copytree(os.getcwd() + "/set{}/scripts".format(set_number), os.getcwd() + "/output/data/set/scripts")
-    shutil.copy(os.getcwd() + "/set{}/objects/beebox.bas".format(set_number), os.getcwd() + "/output/data/set/objects/beebox.bas")
+    
+    # Compile beebox scripts
+    compile_bee_box(set_number)
 
     # Compile images
     bitmaps = glob.glob("set{}/*.bmp".format(set_number))
