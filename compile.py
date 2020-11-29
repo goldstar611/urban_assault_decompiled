@@ -1629,6 +1629,13 @@ def compile_bee_box(set_number="1"):
     bee_box.save_to_file(os.getcwd() + "/output/data/set/objects/beebox.bas")
 
 
+def compile_mc2_res():
+    for resource in glob.glob("mc2res/skeleton/*"):
+        s = Form().from_json_file(resource)
+        file_name = resource.replace(".json", "")
+        s.save_to_file("output/data/{}".format(file_name))
+
+
 def compile_single_files(set_number="1"):
     # Delete output folder if it exists
     if os.path.exists(os.getcwd() + "/output"):
@@ -1638,20 +1645,21 @@ def compile_single_files(set_number="1"):
     check_dirs = ["/output/data/set/rsrcpool",
                   "/output/data/set/Skeleton",
                   "/output/data/set/objects",
+                  "/output/data/mc2res/skeleton",
                   ]
     for dirs in check_dirs:
         if not os.path.exists(os.getcwd() + dirs):
             os.makedirs(os.getcwd() + dirs)
 
     # Copy static files
-    shutil.copytree(os.getcwd() + "/mc2res", os.getcwd() + "/output/data/mc2res")
     shutil.copytree(os.getcwd() + "/set{}/hi".format(set_number), os.getcwd() + "/output/data/set/hi")
     shutil.copytree(os.getcwd() + "/set{}/palette".format(set_number), os.getcwd() + "/output/data/set/palette")
     shutil.copytree(os.getcwd() + "/set{}/remap".format(set_number), os.getcwd() + "/output/data/set/remap")
     shutil.copytree(os.getcwd() + "/set{}/scripts".format(set_number), os.getcwd() + "/output/data/set/scripts")
     
-    # Compile beebox scripts
+    # Compile beebox scripts and mc2 resources
     compile_bee_box(set_number)
+    compile_mc2_res()
 
     # Compile images
     bitmaps = glob.glob("set{}/*.bmp".format(set_number))
