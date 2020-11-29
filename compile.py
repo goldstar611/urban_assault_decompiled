@@ -1,13 +1,20 @@
 import base64
+import glob
 import io
 import logging
 import os
 import shutil
+import struct
 import sys
 from typing import Union, List
 
 import myjson
 
+
+unsigned_int_be = "<I"
+size_of_unsigned_int = 4
+unsigned_short_be = "<H"
+size_of_unsigned_short = 2
 color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 4282992969, 4278190081, 4288398800,
                4278203647, 4278190335, 4294901760, 4294945564, 4278245713, 4282795590, 4294967176, 4278225322,
                4278190081, 4294967295, 4289063167, 4285382071, 4284531364, 4284532626, 4288399276, 4284660169,
@@ -131,7 +138,7 @@ class Chunk(object):
 
     def to_class(self):
         if self.chunk_id in master_list:
-            o = master_list[self.chunk_id]()
+            o = master_list[self.chunk_id]()  # type: Chunk
             o.set_binary_data(self.data)
             return o
 
@@ -139,7 +146,7 @@ class Chunk(object):
 
     def to_dict(self):
         if self.chunk_id in master_list:
-            o = master_list[self.chunk_id]()
+            o = master_list[self.chunk_id]()  # type: Chunk
             o.set_binary_data(self.data)
             return o.to_dict()
         # Generic json support for all IFF chunks
@@ -153,7 +160,7 @@ class Chunk(object):
             json_dict = myjson.loads(json_dict)  # No Test Coverage
         self.chunk_id, attributes_dict = json_dict.popitem()
         if self.chunk_id in master_list:
-            o = master_list[self.chunk_id]()
+            o = master_list[self.chunk_id]()  # type: Chunk
         else:
             raise ValueError("Cant call from_json() on unknown Chunk type")  # No Test Coverage
         o.from_json_generic({self.chunk_id: attributes_dict})
@@ -486,7 +493,7 @@ class Data(Chunk):
 
     def set_binary_data(self, binary_data):
         vanm_data = binary_data
-        vanm_data_len = len(vanm_data)
+        # vanm_data_len = len(vanm_data)
 
         idx = 0
         # Handle the source class ID, it's safer than just stepping +13
@@ -557,8 +564,8 @@ class Data(Chunk):
         frame_times = []
         for frame in self.frames:
             poly.append(frame["vbmp_coords"])
-            vbmp_names.append(frame["vbmp_name"])
-            vbmp_names = list(set(vbmp_names))  # HACK
+            if frame["vbmp_name"] not in vbmp_names:
+                vbmp_names.append(frame["vbmp_name"])
             frame_times.append([frame["frame_time"],
                                 vbmp_names.index(frame["vbmp_name"]),
                                 poly.index(frame["vbmp_coords"])])
@@ -736,10 +743,8 @@ class Atts(Chunk):
                            self.noise)
 
     def get_data(self):
-        if self.is_ptcl_atts or hasattr(self, "context_life_time"):  # TODO: REMOVE HACK: After JSON files are updated
-            return self._get_data_particle()
-
         ret = bytes()
+
         for atts in self.atts_entries:
             ret += struct.pack(">hBBBB",
                                atts["poly_id"],
@@ -1046,9 +1051,11 @@ class Embd(Form):
         self.emrs_resources = {}
         for i, sub_chunk in enumerate(self.sub_chunks):
             if i == 0:
+                # noinspection PyUnresolvedReferences
                 if not isinstance(sub_chunk, Form) and sub_chunk.form_type == "ROOT":  # No Test Coverage
                     raise ValueError("Embd().parse_emrs() expects first sub_chunk to be Form() with type ROOT")
             elif i % 2:
+                # noinspection PyUnresolvedReferences
                 emrs_name = sub_chunk.to_class().emrs_name
             else:
                 self.emrs_resources[emrs_name] = sub_chunk
@@ -1092,21 +1099,24 @@ class Embd(Form):
         asset_name = None
         for i, sub_chunk in enumerate(self.sub_chunks):
             if i == 0:
+                # noinspection PyUnresolvedReferences
                 if not isinstance(sub_chunk, Form) and sub_chunk.form_type == "ROOT":
                     raise ValueError("Embd().extract_resources() expects first sub_chunk to be Form() with type ROOT")
             elif i % 2:
                 # EMRS
+                # noinspection PyUnresolvedReferences
                 asset_name = sub_chunk.to_class().emrs_name
             else:
                 # Asset
                 if sub_chunk.form_type == "VBMP":
+                    # noinspection PyUnresolvedReferences
                     sub_chunk.to_class().save_to_bmp(os.path.join(output_location, "%s.bmp" % asset_name))
                 elif sub_chunk.form_type == "SKLT" or sub_chunk.form_type == "VANM":
                     # TODO: Using the base name is not really compatible with MC2 forms which
                     # TODO:   expect the file name to be Skeleton/blah.sklt
                     base_name = os.path.basename(asset_name)
                     with open(os.path.join(output_location, base_name + ".json"), "w") as f:
-                        f.write(sub_chunk.to_dict())
+                        f.write(sub_chunk.to_json())
                 else:
                     raise ValueError("extract_resources() unimplemented for %s", sub_chunk.form_type)
 
@@ -1507,14 +1517,6 @@ master_list = {
     "STRC": Strc,
 }
 
-import glob
-import struct
-
-unsigned_int_be = "<I"
-size_of_unsigned_int = 4
-unsigned_short_be = "<H"
-size_of_unsigned_short = 2
-
 
 def parse_set_descriptor(set_number="1"):
     sdf = []
@@ -1735,17 +1737,17 @@ def compile_single_files(set_number="1"):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        set_number = sys.argv[1]
+        set_num = sys.argv[1]
     else:
-        set_number = "1_xp"
+        set_num = "1_xp"
 
     # Remove leading "set" if found
-    if set_number.startswith("set"):
-        set_number = set_number[3:]
+    if set_num.startswith("set"):
+        set_num = set_num[3:]
 
     # Remove trailing slash if found
-    if set_number.endswith("/") or set_number.endswith("\\"):
-        set_number = set_number[:-1]
+    if set_num.endswith("/") or set_num.endswith("\\"):
+        set_num = set_num[:-1]
 
-    compile_single_files(set_number)
-    compile_set_bas(set_number)
+    compile_single_files(set_num)
+    compile_set_bas(set_num)
