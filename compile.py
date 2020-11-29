@@ -136,13 +136,16 @@ class Chunk(object):
 
         return ValueError("This class cannot be converted")  # No Test Coverage
 
-    def to_json(self):
+    def to_dict(self):
         if self.chunk_id in master_list:
             o = master_list[self.chunk_id]()
             o.set_binary_data(self.data)
-            return myjson.dumps(o.to_json(), indent=1, sort_keys=True)
+            return o.to_dict()
         # Generic json support for all IFF chunks
-        return myjson.dumps({self.chunk_id: {"data": base64.b64encode(self.data).decode("ascii")}})  # No Test Coverage
+        return {self.chunk_id: {"data": base64.b64encode(self.data).decode("ascii")}}  # No Test Coverage
+
+    def to_json(self):
+        return myjson.dumps(self.to_dict(), indent=2, sort_keys=True)
 
     def from_json(self, json_dict):
         if isinstance(json_dict, str):
@@ -237,13 +240,15 @@ class Form(object):
 
         return ValueError("This class cannot be converted")  # No Test Coverage
 
-    def to_json(self):
+    def to_dict(self):
         # Generic json support for all IFF forms
         children = []
         for child in self.sub_chunks:
-            children.append(myjson.loads(child.to_json()))
-        ret_string = {self.form_type: children}
-        return myjson.dumps(ret_string, indent=1, sort_keys=True)
+            children.append(child.to_dict())
+        return {self.form_type: children}
+
+    def to_json(self):
+        return myjson.dumps(self.to_dict(), indent=2, sort_keys=True)
 
     def from_json(self, json_dict):
         # Generic json support for all IFF forms
@@ -391,7 +396,7 @@ class Name(Chunk):
         else:
             return ret
 
-    def to_json(self):
+    def to_dict(self):
         return {self.chunk_id: {"zero_terminated": self.zero_terminated,
                                 "name": self.name
                                 }
@@ -411,7 +416,7 @@ class Clid(Chunk):
     def get_data(self):
         return bytes(self.class_id, "ascii") + b"\x00"
 
-    def to_json(self):
+    def to_dict(self):
         return {self.chunk_id: {"class_id": self.class_id,
                                 }
                 }
@@ -434,7 +439,7 @@ class Emrs(Chunk):
     def get_data(self):
         return bytes(self.class_id, "ascii") + b"\x00" + bytes(self.emrs_name, "ascii") + b"\x00\x00"
 
-    def to_json(self):
+    def to_dict(self):
         return {self.chunk_id: {"class_id": self.class_id,
                                 "emrs_name": self.emrs_name,
                                 }
@@ -570,7 +575,7 @@ class Data(Chunk):
         a = struct.pack(">H", len(class_id)) + bytes(class_id, "ascii") + struct.pack(">H", len(vbmp_names_bytes)) + vbmp_names_bytes + struct.pack(">H", int(len(poly_bytes) / 2)) + poly_bytes + struct.pack(">H", len(frame_times)) + frame_times_bytes
         return a
 
-    def to_json(self):
+    def to_dict(self):
         return {self.chunk_id: {"class_id": self.class_id,
                                 "frames": self.frames,
                                 }
@@ -596,7 +601,7 @@ class Head(Chunk):
         return struct.pack(">HHH",
                            self.width, self.height, self.flags)
 
-    def to_json(self):
+    def to_dict(self):
         return {self.chunk_id: {"width": self.width,
                                 "height": self.height,
                                 "flags": self.flags,
@@ -616,7 +621,7 @@ class Body(Chunk):
     def get_data(self):
         return self.data
 
-    def to_json(self):
+    def to_dict(self):
         return {self.chunk_id: {"data": base64.b64encode(self.get_data()).decode("ascii")}}
 
     def from_json_generic(self, json_string):
@@ -777,7 +782,7 @@ class Atts(Chunk):
                                 }
                 }
 
-    def to_json(self):
+    def to_dict(self):
         if self.is_ptcl_atts:
             return self._to_json_particle()
 
@@ -819,7 +824,7 @@ class Poo2(Chunk):
 
         return ret
 
-    def to_json(self):
+    def to_dict(self):
         return {self.chunk_id: {"points": self.points,
                                 }
                 }
@@ -864,7 +869,7 @@ class Pol2(Chunk):
 
         return ret
 
-    def to_json(self):
+    def to_dict(self):
         return {self.chunk_id: {"edges": self.edges,
                                 }
                 }
@@ -914,7 +919,7 @@ class Olpl(Chunk):
 
         return ret
 
-    def to_json(self):
+    def to_dict(self):
         return {self.chunk_id: {"points": self.points,
                                 }
                 }
@@ -945,7 +950,7 @@ class Otl2(Chunk):
 
         return ret
 
-    def to_json(self):
+    def to_dict(self):
         return {self.chunk_id: {"points": self.points,
                                 }
                 }
@@ -1100,7 +1105,7 @@ class Embd(Form):
                     # TODO:   expect the file name to be Skeleton/blah.sklt
                     base_name = os.path.basename(asset_name)
                     with open(os.path.join(output_location, base_name + ".json"), "w") as f:
-                        f.write(sub_chunk.to_json())
+                        f.write(sub_chunk.to_dict())
                 else:
                     raise ValueError("extract_resources() unimplemented for %s", sub_chunk.form_type)
 
@@ -1395,7 +1400,7 @@ class Strc(Chunk):
                            self.offset,
                            self.anim_type) + bytes(self.anim_name, "ascii") + b"\x00"
 
-    def to_json(self):
+    def to_dict(self):
         if self.strc_type == Strc.STRC_BASE:
             return {self.chunk_id: {"strc_type": self.strc_type,
                                     "version": self.version,
@@ -1444,7 +1449,7 @@ class Strc(Chunk):
                                     }
                     }
 
-        raise ValueError("STRC().to_json() Can't get json for unknown STRC!")  # No Test Coverage
+        raise ValueError("STRC().to_dict() Can't get json for unknown STRC!")  # No Test Coverage
 
 
 class Root(Form):

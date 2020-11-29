@@ -99,9 +99,12 @@ class TestChunk(unittest.TestCase):
         c = compile.Chunk()
         c.chunk_id = "NAME"
         c.data = b"TEST\x00"
-        j = c.to_json()
-        self.assertTrue('"name": "TEST"' in j)
-        self.assertTrue('"zero_terminated": true' in j)
+        j = c.to_dict()
+        self.assertTrue("name" in j["NAME"])
+        self.assertEqual(j["NAME"]["name"], "TEST")
+        self.assertTrue("zero_terminated" in j["NAME"])
+        self.assertTrue(j["NAME"]["zero_terminated"])
+
 
     # TODO from_json
     # TODO from_json_generic
@@ -113,7 +116,7 @@ class TestChunk(unittest.TestCase):
             c = compile.Chunk().load_from_file(chunk)
             cl = c.to_class()
             fd = cl.full_data()
-            j = cl.to_json()
+            j = cl.to_dict()
             if c.chunk_id != "DATA":
                 # DATA is a special case because we are free to order the ILBM references in any order
                 self.assertEqual(c.full_data(), cl.full_data())
@@ -125,7 +128,7 @@ class TestChunk(unittest.TestCase):
             c = compile.Form().load_from_file(chunk)
             cl = c.to_class()
             fd = cl.full_data()
-            j = cl.to_json()
+            j = cl.to_dict()
             self.assertEqual(c.full_data(), cl.full_data())
 
 
@@ -215,9 +218,8 @@ class TestForm(unittest.TestCase):
         c = compile.Chunk("NAME")
         c.data = b"this_is_name\x00"
         f = compile.Form("TFRM", [c])
-        j = f.to_json()
-        j_mod = j.replace("\n", "").replace(" ", "")
-        self.assertEqual(j_mod, '{"TFRM":[{"NAME":{"name":"this_is_name","zero_terminated":true}}]}')
+        j = f.to_dict()
+        self.assertDictEqual(j, {"TFRM":[{"NAME":{"name":"this_is_name","zero_terminated":True}}]})
 
     # TODO from_json x4
 
