@@ -1671,7 +1671,6 @@ def compile_single_files(set_number="1"):
         shutil.copytree(src.format(set_number, static_asset),
                         dst.format(static_asset))
 
-    
     # Compile beebox scripts and mc2 resources
     compile_bee_box(set_number)
     compile_mc2_res()
