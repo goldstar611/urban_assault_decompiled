@@ -15,13 +15,10 @@
 * Use GIMP to edit the BMP files. Choose File -> Overwrite *.bmp option. Make sure the output file size is still 66,614 bytes.
 
 ### Notes:
-* I dont think beebox.json gets compiled back into beebox.bas
 * Single load mode is when UA trys to load each model from its own file.
 * Single load compilation can be enabled if you uncomment "# compile_single_files(set_number)" in compile.py
 * Slurps is another name for the list of ground skeletons/wireframes/objects
 
 
 ### Things to change:
-* I have a lot of hard coded paths that use forward slash which is not compatible with Windows
-* Cygwin lets programs use forward slashes so it might work using Cygwin
-* The Windows 10 Subsystem for Linux might also let the script work
+* The Windows 10 Subsystem for Linux might let the script work on Windows
