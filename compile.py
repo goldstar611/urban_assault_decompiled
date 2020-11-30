@@ -1510,7 +1510,8 @@ master_list = {
 
 def parse_set_descriptor(set_number="1"):
     sdf = []
-    with open(os.path.join("set{}".format(set_number), "scripts", "set.sdf"), "rb") as f:
+    path = os.path.join("assets", "sets", "set{}", "scripts", "set.sdf")
+    with open(path.format(set_number), "rb") as f:
         for line in f:
             if b">" in line:
                 break
@@ -1522,7 +1523,8 @@ def parse_set_descriptor(set_number="1"):
 
 def parse_visproto(set_number="1"):
     visproto = []
-    with open(os.path.join("set{}".format(set_number), "scripts", "visproto.lst"), "rb") as f:
+    path = os.path.join("assets", "sets", "set{}", "scripts", "visproto.lst")
+    with open(path.format(set_number), "rb") as f:
         for line in f:
             if b">" in line:
                 break
@@ -1534,7 +1536,8 @@ def parse_visproto(set_number="1"):
 
 def parse_slurps(set_number="1"):
     slurps = []
-    with open(os.path.join("set{}".format(set_number), "scripts", "slurps.lst"), "rb") as f:
+    path = os.path.join("assets", "sets", "set{}", "scripts", "slurps.lst")
+    with open(path.format(set_number), "rb") as f:
         for line in f:
             if b">" in line:
                 break
@@ -1552,7 +1555,8 @@ def compile_set_bas(set_number="1"):
 
     embd = mc2.embd
 
-    bitmaps = glob.glob("set{}/*.*".format(set_number))
+    path = os.path.join("assets", "sets", "set{}", "*.*")
+    bitmaps = glob.glob(path.format(set_number))
     bitmaps.sort()
 
     # Add bitmaps to Embd
@@ -1563,7 +1567,8 @@ def compile_set_bas(set_number="1"):
         embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
 
     # TODO Skeleton functions (in Embd class)
-    skeletons = glob.glob("set{}/Skeleton/*.json".format(set_number))
+    path = os.path.join("assets", "sets", "set{}", "Skeleton", "*.json")
+    skeletons = glob.glob(path.format(set_number))
     skeletons.sort()
 
     # Add skeletons to Embd
@@ -1575,7 +1580,8 @@ def compile_set_bas(set_number="1"):
         embd.add_sklt(resource_name, sklt_form)
 
     # TODO Animation functions (in Embd class)
-    animations = glob.glob("set{}/rsrcpool/*.json".format(set_number))
+    path = os.path.join("assets", "sets", "set{}", "rsrcpool", "*.json")
+    animations = glob.glob(path.format(set_number))
     animations.sort()
 
     # Add animations to Embd
@@ -1587,7 +1593,8 @@ def compile_set_bas(set_number="1"):
         embd.add_vanm(resource_name, vanm_form)
 
     # TODO Move vehicles functions to MC2 object
-    vehicles = ["set{}/objects/vehicles/{}.json".format(set_number, x.replace("base", "bas")) for x in visproto]
+    path = os.path.join("assets", "sets", "set{}", "objects", "vehicles", "{}.json")
+    vehicles = [path.format(set_number, x.replace("base", "bas")) for x in visproto]
     # vehicles.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for vehicle in vehicles:
@@ -1598,7 +1605,8 @@ def compile_set_bas(set_number="1"):
             mc2.vehicles.add_chunk(sub_chunk)
 
     # TODO Move buildings functions to MC2 object
-    buildings = ["set{}/objects/buildings/{}.json".format(set_number, x.replace("base", "bas")) for x in sdf]
+    path = os.path.join("assets", "sets", "set{}", "objects", "buildings", "{}.json")
+    buildings = [path.format(set_number, x.replace("base", "bas")) for x in sdf]
     # buildings.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for building in buildings:
@@ -1609,7 +1617,8 @@ def compile_set_bas(set_number="1"):
             mc2.buildings.add_chunk(sub_chunk)
 
     # TODO Move ground functions to MC2 object
-    grounds = ["set{}/objects/ground/{}.json".format(set_number, x.replace("base", "bas")) for x in slurps]
+    path = os.path.join("assets", "sets", "set{}", "objects", "ground", "{}.json")
+    grounds = [path.format(set_number, x.replace("base", "bas")) for x in slurps]
     # grounds.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for ground in grounds:
@@ -1619,58 +1628,69 @@ def compile_set_bas(set_number="1"):
         for sub_chunk in ground_form.sub_chunks:
             mc2.ground.add_chunk(sub_chunk)
 
-    mc2.save_to_file("output/set{}_compiled.bas".format(set_number))
+    path = os.path.join("output", "set{}_compiled.bas")
+    mc2.save_to_file(path.format(set_number))
 
 
 def compile_bee_box(set_number="1"):
-    bee_box = Mc2().from_json_file(os.getcwd() + "/set{}/objects/beebox.bas.json".format(set_number))
-    bee_box.save_to_file(os.getcwd() + "/output/data/set/objects/beebox.bas")
+    path = os.path.join("assets", "sets", "set{}", "objects", "beebox.bas.json")
+    bee_box = Mc2().from_json_file(path.format(set_number))
+    
+    path = os.path.join("output", "data", "set", "objects", "beebox.bas")
+    bee_box.save_to_file(path)
 
 
 def compile_mc2_res():
-    for resource in glob.glob("mc2res/skeleton/*"):
+    path = os.path.join("assets", "mc2res", "skeleton", "*")
+    for resource in glob.glob(path):
         s = Form().from_json_file(resource)
-        file_name = resource.replace(".json", "")
-        s.save_to_file("output/data/{}".format(file_name))
+        file_name = os.path.basename(resource.replace(".json", ""))
+        path = os.path.join("output", "data", "mc2res", "skeleton", "{}")
+        s.save_to_file(path.format(file_name))
 
 
 def compile_single_files(set_number="1"):
     # Delete output folder if it exists
-    if os.path.exists(os.getcwd() + "/output"):
-        shutil.rmtree(os.getcwd() + "/output")
+    if os.path.exists("output"):
+        shutil.rmtree("output")
 
     # Create necessary folders that have not been created yet
-    check_dirs = ["/output/data/set/rsrcpool",
-                  "/output/data/set/Skeleton",
-                  "/output/data/set/objects",
-                  "/output/data/mc2res/skeleton",
+    check_dirs = [os.path.join("output", "data", "set", "rsrcpool"),
+                  os.path.join("output", "data", "set", "Skeleton"),
+                  os.path.join("output", "data", "set", "objects"),
+                  os.path.join("output", "data", "mc2res", "skeleton"),
                   ]
     for dirs in check_dirs:
-        if not os.path.exists(os.getcwd() + dirs):
-            os.makedirs(os.getcwd() + dirs)
+        if not os.path.exists(dirs):
+            os.makedirs(dirs)
 
     # Copy static files
-    shutil.copytree(os.getcwd() + "/set{}/hi".format(set_number), os.getcwd() + "/output/data/set/hi")
-    shutil.copytree(os.getcwd() + "/set{}/palette".format(set_number), os.getcwd() + "/output/data/set/palette")
-    shutil.copytree(os.getcwd() + "/set{}/remap".format(set_number), os.getcwd() + "/output/data/set/remap")
-    shutil.copytree(os.getcwd() + "/set{}/scripts".format(set_number), os.getcwd() + "/output/data/set/scripts")
+    for static_asset in ["hi", "palette", "remap", "scripts"]:
+        src = os.path.join("assets", "sets", "set{}", "{}")
+        dst = os.path.join("output", "data", "set", "{}")
+        shutil.copytree(src.format(set_number, static_asset),
+                        dst.format(static_asset))
+
     
     # Compile beebox scripts and mc2 resources
     compile_bee_box(set_number)
     compile_mc2_res()
 
     # Compile images
-    bitmaps = glob.glob("set{}/*.*".format(set_number))
+    path = os.path.join("assets", "sets", "set{}", "*.*")
+    bitmaps = glob.glob(path.format(set_number))
     bitmaps.sort()
 
     for bitmap in bitmaps:
         print(bitmap)
 
         new_vbmp = Vbmp().load_image(bitmap)
-        new_vbmp.save_to_file("output/data/set/" + os.path.splitext(os.path.basename(bitmap))[0])
+        path = os.path.join("output", "data", "set", "{}")
+        new_vbmp.save_to_file(path.format(os.path.splitext(os.path.basename(bitmap))[0]))
 
     # Compile animations
-    animations = glob.glob("set{}/rsrcpool/*.json".format(set_number))
+    path = os.path.join("assets", "sets", "set{}", "rsrcpool", "*.json")
+    animations = glob.glob(path.format(set_number))
     animations.sort()
 
     for animation in animations:
@@ -1678,21 +1698,24 @@ def compile_single_files(set_number="1"):
         resource_name = os.path.splitext(os.path.basename(animation))[0]
 
         vanm_form = Form().from_json_file(animation)
-        vanm_form.save_to_file("output/data/set/rsrcpool/" + resource_name)
+        path = os.path.join("output", "data", "set", "rsrcpool", "{}")
+        vanm_form.save_to_file(path.format(resource_name))
 
     # Compile skeletons
-    skeletons = glob.glob("set{}/Skeleton/*.json".format(set_number))
+    path = os.path.join("set{}", "Skeleton", "*.json")
+    skeletons = glob.glob(path.format(set_number))
     skeletons.sort()
 
     for skeleton in skeletons:
         print(skeleton)
-        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0]
 
         sklt_form = Form().from_json_file(skeleton)
-        sklt_form.save_to_file("output/data/set/" + resource_name)
+        path = os.path.join("output", "data", "set", "Skeleton", "{}")
+        sklt_form.save_to_file(path.format(os.path.splitext(os.path.basename(skeleton))[0]))
 
     # Compile vehicles (Inside MC2 class)
-    vehicles = glob.glob("set{}/objects/vehicles/*.json".format(set_number))
+    path = os.path.join("set{}", "objects", "vehicles", "*.json")
+    vehicles = glob.glob(path.format(set_number))
     vehicles.sort()
 
     for vehicle in vehicles:
@@ -1700,10 +1723,12 @@ def compile_single_files(set_number="1"):
         resource_name = os.path.splitext(os.path.basename(vehicle))[0]
 
         sklt_form = Form().from_json_file(vehicle)
-        sklt_form.save_to_file("output/data/set/objects/" + resource_name)
+        path = os.path.join("output", "data", "set", "objects")
+        sklt_form.save_to_file(path.format(resource_name))
 
     # Compile buildings (Inside MC2 class)
-    buildings = glob.glob("set{}/objects/buildings/*.json".format(set_number))
+    path = os.path.join("set{}", "objects", "buildings", "*.json")
+    buildings = glob.glob(path.format(set_number))
     buildings.sort()
 
     for building in buildings:
@@ -1711,10 +1736,12 @@ def compile_single_files(set_number="1"):
         resource_name = os.path.splitext(os.path.basename(building))[0]
 
         sklt_form = Form().from_json_file(building)
-        sklt_form.save_to_file("output/data/set/objects/" + resource_name)
+        path = os.path.join("output", "data", "set", "objects")
+        sklt_form.save_to_file(path.format(resource_name))
 
     # Compile ground (Inside MC2 class)
-    grounds = glob.glob("set{}/objects/ground/*.json".format(set_number))
+    path = os.path.join("set{}", "objects", "ground", "*.json")
+    grounds = glob.glob(path.format(set_number))
     grounds.sort()
 
     for ground in grounds:
@@ -1722,7 +1749,8 @@ def compile_single_files(set_number="1"):
         resource_name = os.path.splitext(os.path.basename(ground))[0]
 
         sklt_form = Form().from_json_file(ground)
-        sklt_form.save_to_file("output/data/set/objects/" + resource_name)
+        path = os.path.join("output", "data", "set", "objects")
+        sklt_form.save_to_file(path.format(resource_name))
 
 
 if __name__ == "__main__":

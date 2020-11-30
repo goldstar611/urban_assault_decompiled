@@ -38,7 +38,7 @@ def compile_sky():
 
         for bmp_file in bmp_files:
             print(bmp_file)
-            vbmp = compile.Vbmp().load_from_bmp(bmp_file)
+            vbmp = compile.Vbmp().load_image(bmp_file)
             embd.add_vbmp(vbmp.file_name, vbmp)
         for json_file in json_files:
             print(json_file)
