@@ -987,10 +987,17 @@ class Vbmp(Form):
     def save_to_ilbm(self, file_name):
         pass
 
-    def load_from_bmp(self, file_name):
+    def load_image(self, file_name):
         image = QtGui.QImage(file_name)
-        image.setColorTable(color_table)
-        image = image.convertToFormat(QtGui.QImage.Format_Indexed8)
+        if image.format() == QtGui.QImage.Format_Invalid:
+            print("WARNING: Not loading invalid image file: {}".format(file_name))
+            return self
+
+        if image.height() != 256 or image.width() != 256:
+            print("WARNING: The file {} has a height that is not 256x256!".format(file_name))
+            image = image.smoothScaled(256, 256)
+
+        image = image.convertToFormat(QtGui.QImage.Format_Indexed8, color_table)
 
         ptr_image_data = image.bits()
         ptr_image_data.setsize(image.byteCount())
@@ -1011,7 +1018,6 @@ class Vbmp(Form):
         return self
 
     def save_to_bmp(self, file_name):
-        from PyQt5 import QtGui
         data = self.sub_chunks[1].get_data()
 
         mirror_horizontal = False
@@ -1546,14 +1552,14 @@ def compile_set_bas(set_number="1"):
 
     embd = mc2.embd
 
-    bitmaps = glob.glob("set{}/*.bmp".format(set_number))
+    bitmaps = glob.glob("set{}/*.*".format(set_number))
     bitmaps.sort()
 
     # Add bitmaps to Embd
     for bitmap in bitmaps:
         print(bitmap)
 
-        new_vbmp = Vbmp().load_from_bmp(bitmap)
+        new_vbmp = Vbmp().load_image(bitmap)
         embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
 
     # TODO Skeleton functions (in Embd class)
@@ -1654,13 +1660,13 @@ def compile_single_files(set_number="1"):
     compile_mc2_res()
 
     # Compile images
-    bitmaps = glob.glob("set{}/*.bmp".format(set_number))
+    bitmaps = glob.glob("set{}/*.*".format(set_number))
     bitmaps.sort()
 
     for bitmap in bitmaps:
         print(bitmap)
 
-        new_vbmp = Vbmp().load_from_bmp(bitmap)
+        new_vbmp = Vbmp().load_image(bitmap)
         new_vbmp.save_to_file("output/data/set/" + os.path.splitext(os.path.basename(bitmap))[0])
 
     # Compile animations
