@@ -645,7 +645,7 @@ class Body(Chunk):
 class Atts(Chunk):
     def __init__(self, chunk_id="ATTS"):
         super(Atts, self).__init__(chunk_id)
-        self.is_ptcl_atts = False
+        self.is_particle_atts = False
         self.atts_entries = []
 
     @staticmethod
@@ -658,7 +658,7 @@ class Atts(Chunk):
                 }
 
     def _set_binary_data_particle(self, binary_data):
-        self.is_ptcl_atts = True
+        self.is_particle_atts = True
         (version,
          accel_start_x, accel_start_y, accel_start_z,
          accel_end_x, accel_end_y, accel_end_z,
@@ -706,7 +706,7 @@ class Atts(Chunk):
                           "Length of binary data was not a multiple of 6! "  # No Test Coverage
                           "Size: %i" % len(binary_data))
 
-        self.is_ptcl_atts = False
+        self.is_particle_atts = False
         poly_cnt = int(len(binary_data) / 6)
         atts_entries = []
 
@@ -744,7 +744,7 @@ class Atts(Chunk):
                            self.noise)
 
     def get_data(self):
-        if self.is_ptcl_atts or hasattr(self, "context_life_time"):  # TODO: REMOVE HACK: After JSON files are updated
+        if self.is_particle_atts:
             return self._get_data_particle()
 
         ret = bytes()
@@ -758,7 +758,7 @@ class Atts(Chunk):
         return ret
 
     def _to_json_particle(self):
-        return {self.chunk_id: {"is_particle_atts": self.is_ptcl_atts,
+        return {self.chunk_id: {"is_particle_atts": self.is_particle_atts,
                                 "version": self.version,
                                 "accel_start_x": self.accel_start_x,
                                 "accel_start_y": self.accel_start_y,
@@ -787,13 +787,13 @@ class Atts(Chunk):
                 }
 
     def _to_json_generic(self):
-        return {self.chunk_id: {"is_particle_atts": self.is_ptcl_atts,
+        return {self.chunk_id: {"is_particle_atts": self.is_particle_atts,
                                 "atts_entries": self.atts_entries,
                                 }
                 }
 
     def to_dict(self):
-        if self.is_ptcl_atts:
+        if self.is_particle_atts:
             return self._to_json_particle()
 
         return self._to_json_generic()
