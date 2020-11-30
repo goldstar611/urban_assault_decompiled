@@ -12,7 +12,7 @@ def main():
             with open(file + ".json", "w") as o:
                 o.write(form.to_json())
 
-
+    #
     files = glob.glob("set*/**/*.skl", recursive=True)
     for file in files:
         print("file:", file)
@@ -21,7 +21,7 @@ def main():
             with open(file + ".json", "w") as o:
                 o.write(form.to_json())
 
-
+    #
     files = glob.glob("set*/**/*.ANM", recursive=True)
     for file in files:
         print("file:", file)
@@ -30,7 +30,7 @@ def main():
             with open(file + ".json", "w") as o:
                 o.write(form.to_json())
 
-
+    #
     files = glob.glob("set*/*.ILB", recursive=True)
     for file in files:
         print("file:", file)
@@ -38,7 +38,7 @@ def main():
         vbmp.load_from_ilbm(file)
         vbmp.save_to_bmp(file + ".bmp")
 
-
+    #
     for file in glob.glob("sky/*.bas", recursive=True):
         # Extract EMBD Resources
         bas_file = compile.Mc2().load_from_file(file)
