@@ -8,8 +8,9 @@ import struct
 import sys
 from typing import Union, List
 
-import myjson
+from PyQt5 import QtGui
 
+import myjson
 
 unsigned_int_be = "<I"
 size_of_unsigned_int = 4
@@ -743,6 +744,9 @@ class Atts(Chunk):
                            self.noise)
 
     def get_data(self):
+        if self.is_ptcl_atts or hasattr(self, "context_life_time"):  # TODO: REMOVE HACK: After JSON files are updated
+            return self._get_data_particle()
+
         ret = bytes()
 
         for atts in self.atts_entries:
@@ -984,30 +988,10 @@ class Vbmp(Form):
         pass
 
     def load_from_bmp(self, file_name):
-        with open(file_name, "rb") as f:
-            f.seek(10)
-            data_offset = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
+        image = QtGui.QImage(file_name)
+        image.setColorTable(color_table)
+        image = image.convertToFormat(QtGui.QImage.Format_Indexed8)
 
-            f.seek(18)
-            width = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
-            height = struct.unpack(unsigned_int_be, f.read(size_of_unsigned_int))[0]
-
-            f.seek(28)
-            bpp = struct.unpack(unsigned_short_be, f.read(size_of_unsigned_short))[0]
-
-            if bpp != 8 or width != 256 or height != 256:
-                print("ERROR: Bitmap must be 256x256 and using an indexed 8bit color map!\n"  # No Test Coverage
-                      "Image was: %sw*%sh*%sb" % (str(width), str(height), str(bpp)))
-                raise ValueError("Selected bitmap was not in the correct format.")
-
-            f.seek(data_offset)
-            bitmap_data = f.read(65536)
-
-        from PyQt5 import QtGui
-        mirror_horizontal = False
-        mirror_vertical = True
-        image = QtGui.QImage(bitmap_data, width, height, QtGui.QImage.Format_Indexed8)
-        image = image.mirrored(mirror_horizontal, mirror_vertical)
         ptr_image_data = image.bits()
         ptr_image_data.setsize(image.byteCount())
         bitmap_data = ptr_image_data.asstring()
@@ -1739,7 +1723,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         set_num = sys.argv[1]
     else:
-        set_num = "1_xp"
+        set_num = "1"
 
     # Remove leading "set" if found
     if set_num.startswith("set"):
