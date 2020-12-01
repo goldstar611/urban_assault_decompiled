@@ -257,13 +257,13 @@ class Mesh(object):
             if bytes(sklt_name, "ascii") in chunk.get_data():
                 print("Found ", sklt_name, "in embd")
                 sklt = embd_form.sub_chunks[i + 1]
-                sklt_poo2_data = sklt.get_single_chunk_by_id("POO2").get_data()
+                sklt_poo2_data = sklt.get_single("POO2").get_data()
                 poo2 = compile.Poo2()
                 poo2.set_binary_data(sklt_poo2_data)
                 vertices = poo2.points_as_list()
                 self.vertices = vertices
 
-                sklt_pol2_data = sklt.get_single_chunk_by_id("POL2").get_data()
+                sklt_pol2_data = sklt.get_single("POL2").get_data()
                 pol2 = compile.Pol2()
                 pol2.set_binary_data(sklt_pol2_data)
                 edges = pol2.edges
@@ -279,13 +279,13 @@ class Mesh(object):
 
         sklt = compile.Form().load_from_file(file_path)
 
-        sklt_poo2_data = sklt.get_single_chunk_by_id("POO2").get_data()
+        sklt_poo2_data = sklt.get_single("POO2").get_data()
         poo2 = compile.Poo2()
         poo2.set_binary_data(sklt_poo2_data)
         vertices = poo2.points_as_list()
         self.vertices = vertices
 
-        sklt_pol2_data = sklt.get_single_chunk_by_id("POL2").get_data()
+        sklt_pol2_data = sklt.get_single("POL2").get_data()
         pol2 = compile.Pol2()
         pol2.set_binary_data(sklt_pol2_data)
         edges = pol2.edges
@@ -1037,8 +1037,8 @@ class Example(QtWidgets.QMainWindow):
 
         if current_item and current_item.form_type() == "SKLT":
             self.GLWidget.show()
-            vertices = current_item.get_form().get_single_chunk_by_id("POO2")
-            edges = current_item.get_form().get_single_chunk_by_id("POL2")
+            vertices = current_item.get_form().get_single("POO2")
+            edges = current_item.get_form().get_single("POL2")
 
             poo2_list = []
             pol2_list = []
@@ -1065,16 +1065,16 @@ class Example(QtWidgets.QMainWindow):
 
             print(poo2_list, pol2_list)
 
-        if current_item and current_item.form_type() == "OBJT" and not current_item.get_form().get_single_form_by_type("KIDS"):
+        if current_item and current_item.form_type() == "OBJT" and not current_item.get_form().get_single("KIDS"):
 
-            amshes = current_item.get_form().get_all_form_by_type("AMSH")
-            sklc = current_item.get_form().get_single_form_by_type("SKLC")
+            amshes = current_item.get_form().get_all("AMSH")
+            sklc = current_item.get_form().get_single("SKLC")
             if amshes and sklc:
                 for amsh in amshes:
-                    sklc_name = sklc.get_single_chunk_by_id("NAME")
-                    atts = amsh.get_single_chunk_by_id("ATTS")
-                    olpl = amsh.get_single_chunk_by_id("OLPL")
-                    nam2 = amsh.get_single_chunk_by_id("NAM2")
+                    sklc_name = sklc.get_single("NAME")
+                    atts = amsh.get_single("ATTS")
+                    olpl = amsh.get_single("OLPL")
+                    nam2 = amsh.get_single("NAM2")
 
                     if sklc_name and nam2 and atts and olpl:
                         self.GLWidget.show()
@@ -1085,7 +1085,7 @@ class Example(QtWidgets.QMainWindow):
                         nam2_data = nam2.get_data()
 
                         top_level = self.treeWidget.topLevelItem(0)  # type: MyQTreeWidgetItem
-                        embd = top_level.get_form().get_single_form_by_type("EMBD")
+                        embd = top_level.get_form().get_single("EMBD")
 
                         temp_name = compile.Name()
                         temp_name.set_binary_data(sklc_name_data)

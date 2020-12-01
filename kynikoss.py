@@ -7,11 +7,11 @@ sky_file = compile.Mc2().load_from_file(os.path.join("sky", "haamitt1.bas"))
 print(sky_file.to_json())
 image_dir = os.path.join("sky", "haamitt1")
 
-cibo_forms = sky_file.get_all_form_by_type("CIBO")
+cibo_forms = sky_file.get_all("CIBO")
 
 for cibo_form in cibo_forms:
-    image_filename = cibo_form.get_single_chunk_by_id("NAM2").conversion_class.name
-    otl2_points = cibo_form.get_single_chunk_by_id("OTL2").conversion_class.points
+    image_filename = cibo_form.get_single("NAM2").conversion_class.name
+    otl2_points = cibo_form.get_single("OTL2").conversion_class.points
     print(image_filename, otl2_points)
 
     image = QtGui.QImage(os.path.join(image_dir, image_filename + ".bmp"))

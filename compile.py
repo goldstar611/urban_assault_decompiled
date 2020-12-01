@@ -12,6 +12,8 @@ from PyQt5 import QtGui
 
 import myjson
 
+logging.basicConfig(level=logging.INFO)
+
 unsigned_int_be = "<I"
 size_of_unsigned_int = 4
 unsigned_short_be = "<H"
@@ -317,22 +319,6 @@ class Form(object):
             return ret_form[0]
         return None
 
-    def get_all_form_by_type(self, form_type, max_count=9999):
-        print("get_all_form_by_type() is deprecated")
-        return self.get_all(form_type, max_count)
-
-    def get_all_chunks_by_id(self, chunk_id, max_count=9999):
-        print("get_all_chunks_by_id() is deprecated")
-        return self.get_all(chunk_id, max_count)
-
-    def get_single_form_by_type(self, form_type):
-        print("get_single_form_by_type() is deprecated")
-        return self.get_single(form_type)
-
-    def get_single_chunk_by_id(self, chunk_id):
-        print("get_single_chunk_by_id() is deprecated")
-        return self.get_single(chunk_id)
-
     def load_from_file(self, file_name):
         if not os.path.isfile(file_name):
             raise FileNotFoundError("The specified file could not be found: %s" % file_name)
@@ -363,7 +349,7 @@ class Form(object):
                 form_size = struct.unpack(">I", bas_data.read(4))[0] - 4
                 form_type = bytes(bas_data.read(4)).decode()
                 form_data_stream = io.BytesIO(bas_data.read(form_size))
-                # print("Found Form", form_type, form_size)
+                logging.debug("Found Form", form_type, form_size)
                 ret_chunks.append(Form(form_type=form_type, sub_chunks=self.parse_stream(form_data_stream)))
                 continue
 
@@ -373,7 +359,7 @@ class Form(object):
                 chunk_data = bas_data.read(chunk_size)
                 if chunk_size % 2:
                     bas_data.read(1)  # Discard pad byte
-                # print("Found Chunk", chunk_id, chunk_size)
+                logging.debug("Found Chunk", chunk_id, chunk_size)
                 c = Chunk(chunk_id)
                 c.set_binary_data(chunk_data)
                 ret_chunks.append(c)
@@ -973,7 +959,7 @@ class Vbmp(Form):
 
     def load_from_ilbm(self, file_name):
         form = Form().load_from_file(file_name)
-            
+
         new_vbmp_head = Head()
         new_vbmp_head.set_binary_data(form.sub_chunks[0].get_data())
         new_vbmp_body = Body()
@@ -981,7 +967,7 @@ class Vbmp(Form):
         self.sub_chunks = []
         self.add_chunk(new_vbmp_head)
         self.add_chunk(new_vbmp_body)
-        
+
         return self
 
     def save_to_ilbm(self, file_name):
@@ -990,11 +976,11 @@ class Vbmp(Form):
     def load_image(self, file_name):
         image = QtGui.QImage(file_name)
         if image.format() == QtGui.QImage.Format_Invalid:
-            print("WARNING: Not loading invalid image file: {}".format(file_name))
+            logging.warning("WARNING: Not loading invalid image file: {}".format(file_name))
             return self
 
         if image.height() != 256 or image.width() != 256:
-            print("WARNING: The file {} has a height that is not 256x256!".format(file_name))
+            logging.warning("WARNING: The file {} has a height that is not 256x256!".format(file_name))
             image = image.smoothScaled(256, 256)
 
         image = image.convertToFormat(QtGui.QImage.Format_Indexed8, color_table)
@@ -1081,7 +1067,7 @@ class Embd(Form):
         self.add_emrs_resource("bmpanim.class", file_name, vanm_form)
 
     def extract_resources(self, output_location):
-        print("extracting resources")
+        logging.info("extracting resources")
 
         if not os.path.isdir(output_location):
             os.mkdir(output_location)
@@ -1545,7 +1531,7 @@ def parse_set_descriptor(set_number="1"):
                 break
             base = line.split(b" ")[0].decode("ascii")
             sdf.append(base)
-    print("sdf:", sdf)
+    logging.info("sdf: {}".format(sdf))
     return sdf
 
 
@@ -1558,7 +1544,7 @@ def parse_visproto(set_number="1"):
                 break
             base = line.split(b";")[0].decode("ascii").strip()
             visproto.append(base)
-    print("visproto:", visproto)
+    logging.info("visproto: {}".format(visproto))
     return visproto
 
 
@@ -1571,7 +1557,7 @@ def parse_slurps(set_number="1"):
                 break
             base = line.split(b";")[0].decode("ascii").strip()
             slurps.append(base)
-    print("slurps:", slurps)
+    logging.info("slurps: {}".format(slurps))
     return slurps
 
 
@@ -1587,7 +1573,7 @@ def compile_set_bas(set_number="1"):
 
     # Add bitmaps to Embd
     for bitmap in bitmaps:
-        print(bitmap)
+        logging.info(bitmap)
         mc2.add_image_from_file(bitmap)
 
     path = os.path.join("assets", "sets", "set{}", "Skeleton", "*.json")
@@ -1596,7 +1582,7 @@ def compile_set_bas(set_number="1"):
 
     # Add skeletons to Embd
     for skeleton in skeletons:
-        print(skeleton)
+        logging.info(skeleton)
         mc2.add_skeleton_from_json_file(skeleton)
 
     path = os.path.join("assets", "sets", "set{}", "rsrcpool", "*.json")
@@ -1605,7 +1591,7 @@ def compile_set_bas(set_number="1"):
 
     # Add animations to Embd
     for animation in animations:
-        print(animation)
+        logging.info(animation)
         mc2.add_animation_from_json_file(animation)
 
     path = os.path.join("assets", "sets", "set{}", "objects", "vehicles", "{}.json")
@@ -1613,7 +1599,7 @@ def compile_set_bas(set_number="1"):
     # vehicles.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for vehicle in vehicles:
-        print(vehicle)
+        logging.info(vehicle)
         mc2.add_vehicle_from_json_file(vehicle)
 
     path = os.path.join("assets", "sets", "set{}", "objects", "buildings", "{}.json")
@@ -1621,7 +1607,7 @@ def compile_set_bas(set_number="1"):
     # buildings.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for building in buildings:
-        print(building)
+        logging.info(building)
         mc2.add_building_from_json_file(building)
 
     path = os.path.join("assets", "sets", "set{}", "objects", "ground", "{}.json")
@@ -1629,7 +1615,7 @@ def compile_set_bas(set_number="1"):
     # grounds.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
 
     for ground in grounds:
-        print(ground)
+        logging.info(ground)
         mc2.add_ground_from_json_file(ground)
 
     path = os.path.join("output", "set{}_compiled.bas")
@@ -1639,7 +1625,7 @@ def compile_set_bas(set_number="1"):
 def compile_bee_box(set_number="1"):
     path = os.path.join("assets", "sets", "set{}", "objects", "beebox.bas.json")
     bee_box = Form().from_json_file(path.format(set_number))
-    
+
     path = os.path.join("output", "data", "set", "objects", "beebox.bas")
     bee_box.save_to_file(path)
 
@@ -1685,7 +1671,7 @@ def compile_single_files(set_number="1"):
     bitmaps.sort()
 
     for bitmap in bitmaps:
-        print(bitmap)
+        logging.info(bitmap)
 
         new_vbmp = Vbmp().load_image(bitmap)
         path = os.path.join("output", "data", "set", "{}")
@@ -1697,7 +1683,7 @@ def compile_single_files(set_number="1"):
     animations.sort()
 
     for animation in animations:
-        print(animation)
+        logging.info(animation)
         resource_name = os.path.splitext(os.path.basename(animation))[0]
 
         vanm_form = Form().from_json_file(animation)
@@ -1710,7 +1696,7 @@ def compile_single_files(set_number="1"):
     skeletons.sort()
 
     for skeleton in skeletons:
-        print(skeleton)
+        logging.info(skeleton)
 
         sklt_form = Form().from_json_file(skeleton)
         path = os.path.join("output", "data", "set", "Skeleton", "{}")
@@ -1722,7 +1708,7 @@ def compile_single_files(set_number="1"):
     vehicles.sort()
 
     for vehicle in vehicles:
-        print(vehicle)
+        logging.info(vehicle)
         resource_name = os.path.splitext(os.path.basename(vehicle))[0]
 
         sklt_form = Form().from_json_file(vehicle)
@@ -1735,7 +1721,7 @@ def compile_single_files(set_number="1"):
     buildings.sort()
 
     for building in buildings:
-        print(building)
+        logging.info(building)
         resource_name = os.path.splitext(os.path.basename(building))[0]
 
         sklt_form = Form().from_json_file(building)
@@ -1748,7 +1734,7 @@ def compile_single_files(set_number="1"):
     grounds.sort()
 
     for ground in grounds:
-        print(ground)
+        logging.info(ground)
         resource_name = os.path.splitext(os.path.basename(ground))[0]
 
         sklt_form = Form().from_json_file(ground)

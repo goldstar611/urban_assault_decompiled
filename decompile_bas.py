@@ -42,7 +42,7 @@ def main():
     for file in glob.glob("sky/*.bas", recursive=True):
         # Extract EMBD Resources
         bas_file = compile.Mc2().load_from_file(file)
-        form = bas_file.get_single_form_by_type("EMBD")
+        form = bas_file.get_single("EMBD")
         embd = compile.Embd()
         embd.sub_chunks = form.sub_chunks
         embd.extract_resources(os.path.splitext(file)[0])
