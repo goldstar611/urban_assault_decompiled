@@ -5,15 +5,16 @@ Created on Mon Jun 30 20:24:06 2014
 
 @author: GoldStar611, Ormu
 """
-import compile
-import myjson
-import numpy
 import os
 import struct
 import sys
-
-from PyQt5 import QtGui, QtCore, uic, QtWidgets, QtOpenGL
 from typing import Union
+
+import numpy
+from PyQt5 import QtGui, QtCore, uic, QtWidgets, QtOpenGL
+
+import compile
+import myjson
 
 try:
     from OpenGL import GL
