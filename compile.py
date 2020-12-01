@@ -1119,11 +1119,6 @@ class Mc2(Form):
         self.buildings = Kids()
         self.ground = Kids()
 
-        # Add convenience functions
-        self.add_sklt = self.embd.add_sklt
-        self.add_vbmp = self.embd.add_vbmp
-        self.add_vanm = self.embd.add_vanm
-
         self.init_mc2()
 
     def init_mc2(self):
@@ -1215,18 +1210,19 @@ class Mc2(Form):
             self.ground.add_chunk(sub_chunk)
 
     def add_image_from_file(self, file_name):
-        new_vbmp = Vbmp().load_image(file_name)
-        self.add_vbmp(os.path.splitext(os.path.basename(file_name))[0] + "M", new_vbmp)  # HACK make .ILBM
+        resource_name = os.path.splitext(os.path.basename(file_name))[0] + "M"  # HACK make .ILBM
+        vbmp_form = Vbmp().load_image(file_name)
+        self.embd.add_vbmp(resource_name, vbmp_form)
 
     def add_skeleton_from_json_file(self, file_name):
         resource_name = "Skeleton/" + os.path.splitext(os.path.basename(file_name))[0] + "t"  # HACK make .sklt
         sklt_form = Form().from_json_file(file_name)
-        self.add_sklt(resource_name, sklt_form)
+        self.embd.add_sklt(resource_name, sklt_form)
 
     def add_animation_from_json_file(self, file_name):
         resource_name = os.path.splitext(os.path.basename(file_name))[0]
         vanm_form = Form().from_json_file(file_name)
-        self.add_vanm(resource_name, vanm_form)
+        self.embd.add_vanm(resource_name, vanm_form)
 
 
 class Strc(Chunk):
