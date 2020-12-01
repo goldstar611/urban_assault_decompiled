@@ -1196,6 +1196,38 @@ class Mc2(Form):
         mc2_objt_base_kids_objt1.sub_chunks[1].add_chunk(self.buildings)  # Hack with sub_chunks[1]
         mc2_objt_base_kids_objt2.sub_chunks[1].add_chunk(self.ground)  # Hack with sub_chunks[1]
 
+    def add_vehicle_from_json_file(self, file_name):
+        vehicle_form = Form().from_json_file(file_name)
+
+        for sub_chunk in vehicle_form.sub_chunks:
+            self.vehicles.add_chunk(sub_chunk)
+
+    def add_building_from_json_file(self, file_name):
+        building_form = Form().from_json_file(file_name)
+
+        for sub_chunk in building_form.sub_chunks:
+            self.buildings.add_chunk(sub_chunk)
+
+    def add_ground_from_json_file(self, file_name):
+        ground_form = Form().from_json_file(file_name)
+
+        for sub_chunk in ground_form.sub_chunks:
+            self.ground.add_chunk(sub_chunk)
+
+    def add_image_from_file(self, file_name):
+        new_vbmp = Vbmp().load_image(file_name)
+        self.add_vbmp(os.path.splitext(os.path.basename(file_name))[0] + "M", new_vbmp)  # HACK make .ILBM
+
+    def add_skeleton_from_json_file(self, file_name):
+        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(file_name))[0] + "t"  # HACK make .sklt
+        sklt_form = Form().from_json_file(file_name)
+        self.add_sklt(resource_name, sklt_form)
+
+    def add_animation_from_json_file(self, file_name):
+        resource_name = os.path.splitext(os.path.basename(file_name))[0]
+        vanm_form = Form().from_json_file(file_name)
+        self.add_vanm(resource_name, vanm_form)
+
 
 class Strc(Chunk):
     STRC_ADE = "STRC_ADE "
@@ -1560,9 +1592,7 @@ def compile_set_bas(set_number="1"):
     # Add bitmaps to Embd
     for bitmap in bitmaps:
         print(bitmap)
-
-        new_vbmp = Vbmp().load_image(bitmap)
-        mc2.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
+        mc2.add_image_from_file(bitmap)
 
     path = os.path.join("assets", "sets", "set{}", "Skeleton", "*.json")
     skeletons = glob.glob(path.format(set_number))
@@ -1571,10 +1601,7 @@ def compile_set_bas(set_number="1"):
     # Add skeletons to Embd
     for skeleton in skeletons:
         print(skeleton)
-        resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0] + "t"  # HACK make .sklt
-
-        sklt_form = Form().from_json_file(skeleton)
-        mc2.add_sklt(resource_name, sklt_form)
+        mc2.add_skeleton_from_json_file(skeleton)
 
     path = os.path.join("assets", "sets", "set{}", "rsrcpool", "*.json")
     animations = glob.glob(path.format(set_number))
@@ -1583,10 +1610,7 @@ def compile_set_bas(set_number="1"):
     # Add animations to Embd
     for animation in animations:
         print(animation)
-        resource_name = os.path.splitext(os.path.basename(animation))[0]
-
-        vanm_form = Form().from_json_file(animation)
-        mc2.add_vanm(resource_name, vanm_form)
+        mc2.add_animation_from_json_file(animation)
 
     path = os.path.join("assets", "sets", "set{}", "objects", "vehicles", "{}.json")
     vehicles = [path.format(set_number, x.replace("base", "bas")) for x in visproto]
@@ -1594,10 +1618,7 @@ def compile_set_bas(set_number="1"):
 
     for vehicle in vehicles:
         print(vehicle)
-        vehicle_form = Form().from_json_file(vehicle)
-
-        for sub_chunk in vehicle_form.sub_chunks:
-            mc2.vehicles.add_chunk(sub_chunk)
+        mc2.add_vehicle_from_json_file(vehicle)
 
     path = os.path.join("assets", "sets", "set{}", "objects", "buildings", "{}.json")
     buildings = [path.format(set_number, x.replace("base", "bas")) for x in sdf]
@@ -1605,10 +1626,7 @@ def compile_set_bas(set_number="1"):
 
     for building in buildings:
         print(building)
-        building_form = Form().from_json_file(building)
-
-        for sub_chunk in building_form.sub_chunks:
-            mc2.buildings.add_chunk(sub_chunk)
+        mc2.add_building_from_json_file(building)
 
     path = os.path.join("assets", "sets", "set{}", "objects", "ground", "{}.json")
     grounds = [path.format(set_number, x.replace("base", "bas")) for x in slurps]
@@ -1616,10 +1634,7 @@ def compile_set_bas(set_number="1"):
 
     for ground in grounds:
         print(ground)
-        ground_form = Form().from_json_file(ground)
-
-        for sub_chunk in ground_form.sub_chunks:
-            mc2.ground.add_chunk(sub_chunk)
+        mc2.add_ground_from_json_file(ground)
 
     path = os.path.join("output", "set{}_compiled.bas")
     mc2.save_to_file(path.format(set_number))
@@ -1627,7 +1642,7 @@ def compile_set_bas(set_number="1"):
 
 def compile_bee_box(set_number="1"):
     path = os.path.join("assets", "sets", "set{}", "objects", "beebox.bas.json")
-    bee_box = Mc2().from_json_file(path.format(set_number))
+    bee_box = Form().from_json_file(path.format(set_number))
     
     path = os.path.join("output", "data", "set", "objects", "beebox.bas")
     bee_box.save_to_file(path)
@@ -1705,7 +1720,7 @@ def compile_single_files(set_number="1"):
         path = os.path.join("output", "data", "set", "Skeleton", "{}")
         sklt_form.save_to_file(path.format(os.path.splitext(os.path.basename(skeleton))[0]))
 
-    # Compile vehicles (Inside MC2 class)
+    # Compile vehicles
     path = os.path.join("set{}", "objects", "vehicles", "*.json")
     vehicles = glob.glob(path.format(set_number))
     vehicles.sort()
@@ -1718,7 +1733,7 @@ def compile_single_files(set_number="1"):
         path = os.path.join("output", "data", "set", "objects")
         sklt_form.save_to_file(path.format(resource_name))
 
-    # Compile buildings (Inside MC2 class)
+    # Compile buildings
     path = os.path.join("set{}", "objects", "buildings", "*.json")
     buildings = glob.glob(path.format(set_number))
     buildings.sort()
@@ -1731,7 +1746,7 @@ def compile_single_files(set_number="1"):
         path = os.path.join("output", "data", "set", "objects")
         sklt_form.save_to_file(path.format(resource_name))
 
-    # Compile ground (Inside MC2 class)
+    # Compile ground
     path = os.path.join("set{}", "objects", "ground", "*.json")
     grounds = glob.glob(path.format(set_number))
     grounds.sort()
