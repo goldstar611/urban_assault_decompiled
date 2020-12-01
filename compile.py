@@ -1553,8 +1553,6 @@ def compile_set_bas(set_number="1"):
     slurps = parse_slurps(set_number)
     mc2 = Mc2()
 
-    embd = mc2.embd
-
     path = os.path.join("assets", "sets", "set{}", "*.*")
     bitmaps = glob.glob(path.format(set_number))
     bitmaps.sort()
@@ -1564,9 +1562,8 @@ def compile_set_bas(set_number="1"):
         print(bitmap)
 
         new_vbmp = Vbmp().load_image(bitmap)
-        embd.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
+        mc2.add_vbmp(os.path.splitext(os.path.basename(bitmap))[0] + "M", new_vbmp)  # HACK make .ILBM
 
-    # TODO Skeleton functions (in Embd class)
     path = os.path.join("assets", "sets", "set{}", "Skeleton", "*.json")
     skeletons = glob.glob(path.format(set_number))
     skeletons.sort()
@@ -1577,9 +1574,8 @@ def compile_set_bas(set_number="1"):
         resource_name = "Skeleton/" + os.path.splitext(os.path.basename(skeleton))[0] + "t"  # HACK make .sklt
 
         sklt_form = Form().from_json_file(skeleton)
-        embd.add_sklt(resource_name, sklt_form)
+        mc2.add_sklt(resource_name, sklt_form)
 
-    # TODO Animation functions (in Embd class)
     path = os.path.join("assets", "sets", "set{}", "rsrcpool", "*.json")
     animations = glob.glob(path.format(set_number))
     animations.sort()
@@ -1590,9 +1586,8 @@ def compile_set_bas(set_number="1"):
         resource_name = os.path.splitext(os.path.basename(animation))[0]
 
         vanm_form = Form().from_json_file(animation)
-        embd.add_vanm(resource_name, vanm_form)
+        mc2.add_vanm(resource_name, vanm_form)
 
-    # TODO Move vehicles functions to MC2 object
     path = os.path.join("assets", "sets", "set{}", "objects", "vehicles", "{}.json")
     vehicles = [path.format(set_number, x.replace("base", "bas")) for x in visproto]
     # vehicles.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
@@ -1604,7 +1599,6 @@ def compile_set_bas(set_number="1"):
         for sub_chunk in vehicle_form.sub_chunks:
             mc2.vehicles.add_chunk(sub_chunk)
 
-    # TODO Move buildings functions to MC2 object
     path = os.path.join("assets", "sets", "set{}", "objects", "buildings", "{}.json")
     buildings = [path.format(set_number, x.replace("base", "bas")) for x in sdf]
     # buildings.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
@@ -1616,7 +1610,6 @@ def compile_set_bas(set_number="1"):
         for sub_chunk in building_form.sub_chunks:
             mc2.buildings.add_chunk(sub_chunk)
 
-    # TODO Move ground functions to MC2 object
     path = os.path.join("assets", "sets", "set{}", "objects", "ground", "{}.json")
     grounds = [path.format(set_number, x.replace("base", "bas")) for x in slurps]
     # grounds.sort()  # DONT SORT SET.BAS!! ORDER MUST MATCH THE SCRIPT
