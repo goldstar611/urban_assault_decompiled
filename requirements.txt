@@ -1,0 +1,4 @@
+numpy
+pyopengl
+pyopengl_accelerate
+pyqt5
