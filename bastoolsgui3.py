@@ -513,12 +513,13 @@ class Example(QtWidgets.QMainWindow):
             self.file_changed = False
             self.setWindowTitle(self.default_windows_title + " " + file_name)
 
-    def resource_path(self, relative_path):
+    @staticmethod
+    def resource_path(relative_path):
         """ Get absolute path to resource, works for dev and for PyInstaller """
-        try:
+        if hasattr(sys, "_MEIPASS"):
             # PyInstaller creates a temp folder and stores path in _MEIPASS
             base_path = sys._MEIPASS
-        except Exception:
+        else:
             base_path = os.path.abspath(".")
 
         return os.path.join(base_path, "gui", relative_path)
