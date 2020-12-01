@@ -1691,7 +1691,7 @@ def compile_single_files(set_number="1"):
         vanm_form.save_to_file(path.format(resource_name))
 
     # Compile skeletons
-    path = os.path.join("set{}", "Skeleton", "*.json")
+    path = os.path.join("assets", "sets", "set{}", "Skeleton", "*.json")
     skeletons = glob.glob(path.format(set_number))
     skeletons.sort()
 
@@ -1703,7 +1703,7 @@ def compile_single_files(set_number="1"):
         sklt_form.save_to_file(path.format(os.path.splitext(os.path.basename(skeleton))[0]))
 
     # Compile vehicles
-    path = os.path.join("set{}", "objects", "vehicles", "*.json")
+    path = os.path.join("assets", "sets", "set{}", "objects", "vehicles", "*.json")
     vehicles = glob.glob(path.format(set_number))
     vehicles.sort()
 
@@ -1712,11 +1712,11 @@ def compile_single_files(set_number="1"):
         resource_name = os.path.splitext(os.path.basename(vehicle))[0]
 
         sklt_form = Form().from_json_file(vehicle)
-        path = os.path.join("output", "data", "set", "objects")
+        path = os.path.join("output", "data", "set", "objects", "{}")
         sklt_form.save_to_file(path.format(resource_name))
 
     # Compile buildings
-    path = os.path.join("set{}", "objects", "buildings", "*.json")
+    path = os.path.join("assets", "sets", "set{}", "objects", "buildings", "*.json")
     buildings = glob.glob(path.format(set_number))
     buildings.sort()
 
@@ -1725,11 +1725,11 @@ def compile_single_files(set_number="1"):
         resource_name = os.path.splitext(os.path.basename(building))[0]
 
         sklt_form = Form().from_json_file(building)
-        path = os.path.join("output", "data", "set", "objects")
+        path = os.path.join("output", "data", "set", "objects", "{}")
         sklt_form.save_to_file(path.format(resource_name))
 
     # Compile ground
-    path = os.path.join("set{}", "objects", "ground", "*.json")
+    path = os.path.join("assets", "sets", "set{}", "objects", "ground", "*.json")
     grounds = glob.glob(path.format(set_number))
     grounds.sort()
 
@@ -1738,7 +1738,7 @@ def compile_single_files(set_number="1"):
         resource_name = os.path.splitext(os.path.basename(ground))[0]
 
         sklt_form = Form().from_json_file(ground)
-        path = os.path.join("output", "data", "set", "objects")
+        path = os.path.join("output", "data", "set", "objects", "{}")
         sklt_form.save_to_file(path.format(resource_name))
 
 
