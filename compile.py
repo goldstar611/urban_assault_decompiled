@@ -10,7 +10,10 @@ from typing import Union, List
 
 from PyQt5 import QtGui
 
-import myjson
+try:
+    import json as json
+except ImportError:
+    import json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -156,11 +159,11 @@ class Chunk(object):
         return {self.chunk_id: {"data": base64.b64encode(self.data).decode("ascii")}}  # No Test Coverage
 
     def to_json(self):
-        return myjson.dumps(self.to_dict(), indent=2, sort_keys=True)
+        return json.dumps(self.to_dict(), indent=2, sort_keys=True)
 
     def from_json(self, json_dict):
         if isinstance(json_dict, str):
-            json_dict = myjson.loads(json_dict)  # No Test Coverage
+            json_dict = json.loads(json_dict)  # No Test Coverage
         self.chunk_id, attributes_dict = json_dict.popitem()
         if self.chunk_id in master_list:
             o = master_list[self.chunk_id]()  # type: Chunk
@@ -173,7 +176,7 @@ class Chunk(object):
     def from_json_generic(self, json_string):
         # Generic json support for all IFF chunks
         if isinstance(json_string, str):
-            json_dict = myjson.loads(json_string)  # type: dict  # No Test Coverage
+            json_dict = json.loads(json_string)  # type: dict  # No Test Coverage
         else:
             json_dict = json_string
 
@@ -259,12 +262,12 @@ class Form(object):
         return {self.form_type: children}
 
     def to_json(self):
-        return myjson.dumps(self.to_dict(), indent=2, sort_keys=True)
+        return json.dumps(self.to_dict(), indent=2, sort_keys=True)
 
     def from_json(self, json_dict):
         # Generic json support for all IFF forms
         if isinstance(json_dict, str):
-            json_dict = myjson.loads(json_dict)  # No Test Coverage
+            json_dict = json.loads(json_dict)  # No Test Coverage
 
         if isinstance(json_dict, list):
             ret_list = []
@@ -285,7 +288,7 @@ class Form(object):
 
     def from_json_file(self, file_name):
         with open(file_name, "r") as f:
-            return self.from_json(myjson.loads(f.read()))
+            return self.from_json(json.loads(f.read()))
 
     def size(self):
         """
@@ -621,7 +624,7 @@ class Body(Chunk):
 
     def from_json_generic(self, json_string):
         if isinstance(json_string, str):
-            json_string = myjson.loads(json_string)  # No Test Coverage
+            json_string = json.loads(json_string)  # No Test Coverage
         self.chunk_id, attributes_dict = json_string.popitem()  # No Test Coverage
         self.data = base64.b64decode(attributes_dict["data"])  # No Test Coverage
 
