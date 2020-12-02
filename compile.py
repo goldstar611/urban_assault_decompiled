@@ -805,7 +805,7 @@ class Poo2(Chunk):
         return [[point["x"], point["y"], point["z"]] for point in self.points]  # No Test Coverage
 
     def points_as_flattened_list(self):
-        return [item for sublist in self.points_as_list() for item in sublist]
+        return [item for sublist in self.points_as_list() for item in sublist]  # No Test Coverage
 
     def set_binary_data(self, binary_data):
         if len(binary_data) % 12 != 0:  # No Test Coverage
