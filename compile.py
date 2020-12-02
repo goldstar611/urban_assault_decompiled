@@ -11,7 +11,7 @@ from typing import Union, List
 from PyQt5 import QtGui
 
 try:
-    import json as json
+    import myjson as json
 except ImportError:
     import json
 
