@@ -804,6 +804,9 @@ class Poo2(Chunk):
     def points_as_list(self):
         return [[point["x"], point["y"], point["z"]] for point in self.points]  # No Test Coverage
 
+    def points_as_flattened_list(self):
+        return [item for sublist in self.points_as_list() for item in sublist]
+
     def set_binary_data(self, binary_data):
         if len(binary_data) % 12 != 0:  # No Test Coverage
             logging.error("Poo2.convert_binary_data(): Length of binary data was not a multiple of 12!")
