@@ -18,6 +18,7 @@ except ImportError:
 
 logging.basicConfig(level=logging.INFO)
 
+GFX_MAX_VERTEX = 12
 unsigned_int_be = "<I"
 size_of_unsigned_int = 4
 unsigned_short_be = "<H"
@@ -940,6 +941,9 @@ class Pol2(Chunk):
         ret = struct.pack(">I", len(self.edges))
         for pol2 in self.edges:
             ret += struct.pack(">H", len(pol2))
+            if len(pol2) > GFX_MAX_VERTEX:
+                raise ValueError("Too many faces in polygon detected ({}). Max number of faces per polygon is 12. "
+                                 "Check GFX_MAX_VERTEX in engine_gfx.h".format(len(pol2)))
             for coordinate in pol2:
                 ret += struct.pack(">H", coordinate)
 
