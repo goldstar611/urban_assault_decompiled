@@ -56,6 +56,24 @@ color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 42829
                4278586382, 4278586127, 4279045134, 4279110667, 4279241993, 4279308038, 4279306500, 4279305734]
 
 
+class Meshy(object):
+    """
+    ### A `Meshy` object contains exactly
+    - one object name
+    - one set of vertices
+    - many meshes
+      - one material
+      - one set of faces
+      - zero or one uv map
+
+    - [ ] Can set object name from UA mesh definition at: MC2/OBJT/BASE/ROOT/NAME.name
+    - [ ] Can load vertices from skeleton referenced in UA mesh defintion at: MC2/OBJT/BASE/OBJT/SKLC/NAME.name
+    - [ ] Can load materials, faces, and uv maps from UA mesh definition at: MC2/OBJT/BASE/ADES/*/AMSH/**/{NAM2,ATTS,OLPL}
+    """
+    def __init__(self, name, vertices, meshes):
+        pass
+
+
 class Chunk(object):
     def __init__(self, chunk_id="?!!?"):
         self.chunk_id = chunk_id
@@ -372,6 +390,31 @@ class Form(object):
 
     def add_chunk(self, chunk):
         self.sub_chunks.append(chunk)
+
+
+class Amsh(Form):
+    def __init__(self, chunk_id="AMSH"):
+        super(Amsh, self).__init__(chunk_id)
+
+    @property
+    def has_uv(self):
+        if self.get_single("OLPL"):
+            return True
+        return False
+
+    @property
+    def get_texture_name(self):
+        return self.get_single("NAM2").to_class().name
+
+    @property
+    def get_polys(self):
+        return [x["poly_id"] for x in self.get_single("ATTS").to_class().atts_entries]
+
+    @property
+    def get_uv_mapping(self):
+        olpl = self.get_single("OLPL").to_class()  # type: Olpl
+        olpl.normalize()
+        return olpl.points
 
 
 class Name(Chunk):
@@ -789,6 +832,21 @@ class Atts(Chunk):
         return self._to_json_generic()
 
 
+class Vector:
+    def __init__(self, x=0.0, y=0.0, z=0.0):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __iter__(self):
+        yield self.x
+        yield self.y
+        yield self.z
+
+    def __repr__(self):
+        return "Vector({}, {}, {})".format(self.x, self.y, self.z)
+
+
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/sklt.cpp#L128
 class Poo2(Chunk):
     def __init__(self, chunk_id="POO2"):
@@ -801,11 +859,19 @@ class Poo2(Chunk):
                         "y": point["y"] / scaling_factor,
                         "z": point["z"] / scaling_factor} for point in self.points]
 
+    def change_coordinate_system(self):
+        self.points = [{"x": point["x"] * -1,
+                        "y": point["z"] * 1,
+                        "z": point["y"] * -1} for point in self.points]
+
     def points_as_list(self):
         return [[point["x"], point["y"], point["z"]] for point in self.points]  # No Test Coverage
 
     def points_as_flattened_list(self):
         return [item for sublist in self.points_as_list() for item in sublist]  # No Test Coverage
+
+    def points_as_vectors(self):
+        return [Vector(*xyz) for xyz in self.points_as_list()]
 
     def set_binary_data(self, binary_data):
         if len(binary_data) % 12 != 0:  # No Test Coverage
@@ -900,6 +966,20 @@ class Olpl(Chunk):
 
     def as_floats(self):
         return self._int_to_float(self.points)
+
+    def normalize(self):
+        ret = []
+        for i in self.points:
+            j_ret = []
+            for j in i:
+                k_ret = []
+                for index, k in enumerate(j):
+                    if index % 2:
+                        k = 255 - k
+                    k_ret.append(k / 256)
+                j_ret.append(k_ret)
+            ret.append(j_ret)
+        self.points = ret
 
     def set_binary_data(self, binary_data):
         offset = 0
@@ -1504,7 +1584,7 @@ class Base(Form):
 master_list = {
     "ADE ": Form,
     "ADES": Form,
-    "AMSH": Form,
+    "AMSH": Amsh,
     "AREA": Form,
     "BANI": Form,
     "BASE": Form,
