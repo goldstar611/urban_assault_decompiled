@@ -168,7 +168,7 @@ class Chunk(object):
             o.set_binary_data(self.data)
             return o
 
-        return ValueError("This class cannot be converted")  # No Test Coverage
+        raise ValueError("This class cannot be converted")  # No Test Coverage
 
     def to_dict(self):
         if self.chunk_id in master_list:
@@ -272,7 +272,7 @@ class Form(object):
             o.form_type = self.form_type
             return o
 
-        return ValueError("This class cannot be converted")  # No Test Coverage
+        raise ValueError("This class cannot be converted")  # No Test Coverage
 
     def to_dict(self):
         # Generic json support for all IFF forms
