@@ -494,7 +494,6 @@ def extract_triangles(mesh):
                     new_tri.faceuvs = uv_key(f_uv[0]), uv_key(f_uv[i]), uv_key(f_uv[i+1])
                 tri_list.append(new_tri)
 
-
         else:
             raise ValueError("Saw something that wasn't a quad or a tri!")
 
@@ -742,6 +741,10 @@ def write_3ds(file_path, meshes, material_dict):
     # create a new object chunk
 
     for mesh in meshes:
+        # TODO REMOVE HACK
+        if not mesh:# TODO REMOVE HACK
+            continue# TODO REMOVE HACK
+
         object_chunk = _3ds_chunk(OBJECT)
 
         object_chunk.add_variable("name", _3ds_string(sane_name(mesh.ob_name)))

@@ -1,6 +1,6 @@
 import os
 
-from compile import Form, Poo2, Pol2, Olpl, Atts, Amsh
+from compile import Form, Poo2, Pol2, Olpl, Atts, Amsh, Otl2
 from io_mesh_3ds.export_3ds import write_3ds
 
 
@@ -52,7 +52,6 @@ def make_fake_mesh(ob_name, vertices, faces, mesh: Amsh):
         olpl.normalize()
         uv_map = olpl.points
     else:
-        print("{} has no uv".format(ob_name))
         material = None
         uv_map = None
 
@@ -68,6 +67,46 @@ def make_fake_mesh(ob_name, vertices, faces, mesh: Amsh):
                            uv_map=uv_map,
                            material=material
                            )
+
+
+def area_to_fake_mesh(ob_name, vertices, faces, area: Form):
+    if area.get_single("OTL2"):
+
+        # Material
+        nam2 = area.get_single("NAM2")
+        material = nam2.to_class().name
+
+        # Poly
+        ade = area.get_single("ADE ")  # type: Form
+        poly = ade.get_single("STRC").to_class().poly
+        faces = [faces[poly]]
+
+        # UV Mapping
+        otl2 = area.get_single("OTL2")  # type: Form
+        otl2 = otl2.to_class()  # type: Otl2
+        olpl = Olpl()
+        olpl.points = [otl2.points]
+        olpl.normalize()
+        uv_map = olpl.points
+
+        return FakeBlenderMesh(ob_name=ob_name,
+                               vertices=vertices,
+                               faces=faces,
+                               uv_map=uv_map,
+                               material=material)
+
+    if area.get_single("BANI"):
+        # Poly
+        ade = area.get_single("ADE ")  # type: Form
+        poly = ade.get_single("STRC").to_class().poly
+        faces = [faces[poly]]
+
+        return FakeBlenderMesh(ob_name=ob_name,
+                               vertices=vertices,
+                               faces=faces,
+                               uv_map=None,
+                               material=None)
+    return None
 
 
 def main():
@@ -96,6 +135,7 @@ def main():
 
         try:
             meshes = [make_fake_mesh(ob_name, vertices.copy(), faces.copy(), m.to_class()) for m in model_form.get_all("AMSH")]
+            meshes += [area_to_fake_mesh(ob_name, vertices.copy(), faces.copy(), m.to_class()) for m in model_form.get_all("AREA")]  # TODO FIX HACK
             write_3ds("./output/{}.3ds".format(ob_name), meshes, material_dict)
         except AttributeError:
             print("AttributeError in file {}".format(file_name))
