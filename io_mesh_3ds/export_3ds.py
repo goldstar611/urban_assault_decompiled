@@ -487,8 +487,7 @@ def extract_triangles(mesh):
             tri_list.append(new_tri)
             tri_list.append(new_tri_2)
 
-        elif len(f_v) >= 5:  # it's a n-gon TODO TEST THIS!
-            print("Now would be a good time to test the n-gon code!")
+        elif len(f_v) >= 5:  # it's a n-gon
             for i in range(1, len(f_v) - 1):
                 new_tri = tri_wrapper((f_v[0], f_v[i], f_v[i+1]), mesh.material, img)
                 if (do_uv):
