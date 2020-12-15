@@ -82,7 +82,7 @@ def main():
 
         sklt_form = Form().from_json_file("./assets/sets/{}/{}.json".format(set, sklt_file_name))
         poo2 = sklt_form.get_single("POO2").to_class()  # type: Poo2
-        # poo2.apply_scaling_factor(20)
+        poo2.apply_scaling_factor(150)
         poo2.change_coordinate_system()
         vertices = poo2.points_as_vectors()
 
