@@ -45,13 +45,15 @@ class FakeBlenderMesh:
 
 
 def make_fake_mesh(ob_name, vertices, faces, mesh: Amsh):
-    material = mesh.get_single("NAM2").to_class().name
 
     if mesh.has_uv:
+        material = mesh.get_single("NAM2").to_class().name
         olpl = mesh.get_single("OLPL").to_class()  # type: Olpl
         olpl.normalize()
         uv_map = olpl.points
     else:
+        print("{} has no uv".format(ob_name))
+        material = None
         uv_map = None
 
     atts = mesh.get_single("ATTS").to_class()  # type: Atts
@@ -73,7 +75,7 @@ def main():
     set = "set1"
     for file_name in glob.glob("assets/sets/{}/objects/buildings/*.bas.json".format(set)) + \
                      glob.glob("assets/sets/{}/objects/vehicles/*.bas.json".format(set)):
-        print(file_name)
+        #print(file_name)
 
         model_form = Form().from_json_file(file_name)
         ob_name = os.path.basename(file_name).replace(".bas", "").replace(".json", "")
@@ -97,6 +99,7 @@ def main():
             write_3ds("./output/{}.3ds".format(ob_name), meshes, material_dict)
         except AttributeError:
             print("AttributeError in file {}".format(file_name))
+            raise
 
 
 if __name__ == '__main__':
