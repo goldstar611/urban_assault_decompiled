@@ -852,7 +852,6 @@ class Vector:
 class Poo2(Chunk):
     def __init__(self, chunk_id="POO2"):
         super(Poo2, self).__init__(chunk_id)
-        self.scaling_factor = 1
         self.points = []
 
     def apply_scaling_factor(self, scaling_factor):
@@ -888,7 +887,6 @@ class Poo2(Chunk):
             new_poo2_point = {"x": x,
                               "y": y,
                               "z": z}
-            self.scaling_factor = max(self.scaling_factor, math.sqrt(x ** 2 + y ** 2 + z ** 2))
             poo2_points.append(new_poo2_point)
 
             self.points = poo2_points
