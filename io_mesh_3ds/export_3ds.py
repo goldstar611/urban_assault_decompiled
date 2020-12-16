@@ -741,9 +741,6 @@ def write_3ds(file_path, meshes, material_dict):
     # create a new object chunk
 
     for mesh in meshes:
-        # TODO REMOVE HACK
-        if not mesh:# TODO REMOVE HACK
-            continue# TODO REMOVE HACK
 
         object_chunk = _3ds_chunk(OBJECT)
 

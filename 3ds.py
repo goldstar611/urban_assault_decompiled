@@ -111,17 +111,17 @@ def area_to_fake_mesh(ob_name, vertices, faces, area: Form):
 
 def main():
     import glob
-    set = "set1"
-    for file_name in glob.glob("assets/sets/{}/objects/buildings/*.bas.json".format(set)) + \
-                     glob.glob("assets/sets/{}/objects/vehicles/*.bas.json".format(set)):
-        #print(file_name)
+    set_number = "set1"
+    for file_name in glob.glob("assets/sets/{}/objects/buildings/*.bas.json".format(set_number)) + \
+                     glob.glob("assets/sets/{}/objects/vehicles/*.bas.json".format(set_number)):
+        print(file_name)
 
         model_form = Form().from_json_file(file_name)
         ob_name = os.path.basename(file_name).replace(".bas", "").replace(".json", "")
 
         sklt_file_name = model_form.get_single("SKLC").get_single("NAME").to_class().name[:-1]  # HACK
 
-        sklt_form = Form().from_json_file("./assets/sets/{}/{}.json".format(set, sklt_file_name))
+        sklt_form = Form().from_json_file("./assets/sets/{}/{}.json".format(set_number, sklt_file_name))
         poo2 = sklt_form.get_single("POO2").to_class()  # type: Poo2
         poo2.apply_scaling_factor(150)
         poo2.change_coordinate_system()
@@ -133,13 +133,10 @@ def main():
         pol2 = sklt_form.get_single("POL2").to_class()  # type: Pol2
         faces = pol2.edges
 
-        try:
-            meshes = [make_fake_mesh(ob_name, vertices.copy(), faces.copy(), m.to_class()) for m in model_form.get_all("AMSH")]
-            meshes += [area_to_fake_mesh(ob_name, vertices.copy(), faces.copy(), m.to_class()) for m in model_form.get_all("AREA")]  # TODO FIX HACK
-            write_3ds("./output/{}.3ds".format(ob_name), meshes, material_dict)
-        except AttributeError:
-            print("AttributeError in file {}".format(file_name))
-            raise
+        meshes = [make_fake_mesh(ob_name, vertices.copy(), faces.copy(), m.to_class()) for m in model_form.get_all("AMSH")]
+        meshes += [area_to_fake_mesh(ob_name, vertices.copy(), faces.copy(), m.to_class()) for m in model_form.get_all("AREA")]  # TODO FIX HACK
+        meshes = [m for m in meshes if m is not None]
+        write_3ds("./output/{}.3ds".format(ob_name), meshes, material_dict)
 
 
 if __name__ == '__main__':
