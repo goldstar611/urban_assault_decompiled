@@ -32,6 +32,8 @@ material_dict = {"AIR1TXT.ILBM": "AIR1TXT.png",
                  "FHRTTWND.ILBM": "FHRTTWND.png",
                  "HUBI.ILBM": "HUBI.png",
                  "TAERROBO.ILBM": "TAERROBO.png",
+                 "NEWSKY1.ILBM": "NEWSKY1.png",
+                 "NEWSKY2.ILBM": "NEWSKY2.png",
                  }
 
 
@@ -45,6 +47,8 @@ class FakeBlenderMesh:
 
 
 def make_fake_mesh(ob_name, vertices, faces, mesh: Amsh):
+    vertices = vertices.copy()
+    faces = faces.copy()
 
     if mesh.has_uv:
         material = mesh.get_single("NAM2").to_class().name
@@ -70,6 +74,9 @@ def make_fake_mesh(ob_name, vertices, faces, mesh: Amsh):
 
 
 def area_to_fake_mesh(ob_name, vertices, faces, area: Form):
+    vertices = vertices.copy()
+    faces = faces.copy()
+
     if area.get_single("OTL2"):
 
         # Material
@@ -128,15 +135,36 @@ def main():
         vertices = poo2.points_as_vectors()
 
         if not sklt_form.get_single("POL2"):
+            print("Skipping {} because it has no polygons.".format(file_name))
             continue
 
         pol2 = sklt_form.get_single("POL2").to_class()  # type: Pol2
         faces = pol2.edges
 
-        meshes = [make_fake_mesh(ob_name, vertices.copy(), faces.copy(), m.to_class()) for m in model_form.get_all("AMSH")]
-        meshes += [area_to_fake_mesh(ob_name, vertices.copy(), faces.copy(), m.to_class()) for m in model_form.get_all("AREA")]  # TODO FIX HACK
-        meshes = [m for m in meshes if m is not None]
+        meshes = []
+        for objt in model_form.get_single("ADES").sub_chunks:
+            class_id = objt.get_single("CLID").to_class().class_id
+
+            if class_id == "amesh.class":
+                mesh = make_fake_mesh(ob_name, vertices, faces, objt.get_single("AMSH").to_class())
+                if mesh:
+                    meshes.append(mesh)
+                continue
+
+            if class_id == "area.class":
+                mesh = area_to_fake_mesh(ob_name, vertices, faces, objt.get_single("AREA").to_class())
+                if mesh:
+                    meshes.append(mesh)
+                continue
+
+            if class_id == "particle.class":
+                #print("skipping {} in {}".format(class_id, file_name))
+                continue
+
+            raise ValueError(class_id)
+
         write_3ds("./output/{}.3ds".format(ob_name), meshes, material_dict)
+    print("Finished")
 
 
 if __name__ == '__main__':
