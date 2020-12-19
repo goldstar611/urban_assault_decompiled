@@ -1,7 +1,6 @@
 import compile
 import glob
 import os
-from PyQt5 import QtGui
 
 
 def decompile_sky():
@@ -9,32 +8,23 @@ def decompile_sky():
         sky_dir = os.path.splitext(sky)[0]
         form = compile.Form().load_from_file(sky)
 
-        embd = compile.Embd()
-        embd.sub_chunks = form.get_single("EMBD").sub_chunks  # HACK
+        form.get_single("EMBD").to_class().extract_resources(sky_dir)  # Extract images + skeletons
+        form.get_single("EMBD").sub_chunks = [compile.Form("ROOT")]  # Drop resources since we already extracted them
 
-        embd.extract_resources(sky_dir)
-
-        ades = form.get_single("ADES")
-        if ades:
-            with open(os.path.join(sky_dir, "ades.json"), "w") as f:
-                f.write(ades.to_json())
+        with open(os.path.join(sky_dir, "sky.json"), "w") as f:
+            f.write(form.to_json())
 
 
 def compile_sky():
-    with open(os.path.join("sky", "sky_generic.json"), "rt") as f:
-        generic_sky_json = f.read()
+    for sky in glob.glob("sky/*/sky.json"):
+        sky_dir = os.path.dirname(sky)
+        print(sky_dir)
 
-    for sky in glob.glob("sky/*"):
-        print(sky)
+        sky_form = compile.Form().from_json_file(sky)
+        embd = sky_form.get_single("EMBD").to_class()
 
-        generic_sky = compile.Form().from_json(generic_sky_json)
-        embd = generic_sky.get_single("EMBD").to_class()  # to_class() makes this a new object. Not part of generic_sky object anymore
-        name = generic_sky.get_single("NAME").to_class()  # to_class() makes this a new object. Not part of generic_sky object anymore
-        sky_dir = os.path.basename(sky)
-
-        json_files = glob.glob(os.path.join(sky, "*.sklt.json"))
-        bmp_files = glob.glob(os.path.join(sky, "*.bmp"))
-        ades_file = os.path.join(sky, "ades.json")
+        json_files = glob.glob(os.path.join(sky_dir, "*.sklt.json"))
+        bmp_files = glob.glob(os.path.join(sky_dir, "*.*"))
 
         for bmp_file in bmp_files:
             print(bmp_file)
@@ -44,10 +34,12 @@ def compile_sky():
             print(json_file)
             sklt = compile.Form().from_json_file(json_file)
 
-            resource_name = os.path.splitext(os.path.basename(json_file))[0]
+            resource_name = "Skeleton/" + os.path.splitext(os.path.basename(json_file))[0]
             embd.add_sklt(resource_name, sklt)
-        if os.path.isfile(ades_file):
-            print(ades_file)
+
+        sky_name = os.path.basename(sky_dir) + ".bas"
+
+        sky_form.save_to_file(os.path.join(sky_dir, sky_name))
 
 
 if __name__ == '__main__':
