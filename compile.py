@@ -1184,7 +1184,7 @@ class Embd(Form):
                     # noinspection PyUnresolvedReferences
                     sub_chunk.to_class().save_to_bmp(os.path.join(output_location, "%s.bmp" % asset_name))
                 elif sub_chunk.form_type == "SKLT" or sub_chunk.form_type == "VANM":
-                    # TODO: Using the base name is not really compatible with MC2 forms which
+                    # TODO: Using the asset name is not compatible with MC2 forms which
                     # TODO:   expect the file name to be Skeleton/blah.sklt
                     base_name = os.path.basename(asset_name)
                     with open(os.path.join(output_location, base_name + ".json"), "w") as f:
