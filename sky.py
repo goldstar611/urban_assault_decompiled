@@ -4,7 +4,7 @@ import os
 
 
 def decompile_sky():
-    for sky in glob.glob("sky/*.bas"):
+    for sky in glob.glob("assets/sky/*.bas"):
         sky_dir = os.path.splitext(sky)[0]
         form = compile.Form().load_from_file(sky)
 
@@ -16,7 +16,7 @@ def decompile_sky():
 
 
 def compile_sky():
-    for sky in glob.glob("sky/*/sky.json"):
+    for sky in glob.glob("assets/sky/*/sky.json"):
         sky_dir = os.path.dirname(sky)
         print(sky_dir)
 
@@ -39,7 +39,7 @@ def compile_sky():
 
         sky_name = os.path.basename(sky_dir) + ".bas"
 
-        sky_form.save_to_file(os.path.join(sky_dir, sky_name))
+        sky_form.save_to_file(os.path.join("output", sky_name))
 
 
 if __name__ == '__main__':
