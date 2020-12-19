@@ -2,7 +2,6 @@ import base64
 import glob
 import io
 import logging
-import math
 import os
 import shutil
 import struct
