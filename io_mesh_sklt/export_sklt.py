@@ -128,15 +128,15 @@ def writeSklt(filepath, polygon_mode, sen2_mode):
                 sen2_min_z = v[2]
             elif v[2] > sen2_max_z:
                 sen2_max_z = v[2]
-        #TODO! Vertex order?
-        sen2_vertices.append((sen2_min_x, sen2_min_y, sen2_min_z))     
-        sen2_vertices.append((sen2_min_x, sen2_min_y, sen2_max_z))
-        sen2_vertices.append((sen2_min_x, sen2_max_y, sen2_min_z))
-        sen2_vertices.append((sen2_min_x, sen2_max_y, sen2_max_z))
-        sen2_vertices.append((sen2_max_x, sen2_min_y, sen2_min_z))
-        sen2_vertices.append((sen2_max_x, sen2_min_y, sen2_max_z))
-        sen2_vertices.append((sen2_max_x, sen2_max_y, sen2_min_z))
-        sen2_vertices.append((sen2_max_x, sen2_max_y, sen2_max_z))
+        # TODO! Vertex order?
+        sen2_vertices.append({"x": sen2_min_x * -1, "z": sen2_min_y * -1, "y": sen2_min_z * -1})
+        sen2_vertices.append({"x": sen2_min_x * -1, "z": sen2_min_y * -1, "y": sen2_max_z * -1})
+        sen2_vertices.append({"x": sen2_min_x * -1, "z": sen2_max_y * -1, "y": sen2_min_z * -1})
+        sen2_vertices.append({"x": sen2_min_x * -1, "z": sen2_max_y * -1, "y": sen2_max_z * -1})
+        sen2_vertices.append({"x": sen2_max_x * -1, "z": sen2_min_y * -1, "y": sen2_min_z * -1})
+        sen2_vertices.append({"x": sen2_max_x * -1, "z": sen2_min_y * -1, "y": sen2_max_z * -1})
+        sen2_vertices.append({"x": sen2_max_x * -1, "z": sen2_max_y * -1, "y": sen2_min_z * -1})
+        sen2_vertices.append({"x": sen2_max_x * -1, "z": sen2_max_y * -1, "y": sen2_max_z * -1})
         
     
     #calculate lengths
