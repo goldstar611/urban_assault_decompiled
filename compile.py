@@ -861,7 +861,7 @@ class Poo2(Chunk):
 
     def change_coordinate_system(self):
         self.points = [{"x": point["x"] * -1,
-                        "y": point["z"] * 1,
+                        "y": point["z"] * -1,
                         "z": point["y"] * -1} for point in self.points]
 
     def points_as_list(self):
