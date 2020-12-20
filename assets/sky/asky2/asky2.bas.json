@@ -1,0 +1,460 @@
+{
+  "MC2 ": [ 
+    {
+      "OBJT": [ 
+        {
+          "CLID": {
+            "class_id": "base.class"
+          }
+        }, 
+        {
+          "BASE": [ 
+            {
+              "ROOT": []
+            }, 
+            {
+              "OBJT": [ 
+                {
+                  "CLID": {
+                    "class_id": "embed.class"
+                  }
+                }, 
+                {
+                  "EMBD": [ 
+                    {
+                      "ROOT": []
+                    } ]
+                } ]
+            }, 
+            {
+              "STRC": {
+                "_un1": 0,
+                "ambient_light": 255,
+                "att_flags": 72,
+                "ax": 0,
+                "ay": 0,
+                "az": 0,
+                "pos": [ 0.0, 0.0, 0.0 ],
+                "rx": 0,
+                "ry": 0,
+                "rz": 0,
+                "scale": [ 1.0, 1.0, 1.0 ],
+                "strc_type": "STRC_BASE",
+                "vec": [ 0.0, 0.0, 0.0 ],
+                "version": 1,
+                "vis_limit": 4096
+              }
+            }, 
+            {
+              "OBJT": [ 
+                {
+                  "CLID": {
+                    "class_id": "sklt.class"
+                  }
+                }, 
+                {
+                  "SKLC": [ 
+                    {
+                      "NAME": {
+                        "name": "ASKY2.sklt",
+                        "zero_terminated": true
+                      }
+                    } ]
+                } ]
+            }, 
+            {
+              "ADES": [ 
+                {
+                  "OBJT": [ 
+                    {
+                      "CLID": {
+                        "class_id": "area.class"
+                      }
+                    }, 
+                    {
+                      "AREA": [ 
+                        {
+                          "ADE ": [ 
+                            {
+                              "ROOT": []
+                            }, 
+                            {
+                              "STRC": {
+                                "_nu2": 0,
+                                "_nul": 0,
+                                "flags": 4,
+                                "point": 0,
+                                "poly": 0,
+                                "strc_type": "STRC_ADE ",
+                                "version": 1
+                              }
+                            } ]
+                        }, 
+                        {
+                          "STRC": {
+                            "_nu2": -32768,
+                            "_nul": 0,
+                            "flags": 1,
+                            "point": 62,
+                            "poly": 0,
+                            "strc_type": "STRC_ADE ",
+                            "version": 1
+                          }
+                        }, 
+                        {
+                          "OBJT": [ 
+                            {
+                              "CLID": {
+                                "class_id": "ilbm.class"
+                              }
+                            }, 
+                            {
+                              "CIBO": [ 
+                                {
+                                  "NAM2": {
+                                    "name": "ASKY1.ILBM",
+                                    "zero_terminated": true
+                                  }
+                                }, 
+                                {
+                                  "OTL2": {
+                                    "points": [ 
+                                      [ 0, 0 ], 
+                                      [ 126, 0 ], 
+                                      [ 126, 127 ], 
+                                      [ 0, 127 ] ]
+                                  }
+                                } ]
+                            } ]
+                        } ]
+                    } ]
+                }, 
+                {
+                  "OBJT": [ 
+                    {
+                      "CLID": {
+                        "class_id": "area.class"
+                      }
+                    }, 
+                    {
+                      "AREA": [ 
+                        {
+                          "ADE ": [ 
+                            {
+                              "ROOT": []
+                            }, 
+                            {
+                              "STRC": {
+                                "_nu2": 0,
+                                "_nul": 0,
+                                "flags": 4,
+                                "point": 0,
+                                "poly": 1,
+                                "strc_type": "STRC_ADE ",
+                                "version": 1
+                              }
+                            } ]
+                        }, 
+                        {
+                          "STRC": {
+                            "_nu2": -32768,
+                            "_nul": 0,
+                            "flags": 1,
+                            "point": 62,
+                            "poly": 0,
+                            "strc_type": "STRC_ADE ",
+                            "version": 1
+                          }
+                        }, 
+                        {
+                          "OBJT": [ 
+                            {
+                              "CLID": {
+                                "class_id": "ilbm.class"
+                              }
+                            }, 
+                            {
+                              "CIBO": [ 
+                                {
+                                  "NAM2": {
+                                    "name": "ASKY1.ILBM",
+                                    "zero_terminated": true
+                                  }
+                                }, 
+                                {
+                                  "OTL2": {
+                                    "points": [ 
+                                      [ 0, 128 ], 
+                                      [ 126, 128 ], 
+                                      [ 126, 255 ], 
+                                      [ 0, 255 ] ]
+                                  }
+                                } ]
+                            } ]
+                        } ]
+                    } ]
+                }, 
+                {
+                  "OBJT": [ 
+                    {
+                      "CLID": {
+                        "class_id": "area.class"
+                      }
+                    }, 
+                    {
+                      "AREA": [ 
+                        {
+                          "ADE ": [ 
+                            {
+                              "ROOT": []
+                            }, 
+                            {
+                              "STRC": {
+                                "_nu2": 0,
+                                "_nul": 0,
+                                "flags": 4,
+                                "point": 0,
+                                "poly": 2,
+                                "strc_type": "STRC_ADE ",
+                                "version": 1
+                              }
+                            } ]
+                        }, 
+                        {
+                          "STRC": {
+                            "_nu2": -32768,
+                            "_nul": 0,
+                            "flags": 1,
+                            "point": 62,
+                            "poly": 0,
+                            "strc_type": "STRC_ADE ",
+                            "version": 1
+                          }
+                        }, 
+                        {
+                          "OBJT": [ 
+                            {
+                              "CLID": {
+                                "class_id": "ilbm.class"
+                              }
+                            }, 
+                            {
+                              "CIBO": [ 
+                                {
+                                  "NAM2": {
+                                    "name": "ASKY1.ILBM",
+                                    "zero_terminated": true
+                                  }
+                                }, 
+                                {
+                                  "OTL2": {
+                                    "points": [ 
+                                      [ 127, 128 ], 
+                                      [ 255, 128 ], 
+                                      [ 255, 255 ], 
+                                      [ 127, 255 ] ]
+                                  }
+                                } ]
+                            } ]
+                        } ]
+                    } ]
+                }, 
+                {
+                  "OBJT": [ 
+                    {
+                      "CLID": {
+                        "class_id": "area.class"
+                      }
+                    }, 
+                    {
+                      "AREA": [ 
+                        {
+                          "ADE ": [ 
+                            {
+                              "ROOT": []
+                            }, 
+                            {
+                              "STRC": {
+                                "_nu2": 0,
+                                "_nul": 0,
+                                "flags": 4,
+                                "point": 0,
+                                "poly": 3,
+                                "strc_type": "STRC_ADE ",
+                                "version": 1
+                              }
+                            } ]
+                        }, 
+                        {
+                          "STRC": {
+                            "_nu2": -32768,
+                            "_nul": 0,
+                            "flags": 1,
+                            "point": 62,
+                            "poly": 0,
+                            "strc_type": "STRC_ADE ",
+                            "version": 1
+                          }
+                        }, 
+                        {
+                          "OBJT": [ 
+                            {
+                              "CLID": {
+                                "class_id": "ilbm.class"
+                              }
+                            }, 
+                            {
+                              "CIBO": [ 
+                                {
+                                  "NAM2": {
+                                    "name": "ASKY1.ILBM",
+                                    "zero_terminated": true
+                                  }
+                                }, 
+                                {
+                                  "OTL2": {
+                                    "points": [ 
+                                      [ 128, 1 ], 
+                                      [ 255, 1 ], 
+                                      [ 255, 125 ], 
+                                      [ 128, 125 ] ]
+                                  }
+                                } ]
+                            } ]
+                        } ]
+                    } ]
+                }, 
+                {
+                  "OBJT": [ 
+                    {
+                      "CLID": {
+                        "class_id": "area.class"
+                      }
+                    }, 
+                    {
+                      "AREA": [ 
+                        {
+                          "ADE ": [ 
+                            {
+                              "ROOT": []
+                            }, 
+                            {
+                              "STRC": {
+                                "_nu2": 0,
+                                "_nul": 0,
+                                "flags": 6,
+                                "point": 0,
+                                "poly": 4,
+                                "strc_type": "STRC_ADE ",
+                                "version": 1
+                              }
+                            } ]
+                        }, 
+                        {
+                          "STRC": {
+                            "_nu2": -32768,
+                            "_nul": 0,
+                            "flags": 1,
+                            "point": 62,
+                            "poly": 0,
+                            "strc_type": "STRC_ADE ",
+                            "version": 1
+                          }
+                        }, 
+                        {
+                          "OBJT": [ 
+                            {
+                              "CLID": {
+                                "class_id": "ilbm.class"
+                              }
+                            }, 
+                            {
+                              "CIBO": [ 
+                                {
+                                  "NAM2": {
+                                    "name": "ASKY2.ILBM",
+                                    "zero_terminated": true
+                                  }
+                                }, 
+                                {
+                                  "OTL2": {
+                                    "points": [ 
+                                      [ 1, 128 ], 
+                                      [ 254, 128 ], 
+                                      [ 254, 255 ], 
+                                      [ 1, 255 ] ]
+                                  }
+                                } ]
+                            } ]
+                        } ]
+                    } ]
+                }, 
+                {
+                  "OBJT": [ 
+                    {
+                      "CLID": {
+                        "class_id": "area.class"
+                      }
+                    }, 
+                    {
+                      "AREA": [ 
+                        {
+                          "ADE ": [ 
+                            {
+                              "ROOT": []
+                            }, 
+                            {
+                              "STRC": {
+                                "_nu2": 0,
+                                "_nul": 0,
+                                "flags": 6,
+                                "point": 0,
+                                "poly": 5,
+                                "strc_type": "STRC_ADE ",
+                                "version": 1
+                              }
+                            } ]
+                        }, 
+                        {
+                          "STRC": {
+                            "_nu2": -32768,
+                            "_nul": 0,
+                            "flags": 1,
+                            "point": 62,
+                            "poly": 0,
+                            "strc_type": "STRC_ADE ",
+                            "version": 1
+                          }
+                        }, 
+                        {
+                          "OBJT": [ 
+                            {
+                              "CLID": {
+                                "class_id": "ilbm.class"
+                              }
+                            }, 
+                            {
+                              "CIBO": [ 
+                                {
+                                  "NAM2": {
+                                    "name": "ASKY2.ILBM",
+                                    "zero_terminated": true
+                                  }
+                                }, 
+                                {
+                                  "OTL2": {
+                                    "points": [ 
+                                      [ 1, 0 ], 
+                                      [ 254, 0 ], 
+                                      [ 254, 127 ], 
+                                      [ 1, 127 ] ]
+                                  }
+                                } ]
+                            } ]
+                        } ]
+                    } ]
+                } ]
+            } ]
+        } ]
+    } ]
+}
