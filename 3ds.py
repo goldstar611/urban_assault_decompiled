@@ -32,8 +32,15 @@ material_dict = {"AIR1TXT.ILBM": "AIR1TXT.png",
                  "FHRTTWND.ILBM": "FHRTTWND.png",
                  "HUBI.ILBM": "HUBI.png",
                  "TAERROBO.ILBM": "TAERROBO.png",
-                 "NEWSKY1.ILBM": "NEWSKY1.png",
+                 "NEWSKY1.ILBM": "NEWSKY1.png",  # Start sky bitmaps
                  "NEWSKY2.ILBM": "NEWSKY2.png",
+                 "braun2.ilbm": "braun2.png",
+                 "ASKY1.ILBM": "ASKY1.png",
+                 "ASKY2.ILBM": "ASKY2.png",
+                 "ct1.ILBM": "ct1.png",
+                 "HIMMEL7.ILBM": "HIMMEL7.png",
+                 "verlauf.ilbm": "verlauf.png",
+                 "ct6.ILBM": "ct6.png",
                  }
 
 
@@ -82,6 +89,9 @@ def area_to_fake_mesh(ob_name, vertices, faces, area: Form):
         # Material
         nam2 = area.get_single("NAM2")
         material = nam2.to_class().name
+
+        if material not in material_dict.keys():
+            raise ValueError("Please add {} to material_dict global.".format(material))
 
         # Poly
         ade = area.get_single("ADE ")  # type: Form
