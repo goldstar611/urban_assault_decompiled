@@ -27,6 +27,42 @@ import time
 import struct
 
 
+class FakeMaterial:
+    def __init__(self, name):
+        self.name = name
+        self.texture_slots = self
+
+    def add(self):
+        return self
+
+
+class FakeTexture:
+    def __init__(self, name, type):
+        self.name = name
+        self.texture_type = type
+
+
+class FakeImage:
+    def __init__(self, texture_name, dir_name):
+        self.texture_name = texture_name
+        self.dir_name = dir_name
+
+
+class FakeBlenderMesh:
+    def __init__(self, ob_name, vertices=None, faces=None, uv_map=None, materials=None):
+        self.ob_name = ob_name
+        self.tessface_uv_textures = uv_map or []
+        self.materials = materials or []
+        self.tessfaces = faces or []
+        self.vertices = vertices or []
+
+    def validate(self):
+        pass
+
+    def update(self):
+        pass
+
+
 ######################################################
 # Data Structures
 ######################################################
@@ -265,7 +301,7 @@ def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, text
           "MATDICT = {} \n"
           "TEXTURE_DICT = {}".format(vertls, facels, materials,
                                      ob_name, mesh_uv, mat_dict, texture_dict))
-    bmesh = bpy.data.meshes.new(ob_name)
+    bmesh = FakeBlenderMesh(ob_name)
 
     if facels is None:
         facels = []
@@ -301,7 +337,7 @@ def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, text
                     img = texture_dict.get(bmat.name)
                 else:
                     print("    warning: material %r not defined!" % matName)
-                    bmat = mat_dict[matName] = bpy.data.materials.new(matName)
+                    bmat = mat_dict[matName] = FakeMaterial(matName)
                     img = None
 
             bmesh.materials.append(bmat)  # can be None
@@ -389,7 +425,7 @@ def process_next_chunk(file, previous_chunk, imported_objects):
 
     def read_texture(new_chunk, temp_chunk, name, mapto):
         print("read_texture {}".format(name))
-        new_texture = bpy.data.textures.new(name, type='IMAGE')
+        new_texture = FakeTexture(name, type='IMAGE')
 
         u_scale, v_scale, u_offset, v_offset = 1.0, 1.0, 0.0, 0.0
         extension = 'wrap'
@@ -400,7 +436,7 @@ def process_next_chunk(file, previous_chunk, imported_objects):
             if temp_chunk.ID == MAT_MAP_FILEPATH:
                 texture_name, read_str_len = read_string(file)
 
-                img = texture_dict[context_material.name] = load_image(texture_name, dir_name)
+                img = texture_dict[context_material.name] = FakeImage(texture_name, dir_name)
                 print("img = TEXTURE_DICT[{}] {}".format(context_material.name, texture_name))
                 temp_chunk.bytes_read += read_str_len  # plus one for the null character that gets removed
 
@@ -488,7 +524,7 @@ def process_next_chunk(file, previous_chunk, imported_objects):
 
             # 			print("read material")
 
-            context_material = bpy.data.materials.new('Material')
+            context_material = FakeMaterial('Material')
 
         elif new_chunk.ID == MAT_NAME:
             print("new_chunk.ID == MAT_NAME")
@@ -626,7 +662,7 @@ def process_next_chunk(file, previous_chunk, imported_objects):
         elif new_chunk.ID == MAT_MAP_FILEPATH:
             texture_name, read_str_len = read_string(file)
             if context_material.name not in texture_dict:
-                texture_dict[context_material.name] = load_image(texture_name, dir_name, place_holder=False)
+                texture_dict[context_material.name] = FakeImage(texture_name, dir_name)
 
             new_chunk.bytes_read += read_str_len  # plus one for the null character that gets removed
         elif new_chunk.ID == EDITKEYFRAME:
@@ -764,3 +800,5 @@ def load_3ds(filepath):
 
     print(" done in %.4f sec." % (time.clock() - time1))
     file.close()
+
+load_3ds("/media/spinnydisk/git/urban_assault_decompiled/output/ST_HYPE.3ds")
