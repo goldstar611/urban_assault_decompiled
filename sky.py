@@ -16,25 +16,29 @@ def decompile_sky():
 
 
 def compile_sky():
-    for sky in glob.glob("assets/sky/*/sky.json"):
+    for sky in glob.glob("assets/sky/*/*.bas.json"):
         sky_dir = os.path.dirname(sky)
         print(sky_dir)
 
         sky_form = compile.Form().from_json_file(sky)
         embd = sky_form.get_single("EMBD").to_class()
 
-        json_files = glob.glob(os.path.join(sky_dir, "*.sklt.json"))
+        json_files = glob.glob(os.path.join(sky_dir, "*.skl.json"))
         bmp_files = glob.glob(os.path.join(sky_dir, "*.*"))
 
         for bmp_file in bmp_files:
             print(bmp_file)
-            vbmp = compile.Vbmp().load_image(bmp_file)
-            embd.add_vbmp(vbmp.file_name, vbmp)
+            try:
+                vbmp = compile.Vbmp().load_image(bmp_file)
+                embd.add_vbmp(vbmp.file_name, vbmp)
+            except compile.InvalidImage:
+                pass
+
         for json_file in json_files:
             print(json_file)
             sklt = compile.Form().from_json_file(json_file)
 
-            resource_name = "Skeleton/" + os.path.splitext(os.path.basename(json_file))[0]
+            resource_name = os.path.splitext(os.path.basename(json_file))[0]
             embd.add_sklt(resource_name, sklt)
 
         sky_name = os.path.basename(sky_dir) + ".bas"

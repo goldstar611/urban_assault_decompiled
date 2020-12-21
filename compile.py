@@ -56,6 +56,10 @@ color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 42829
                4278586382, 4278586127, 4279045134, 4279110667, 4279241993, 4279308038, 4279306500, 4279305734]
 
 
+class InvalidImage(Exception):
+    pass
+
+
 class Meshy(object):
     """
     ### A `Meshy` object contains exactly
@@ -1074,8 +1078,7 @@ class Vbmp(Form):
     def load_image(self, file_name):
         image = QtGui.QImage(file_name)
         if image.format() == QtGui.QImage.Format_Invalid:
-            logging.warning("WARNING: Not loading invalid image file: {}".format(file_name))
-            return self
+            raise InvalidImage("WARNING: Not loading invalid image file: {}".format(file_name))
 
         if image.height() != 256 or image.width() != 256:
             logging.warning("WARNING: The file {} has a height that is not 256x256!".format(file_name))
@@ -1770,10 +1773,12 @@ def compile_single_files(set_number="1"):
 
     for bitmap in bitmaps:
         logging.info(bitmap)
-
-        new_vbmp = Vbmp().load_image(bitmap)
-        path = os.path.join("output", "data", "set", "{}")
-        new_vbmp.save_to_file(path.format(os.path.splitext(os.path.basename(bitmap))[0]))
+        try:
+            new_vbmp = Vbmp().load_image(bitmap)
+            path = os.path.join("output", "data", "set", "{}")
+            new_vbmp.save_to_file(path.format(os.path.splitext(os.path.basename(bitmap))[0]))
+        except InvalidImage:
+            logging.WARN("Skipping invalid image file {}".format(bitmap))
 
     # Compile animations
     path = os.path.join("assets", "sets", "set{}", "rsrcpool", "*.json")
