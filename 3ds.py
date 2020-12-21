@@ -4,46 +4,6 @@ from compile import Form, Poo2, Pol2, Olpl, Atts, Amsh, Otl2
 from io_mesh_3ds.export_3ds import write_3ds
 
 
-material_dict = {"AIR1TXT.ILBM": "AIR1TXT.png",
-                 "BODEN5.ILBM": "BODEN5.png",
-                 "FHUBI.ILBM": "FHUBI.png",
-                 "HYPE.ILBM": "HYPE.png",
-                 "BAGGER.ILBM": "BAGGER.png",
-                 "CITY1.ILBM": "CITY1.png",
-                 "FHYPE.ILBM": "FHYPE.png",
-                 "MACHT.ILBM": "MACHT.png",
-                 "BERUD.ILBM": "BERUD.png",
-                 "FAERROBO.ILBM": "FAERROBO.png",
-                 "FMACHT.ILBM": "FMACHT.png",
-                 "MTL.ILBM": "MTL.png",
-                 "BODEN1.ILBM": "BODEN1.png",
-                 "FBAGGER.ILBM": "FBAGGER.png",
-                 "FSCHROTT.ILBM": "FSCHROTT.png",
-                 "ROBONEU.ILBM": "ROBONEU.png",
-                 "BODEN2.ILBM": "BODEN2.png",
-                 "FBERUD.ILBM": "FBERUD.png",
-                 "FX1.ILBM": "FX1.png",
-                 "SCHROTT.ILBM": "SCHROTT.png",
-                 "BODEN3.ILBM": "BODEN3.png",
-                 "FCITY1.ILBM": "FCITY1.png",
-                 "FX2.ILBM": "FX2.png",
-                 "SHRTTWND.ILBM": "SHRTTWND.png",
-                 "BODEN4.ILBM": "BODEN4.png",
-                 "FHRTTWND.ILBM": "FHRTTWND.png",
-                 "HUBI.ILBM": "HUBI.png",
-                 "TAERROBO.ILBM": "TAERROBO.png",
-                 "NEWSKY1.ILBM": "NEWSKY1.png",  # Start sky bitmaps
-                 "NEWSKY2.ILBM": "NEWSKY2.png",
-                 "braun2.ilbm": "braun2.png",
-                 "ASKY1.ILBM": "ASKY1.png",
-                 "ASKY2.ILBM": "ASKY2.png",
-                 "ct1.ILBM": "ct1.png",
-                 "HIMMEL7.ILBM": "HIMMEL7.png",
-                 "verlauf.ilbm": "verlauf.png",
-                 "ct6.ILBM": "ct6.png",
-                 }
-
-
 class FakeBlenderMesh:
     def __init__(self, ob_name, vertices, faces, uv_map, material):
         self.ob_name = ob_name
@@ -89,9 +49,6 @@ def area_to_fake_mesh(ob_name, vertices, faces, area: Form):
         # Material
         nam2 = area.get_single("NAM2")
         material = nam2.to_class().name
-
-        if material not in material_dict.keys():
-            raise ValueError("Please add {} to material_dict global.".format(material))
 
         # Poly
         ade = area.get_single("ADE ")  # type: Form
@@ -151,6 +108,7 @@ def main():
         pol2 = sklt_form.get_single("POL2").to_class()  # type: Pol2
         faces = pol2.edges
 
+        material_dict = {}
         meshes = []
         for objt in model_form.get_single("ADES").sub_chunks:
             class_id = objt.get_single("CLID").to_class().class_id
@@ -159,12 +117,16 @@ def main():
                 mesh = make_fake_mesh(ob_name, vertices, faces, objt.get_single("AMSH").to_class())
                 if mesh:
                     meshes.append(mesh)
+                if mesh and mesh.material:
+                    material_dict[mesh.material] = os.path.splitext(mesh.material)[0] + ".png"
                 continue
 
             if class_id == "area.class":
                 mesh = area_to_fake_mesh(ob_name, vertices, faces, objt.get_single("AREA").to_class())
                 if mesh:
                     meshes.append(mesh)
+                if mesh and mesh.material:
+                    material_dict[mesh.material] = os.path.splitext(mesh.material)[0] + ".png"
                 continue
 
             if class_id == "particle.class":
