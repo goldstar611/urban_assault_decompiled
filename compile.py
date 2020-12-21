@@ -853,10 +853,13 @@ class Poo2(Chunk):
         super(Poo2, self).__init__(chunk_id)
         self.points = []
 
-    def apply_scaling_factor(self, scaling_factor):
+    def scale_down(self, scaling_factor):
         self.points = [{"x": point["x"] / scaling_factor,
                         "y": point["y"] / scaling_factor,
                         "z": point["z"] / scaling_factor} for point in self.points]
+
+    def scale_up(self, scaling_factor):
+        self.scale_down(1 / scaling_factor)
 
     def change_coordinate_system(self):
         self.points = [{"x": point["x"] * -1,

@@ -97,7 +97,7 @@ def main():
 
         sklt_form = Form().from_json_file("./assets/sets/{}/{}.json".format(set_number, sklt_file_name))
         poo2 = sklt_form.get_single("POO2").to_class()  # type: Poo2
-        poo2.apply_scaling_factor(150)
+        poo2.scale_down(150)
         poo2.change_coordinate_system()
         vertices = poo2.points_as_vectors()
 
@@ -130,7 +130,7 @@ def main():
                 continue
 
             if class_id == "particle.class":
-                #print("skipping {} in {}".format(class_id, file_name))
+                # print("skipping {} in {}".format(class_id, file_name))
                 continue
 
             raise ValueError(class_id)
