@@ -55,6 +55,7 @@ class FakeBlenderMesh:
         self.materials = materials or []
         self.tessfaces = faces or []
         self.vertices = vertices or []
+        self.face_to_material_idx = {}
 
     def validate(self):
         pass
@@ -307,25 +308,10 @@ def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, text
         facels = []
 
     if vertls:
+        bmesh.vertices = vertls
 
-        bmesh.vertices.add(len(vertls) // 3)
-        bmesh.vertices.foreach_set("co", vertls)
-
-        nbr_faces = len(facels)
-        bmesh.polygons.add(nbr_faces)
-        bmesh.loops.add(nbr_faces * 3)
-        eekadoodle_faces = []
         for v1, v2, v3 in facels:
-            eekadoodle_faces.extend((v3, v1, v2) if v3 == 0 else (v1, v2, v3))
-        bmesh.polygons.foreach_set("loop_start", range(0, nbr_faces * 3, 3))
-        bmesh.polygons.foreach_set("loop_total", (3,) * nbr_faces)
-        bmesh.loops.foreach_set("vertex_index", eekadoodle_faces)
-
-        if bmesh.polygons and mesh_uv:
-            bmesh.uv_textures.new()
-            uv_faces = bmesh.uv_textures.active.data[:]
-        else:
-            uv_faces = None
+            bmesh.tessfaces.append([v3, v1, v2] if v3 == 0 else [v1, v2, v3])
 
         for mat_idx, (matName, faces) in enumerate(materials):
             if matName is None:
@@ -333,26 +319,17 @@ def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, text
             else:
                 bmat = mat_dict.get(matName)
                 # in rare cases no materials defined.
-                if bmat:
-                    img = texture_dict.get(bmat.name)
-                else:
-                    print("    warning: material %r not defined!" % matName)
+                if not bmat:
+                    raise ValueError("Material %r not defined!" % matName)
                     bmat = mat_dict[matName] = FakeMaterial(matName)
-                    img = None
 
             bmesh.materials.append(bmat)  # can be None
 
-            if uv_faces and img:
-                for f_idx in faces:
-                    bmesh.polygons[f_idx].material_index = mat_idx
-                    uv_faces[f_idx].image = img
-            else:
-                for f_idx in faces:
-                    bmesh.polygons[f_idx].material_index = mat_idx
+            for f_idx in faces:
+                bmesh.face_to_material_idx[f_idx] = mat_idx
 
-        if uv_faces:
-            uvl = bmesh.uv_layers.active.data[:]
-            for f_idx, pl in enumerate(bmesh.polygons):
+        if mesh_uv:
+            for f_idx, pl in enumerate(bmesh.tessfaces):
                 face = facels[f_idx]
                 v1, v2, v3 = face
 
@@ -360,9 +337,10 @@ def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, text
                 if v3 == 0:
                     v1, v2, v3 = v3, v1, v2
 
-                uvl[pl.loop_start].uv = mesh_uv[v1 * 2: (v1 * 2) + 2]
-                uvl[pl.loop_start + 1].uv = mesh_uv[v2 * 2: (v2 * 2) + 2]
-                uvl[pl.loop_start + 2].uv = mesh_uv[v3 * 2: (v3 * 2) + 2]
+                bmesh.tessface_uv_textures.append([mesh_uv[v1 * 2: (v1 * 2) + 2],
+                                                   mesh_uv[v2 * 2: (v2 * 2) + 2],
+                                                   mesh_uv[v3 * 2: (v3 * 2) + 2]
+                                                   ])
                 # always a tri
 
     bmesh.validate()
