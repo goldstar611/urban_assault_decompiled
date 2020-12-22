@@ -181,8 +181,6 @@ EK_OB_SCALE_TRACK = 0xB022
 
 ROOT_OBJECT = 0xFFFF
 
-object_dictionary = {}
-
 
 class Chunk:
     __slots__ = (
@@ -293,15 +291,6 @@ def add_texture_to_material(image, texture, scale, offset, extension, material, 
 
 
 def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, texture_dict, imported_objects):
-    print("putContextMesh \n"
-          "myContextMesh_vertls = {} \n"
-          "myContextMesh_facels = {} \n"
-          "myContextMeshMaterials = {} \n"
-          "contextObName = {} \n"
-          "contextMeshUV = {} \n"
-          "MATDICT = {} \n"
-          "TEXTURE_DICT = {}".format(vertls, facels, materials,
-                                     ob_name, mesh_uv, mat_dict, texture_dict))
     bmesh = FakeBlenderMesh(ob_name)
 
     if facels is None:
@@ -320,7 +309,7 @@ def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, text
                 bmat = mat_dict.get(matName)
                 # in rare cases no materials defined.
                 if not bmat:
-                    raise ValueError("Material %r not defined!" % matName)
+                    #raise ValueError("Material %r not defined!" % matName)
                     bmat = mat_dict[matName] = FakeMaterial(matName)
 
             bmesh.materials.append(bmat)  # can be None
@@ -346,9 +335,7 @@ def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, text
     bmesh.validate()
     bmesh.update()
 
-    ob = bpy.data.objects.new(ob_name, bmesh)
-    object_dictionary[ob_name] = ob
-    imported_objects.append(ob)
+    imported_objects.append(bmesh)
 
 
 def process_next_chunk(file, previous_chunk, imported_objects):
@@ -665,11 +652,7 @@ def process_next_chunk(file, previous_chunk, imported_objects):
             hierarchy = struct.unpack('<H', temp_data)[0]
             new_chunk.bytes_read += 2
 
-            child = object_dictionary.get(object_name)
-
-            if child is None:
-                child = bpy.data.objects.new(object_name, None)  # create an empty object
-                imported_objects.append(child)
+            #child = object_dictionary.get(object_name)
 
             object_list.append(child)
             object_parent.append(hierarchy)
@@ -678,7 +661,7 @@ def process_next_chunk(file, previous_chunk, imported_objects):
             object_name, read_str_len = read_string(file)
             # child.name = object_name
             child.name += "." + object_name
-            object_dictionary[object_name] = child
+            #object_dictionary[object_name] = child
             new_chunk.bytes_read += read_str_len
             # print("new instance object:", object_name)
 
@@ -750,6 +733,8 @@ def process_next_chunk(file, previous_chunk, imported_objects):
 
 
 def load_3ds(filepath):
+    imported_objects = []
+
     print("importing 3DS: %r..." % filepath, end="")
 
     time1 = time.clock()
@@ -767,16 +752,15 @@ def load_3ds(filepath):
         file.close()
         return
 
-    # fixme, make unglobal, clear in case
-    object_dictionary.clear()
-
-    imported_objects = []  # Fill this list with objects
     process_next_chunk(file, current_chunk, imported_objects)
-
-    # fixme, make unglobal
-    object_dictionary.clear()
 
     print(" done in %.4f sec." % (time.clock() - time1))
     file.close()
 
-load_3ds("/media/spinnydisk/git/urban_assault_decompiled/output/ST_HYPE.3ds")
+    return imported_objects
+
+
+import glob
+objects = [load_3ds(f) for f in glob.glob("/media/spinnydisk/git/urban_assault_decompiled/output/*.3ds")]
+
+print("Done")
