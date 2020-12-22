@@ -37,9 +37,9 @@ class FakeMaterial:
 
 
 class FakeTexture:
-    def __init__(self, name, type):
+    def __init__(self, name, tex_type):
         self.name = name
-        self.texture_type = type
+        self.texture_type = tex_type
 
 
 class FakeImage:
@@ -290,7 +290,7 @@ def add_texture_to_material(image, texture, scale, offset, extension, material, 
         mtex.use_map_normal = True
 
 
-def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, texture_dict, imported_objects):
+def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, imported_objects):
     bmesh = FakeBlenderMesh(ob_name)
 
     if facels is None:
@@ -309,7 +309,7 @@ def put_context_mesh(vertls, facels, materials, ob_name, mesh_uv, mat_dict, text
                 bmat = mat_dict.get(matName)
                 # in rare cases no materials defined.
                 if not bmat:
-                    #raise ValueError("Material %r not defined!" % matName)
+                    # raise ValueError("Material %r not defined!" % matName)
                     bmat = mat_dict[matName] = FakeMaterial(matName)
 
             bmesh.materials.append(bmat)  # can be None
@@ -350,14 +350,13 @@ def process_next_chunk(file, previous_chunk, imported_objects):
     matdict = {}
 
     # Localspace variable names, faster.
-    STRUCT_SIZE_FLOAT = struct.calcsize('f')
-    STRUCT_SIZE_2FLOAT = struct.calcsize('2f')
-    STRUCT_SIZE_3FLOAT = struct.calcsize('3f')
-    STRUCT_SIZE_4FLOAT = struct.calcsize('4f')
-    STRUCT_SIZE_UNSIGNED_SHORT = struct.calcsize('H')
-    STRUCT_SIZE_4UNSIGNED_SHORT = struct.calcsize('4H')
-    STRUCT_SIZE_4x3MAT = struct.calcsize('ffffffffffff')
-    # STRUCT_SIZE_4x3MAT = calcsize('ffffffffffff')
+    struct_size_float = struct.calcsize('f')
+    struct_size_2_float = struct.calcsize('2f')
+    struct_size_3_float = struct.calcsize('3f')
+    struct_size_4_float = struct.calcsize('4f')
+    struct_size_unsigned_short = struct.calcsize('H')
+    struct_size_4_unsigned_short = struct.calcsize('4H')
+    struct_size_4x3_mat = struct.calcsize('ffffffffffff')
     # only init once
     object_list = []  # for hierarchy
     object_parent = []  # index of parent in hierarchy, 0xFFFF = no parent
@@ -369,18 +368,18 @@ def process_next_chunk(file, previous_chunk, imported_objects):
     create_blender_object = False
 
     def read_float_color(temp_chunk):
-        temp_data = file.read(STRUCT_SIZE_3FLOAT)
-        temp_chunk.bytes_read += STRUCT_SIZE_3FLOAT
+        temp_data = file.read(struct_size_3_float)
+        temp_chunk.bytes_read += struct_size_3_float
         return [float(col) for col in struct.unpack('<3f', temp_data)]
 
     def read_float(temp_chunk):
-        temp_data = file.read(STRUCT_SIZE_FLOAT)
-        temp_chunk.bytes_read += STRUCT_SIZE_FLOAT
+        temp_data = file.read(struct_size_float)
+        temp_chunk.bytes_read += struct_size_float
         return struct.unpack('<f', temp_data)[0]
 
     def read_short(temp_chunk):
-        temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
-        temp_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT
+        temp_data = file.read(struct_size_unsigned_short)
+        temp_chunk.bytes_read += struct_size_unsigned_short
         return struct.unpack('<H', temp_data)[0]
 
     def read_byte_color(temp_chunk):
@@ -390,7 +389,7 @@ def process_next_chunk(file, previous_chunk, imported_objects):
 
     def read_texture(new_chunk, temp_chunk, name, mapto):
         print("read_texture {}".format(name))
-        new_texture = FakeTexture(name, type='IMAGE')
+        new_texture = FakeTexture(name, tex_type='IMAGE')
 
         u_scale, v_scale, u_offset, v_offset = 1.0, 1.0, 0.0, 0.0
         extension = 'wrap'
@@ -466,17 +465,14 @@ def process_next_chunk(file, previous_chunk, imported_objects):
 
             if create_blender_object:
                 print("CreateBlenderObject is True")
-                put_context_mesh(context_mesh_vertls, context_mesh_facels, context_mesh_materials,
-                                 context_ob_name, context_mesh_uv, matdict, texture_dict,
-                                 imported_objects)
+                put_context_mesh(context_mesh_vertls, context_mesh_facels, context_mesh_materials, context_ob_name,
+                                 context_mesh_uv, matdict, imported_objects)
                 context_mesh_vertls = []
                 context_mesh_facels = []
 
                 # preparando para receber o proximo objeto
                 context_mesh_materials = []
                 context_mesh_uv = None
-                # Reset matrix
-                context_matrix_rot = None
 
             create_blender_object = True
             context_ob_name, read_str_len = read_string(file)
@@ -542,31 +538,6 @@ def process_next_chunk(file, previous_chunk, imported_objects):
             print("new_chunk.ID == MAT_TEXTURE_MAP")
             read_texture(new_chunk, temp_chunk, "Diffuse", "COLOR")
 
-        elif new_chunk.ID == MAT_SPECULAR_MAP:
-            read_texture(new_chunk, temp_chunk, "Specular", "SPECULARITY")
-
-        elif new_chunk.ID == MAT_OPACITY_MAP:
-            read_texture(new_chunk, temp_chunk, "Opacity", "ALPHA")
-
-        elif new_chunk.ID == MAT_BUMP_MAP:
-            read_texture(new_chunk, temp_chunk, "Bump", "NORMAL")
-
-        elif new_chunk.ID == MAT_TRANSPARENCY:
-            read_chunk(file, temp_chunk)
-
-            if temp_chunk.ID == PERCENTAGE_SHORT:
-                temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
-                temp_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT
-                context_material.alpha = 1 - (float(struct.unpack('<H', temp_data)[0]) / 100)
-            elif temp_chunk.ID == PERCENTAGE_FLOAT:
-                temp_data = file.read(STRUCT_SIZE_FLOAT)
-                temp_chunk.bytes_read += STRUCT_SIZE_FLOAT
-                context_material.alpha = 1 - float(struct.unpack('f', temp_data)[0])
-            else:
-                print("Cannot read material transparency")
-
-            new_chunk.bytes_read += temp_chunk.bytes_read
-
         elif new_chunk.ID == OBJECT_MESH:
             print("new_chunk.ID == OBJECT_MESH")
             # print 'Found an OBJECT_MESH chunk'
@@ -576,23 +547,23 @@ def process_next_chunk(file, previous_chunk, imported_objects):
             """
             Worldspace vertex locations
             """
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
+            temp_data = file.read(struct_size_unsigned_short)
             num_verts = struct.unpack('<H', temp_data)[0]
             new_chunk.bytes_read += 2
 
-            context_mesh_vertls = struct.unpack('<%df' % (num_verts * 3), file.read(STRUCT_SIZE_3FLOAT * num_verts))
-            new_chunk.bytes_read += STRUCT_SIZE_3FLOAT * num_verts
+            context_mesh_vertls = list(struct.unpack('<%df' % (num_verts * 3), file.read(struct_size_3_float * num_verts)))
+            new_chunk.bytes_read += struct_size_3_float * num_verts
             # dummyvert is not used atm!
 
         elif new_chunk.ID == OBJECT_FACES:
             print("new_chunk.ID == OBJECT_FACES")
             # print 'elif new_chunk.ID == OBJECT_FACES:'
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
+            temp_data = file.read(struct_size_unsigned_short)
             num_faces = struct.unpack('<H', temp_data)[0]
             new_chunk.bytes_read += 2
 
-            temp_data = file.read(STRUCT_SIZE_4UNSIGNED_SHORT * num_faces)
-            new_chunk.bytes_read += STRUCT_SIZE_4UNSIGNED_SHORT * num_faces  # 4 short ints x 2 bytes each
+            temp_data = file.read(struct_size_4_unsigned_short * num_faces)
+            new_chunk.bytes_read += struct_size_4_unsigned_short * num_faces  # 4 short ints x 2 bytes each
             context_mesh_facels = struct.unpack('<%dH' % (num_faces * 4), temp_data)
             context_mesh_facels = [context_mesh_facels[i - 3:i] for i in range(3, (num_faces * 4) + 3, 4)]
 
@@ -601,12 +572,12 @@ def process_next_chunk(file, previous_chunk, imported_objects):
             material_name, read_str_len = read_string(file)
             new_chunk.bytes_read += read_str_len  # remove 1 null character.
 
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
+            temp_data = file.read(struct_size_unsigned_short)
             num_faces_using_mat = struct.unpack('<H', temp_data)[0]
-            new_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT
+            new_chunk.bytes_read += struct_size_unsigned_short
 
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT * num_faces_using_mat)
-            new_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT * num_faces_using_mat
+            temp_data = file.read(struct_size_unsigned_short * num_faces_using_mat)
+            new_chunk.bytes_read += struct_size_unsigned_short * num_faces_using_mat
 
             temp_data = struct.unpack("<%dH" % num_faces_using_mat, temp_data)
 
@@ -616,98 +587,19 @@ def process_next_chunk(file, previous_chunk, imported_objects):
 
         elif new_chunk.ID == OBJECT_UV:
             print("new_chunk.ID == OBJECT_UV")
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
+            temp_data = file.read(struct_size_unsigned_short)
             num_uv = struct.unpack('<H', temp_data)[0]
             new_chunk.bytes_read += 2
 
-            temp_data = file.read(STRUCT_SIZE_2FLOAT * num_uv)
-            new_chunk.bytes_read += STRUCT_SIZE_2FLOAT * num_uv
-            context_mesh_uv = struct.unpack('<%df' % (num_uv * 2), temp_data)
-
-        elif new_chunk.ID == MAT_MAP_FILEPATH:
-            texture_name, read_str_len = read_string(file)
-            if context_material.name not in texture_dict:
-                texture_dict[context_material.name] = FakeImage(texture_name, dir_name)
-
-            new_chunk.bytes_read += read_str_len  # plus one for the null character that gets removed
-        elif new_chunk.ID == EDITKEYFRAME:
-            pass
-
-        # including these here means their EK_OB_NODE_HEADER are scanned
-        elif new_chunk.ID in {ED_KEY_AMBIENT_NODE,
-                              ED_KEY_OBJECT_NODE,
-                              ED_KEY_CAMERA_NODE,
-                              ED_KEY_TARGET_NODE,
-                              ED_KEY_LIGHT_NODE,
-                              ED_KEY_L_TARGET_NODE,
-                              ED_KEY_SPOTLIGHT_NODE}:  # another object is being processed
-            child = None
-
-        elif new_chunk.ID == EK_OB_NODE_HEADER:
-            object_name, read_str_len = read_string(file)
-            new_chunk.bytes_read += read_str_len
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT * 2)
-            new_chunk.bytes_read += 4
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
-            hierarchy = struct.unpack('<H', temp_data)[0]
-            new_chunk.bytes_read += 2
-
-            #child = object_dictionary.get(object_name)
-
-            object_list.append(child)
-            object_parent.append(hierarchy)
-
-        elif new_chunk.ID == EK_OB_INSTANCE_NAME:
-            object_name, read_str_len = read_string(file)
-            # child.name = object_name
-            child.name += "." + object_name
-            #object_dictionary[object_name] = child
-            new_chunk.bytes_read += read_str_len
-            # print("new instance object:", object_name)
-
-        elif new_chunk.ID == EK_OB_POSITION_TRACK:  # translation
-            new_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT * 5
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT * 5)
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
-            nkeys = struct.unpack('<H', temp_data)[0]
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
-            new_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT * 2
-            for i in range(nkeys):
-                temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
-                nframe = struct.unpack('<H', temp_data)[0]
-                new_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT
-                temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT * 2)
-                new_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT * 2
-                temp_data = file.read(STRUCT_SIZE_3FLOAT)
-                loc = struct.unpack('<3f', temp_data)
-                new_chunk.bytes_read += STRUCT_SIZE_3FLOAT
-                if nframe == 0:
-                    child.location = loc
-
-        elif new_chunk.ID == EK_OB_SCALE_TRACK:  # translation
-            new_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT * 5
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT * 5)
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
-            nkeys = struct.unpack('<H', temp_data)[0]
-            temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
-            new_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT * 2
-            for i in range(nkeys):
-                temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT)
-                nframe = struct.unpack('<H', temp_data)[0]
-                new_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT
-                temp_data = file.read(STRUCT_SIZE_UNSIGNED_SHORT * 2)
-                new_chunk.bytes_read += STRUCT_SIZE_UNSIGNED_SHORT * 2
-                temp_data = file.read(STRUCT_SIZE_3FLOAT)
-                sca = struct.unpack('<3f', temp_data)
-                new_chunk.bytes_read += STRUCT_SIZE_3FLOAT
-                if nframe == 0:
-                    child.scale = sca
+            temp_data = file.read(struct_size_2_float * num_uv)
+            new_chunk.bytes_read += struct_size_2_float * num_uv
+            context_mesh_uv = list(struct.unpack('<%df' % (num_uv * 2), temp_data))
 
         else:
             print("unknown chunk: "+hex(new_chunk.ID))
             buffer_size = new_chunk.length - new_chunk.bytes_read
             binary_format = "%ic" % buffer_size
-            temp_data = file.read(struct.calcsize(binary_format))
+            _ = file.read(struct.calcsize(binary_format))
             new_chunk.bytes_read += buffer_size
 
         # update the previous chunk bytes read
@@ -716,20 +608,8 @@ def process_next_chunk(file, previous_chunk, imported_objects):
     # FINISHED LOOP
     # There will be a number of objects still not added
     if create_blender_object:
-        put_context_mesh(context_mesh_vertls, context_mesh_facels, context_mesh_materials,
-                         context_ob_name, context_mesh_uv, matdict, texture_dict,
-                         imported_objects)
-
-    # Assign parents to objects
-    # check _if_ we need to assign first because doing so recalcs the depsgraph
-    for ind, ob in enumerate(object_list):
-        parent = object_parent[ind]
-        if parent == ROOT_OBJECT:
-            if ob.parent is not None:
-                ob.parent = None
-        else:
-            if ob.parent != object_list[parent]:
-                ob.parent = object_list[parent]
+        put_context_mesh(context_mesh_vertls, context_mesh_facels, context_mesh_materials, context_ob_name,
+                         context_mesh_uv, matdict, imported_objects)
 
 
 def load_3ds(filepath):
