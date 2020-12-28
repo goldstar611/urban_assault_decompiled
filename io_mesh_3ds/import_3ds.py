@@ -643,4 +643,40 @@ def load_3ds(filepath):
 import glob
 objects = [load_3ds(f) for f in glob.glob("/media/spinnydisk/git/urban_assault_decompiled/output/*.3ds")]
 
+import compile
+ST_HYPE = load_3ds("/media/spinnydisk/git/urban_assault_decompiled/output/ST_HYPE.3ds")
+
+# Create top level object
+model_name = ST_HYPE[0].ob_name
+# Set SKLC.NAME.name
+o = compile.Objt()
+clid = compile.Clid()
+sklc = compile.Form(form_type="SKLC")
+o.sub_chunks = [clid, sklc]
+clid.class_id = "sklt.class"
+
+name = compile.Name()
+sklc.sub_chunks = [name]
+name.name = "{}.sklt".format(model_name)
+
+# Write Skeleton file (POO2/POL2/SEN2)
+#  TODO SEN2
+
+# For each Fake Blender Mesh
+temp_dict = {}
+for mesh in ST_HYPE:
+    # For each material in materials
+    for material in mesh.materials:
+        if material.texture.image.texture_name not in temp_dict:
+            temp_dict[material.texture.image.texture_name] = []
+
+    # For each face_to_material_idx
+    for poly, material_index in mesh.face_to_material_idx.items():
+        uv = [[int(x*255), int(y*255)] for x, y in mesh.tessface_uv_textures[poly]]
+        temp_dict[mesh.materials[material_index].texture.image.texture_name].append({"poly": mesh.tessfaces[poly],
+                                                                                     "uv": uv})
+
+# For each poly, uv in temp_dict, append ATTS and OLPL to the correct AMSH form
+
+
 print("Done")
