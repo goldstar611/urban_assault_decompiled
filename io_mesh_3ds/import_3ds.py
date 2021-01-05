@@ -641,13 +641,13 @@ def load_3ds(filepath):
 
 
 import glob
-objects = [load_3ds(f) for f in glob.glob("/media/spinnydisk/git/urban_assault_decompiled/output/*.3ds")]
+#objects = [load_3ds(f) for f in glob.glob("/media/spinnydisk/git/urban_assault_decompiled/output/*.3ds")]
 
 import compile
 ST_HYPE = load_3ds("/media/spinnydisk/git/urban_assault_decompiled/output/ST_HYPE.3ds")
 
 # Create top level object
-model_name = ST_HYPE[0].ob_name
+model_name = ST_HYPE[0].ob_name  # TODO Hope that first mesh isn't SEN2
 # Set SKLC.NAME.name
 o = compile.Objt()
 clid = compile.Clid()
@@ -659,22 +659,51 @@ name = compile.Name()
 sklc.sub_chunks = [name]
 name.name = "{}.sklt".format(model_name)
 
-# Write Skeleton file (POO2/POL2/SEN2)
-#  TODO SEN2
-
 # For each Fake Blender Mesh
 temp_dict = {}
+temp_vertices = []
+temp_faces = []
 for mesh in ST_HYPE:
+    if "sen2" in mesh.ob_name.lower():
+        print("Found SEN2 mesh, skipping")  # TODO
+        continue
     # For each material in materials
     for material in mesh.materials:
         if material.texture.image.texture_name not in temp_dict:
             temp_dict[material.texture.image.texture_name] = []
 
+    # create vertex list, ensure no duplicates
+    for vertex in zip(mesh.vertices[::3], mesh.vertices[1::3], mesh.vertices[2::3]):
+        if vertex not in temp_vertices:
+            temp_vertices.append(list(vertex))
+
+    for tess_face in mesh.tessfaces:
+        temp_face = list(map(lambda j: temp_vertices.index(j), map(lambda i: mesh.vertices[i*3:i*3+3], tess_face)))
+        temp_faces.append(temp_face)
+
     # For each face_to_material_idx
     for poly, material_index in mesh.face_to_material_idx.items():
         uv = [[int(x*255), int(y*255)] for x, y in mesh.tessface_uv_textures[poly]]
-        temp_dict[mesh.materials[material_index].texture.image.texture_name].append({"poly": mesh.tessfaces[poly],
+
+        # map mesh.tessfaces[poly] -> index of temp_vertices
+        temp_face = list(
+            map(lambda j: temp_vertices.index(j), map(lambda i: mesh.vertices[i * 3:i * 3 + 3], mesh.tessfaces[poly]))
+        )
+        temp_dict[mesh.materials[material_index].texture.image.texture_name].append({"poly": temp_faces.index(temp_face),
                                                                                      "uv": uv})
+
+# Write Skeleton file (POO2/POL2/SEN2)
+#  TODO SEN2
+poo2 = compile.Poo2()
+poo2.set_points_from_list(temp_vertices)
+poo2.scale_up(150)
+poo2.round_points()
+poo2.change_coordinate_system()
+pol2 = compile.Pol2()
+pol2.edges = temp_faces
+sklt = compile.Sklt()
+sklt.sub_chunks = [poo2, pol2]
+sklt.save_to_json_file(os.path.join(".", "{}.skl.json".format(model_name)))  # TODO USE OUTPUTDIR
 
 # For each poly, uv in temp_dict, append ATTS and OLPL to the correct AMSH form
 

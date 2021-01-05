@@ -360,6 +360,10 @@ class Form(object):
         with open(file_name, "wb") as f:
             f.write(self.full_data())
 
+    def save_to_json_file(self, file_name):
+        with open(file_name, "wt") as f:
+            f.write(self.to_json())
+
     def parse_stream(self, bas_data):
         """
 
@@ -875,6 +879,16 @@ class Poo2(Chunk):
 
     def points_as_flattened_list(self):
         return [item for sublist in self.points_as_list() for item in sublist]  # No Test Coverage
+
+    def set_points_from_list(self, points):
+        self.points = [{"x": x,
+                        "y": y,
+                        "z": z} for x, y, z in points]  # No Test Coverage
+
+    def round_points(self):
+        self.points = [{"x": round(point["x"]),
+                        "y": round(point["y"]),
+                        "z": round(point["z"])} for point in self.points]  # No Test Coverage
 
     def points_as_vectors(self):
         return [Vector(*xyz) for xyz in self.points_as_list()]
@@ -1588,6 +1602,11 @@ class Base(Form):
         super(Base, self).__init__(form_type, sub_chunks)
 
 
+class Sklt(Form):
+    def __init__(self, form_type="SKLT", sub_chunks=None):
+        super(Sklt, self).__init__(form_type, sub_chunks)
+
+
 master_list = {
     "ADE ": Form,
     "ADES": Form,
@@ -1603,7 +1622,7 @@ master_list = {
     "PTCL": Form,
     "ROOT": Form,
     "SKLC": Form,
-    "SKLT": Form,
+    "SKLT": Sklt,
     "VANM": Form,
     "VBMP": Vbmp,
     "ATTS": Atts,
