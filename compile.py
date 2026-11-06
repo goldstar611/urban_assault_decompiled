@@ -151,14 +151,6 @@ class Chunk(object):
         with open(file_name, "wb") as f:
             f.write(self.full_data())
 
-    def to_class(self) -> Chunk:
-        if self.chunk_id in chunk_registry:
-            o = chunk_registry[self.chunk_id]()
-            o.set_binary_data(self.data)
-            return o
-
-        raise ValueError("This class cannot be converted")  # No Test Coverage
-
     def to_dict(self) -> Dict[str, Dict[str, Any]]:
         if self.chunk_id in chunk_registry:
             o = chunk_registry[self.chunk_id]()
@@ -241,12 +233,6 @@ class Form(object):
         data = self.get_data()
         data_length = len(data)
         return bytes("FORM", "ascii") + struct.pack(">I", data_length) + data
-
-    def to_class(self) -> Form:
-        if self.form_type in form_registry:
-            return form_registry[self.form_type](self.form_type, self.sub_chunks)
-
-        raise ValueError("This class cannot be converted")  # No Test Coverage
 
     def to_dict(self) -> Dict[str, List[Dict[str, Any]]]:
         # Generic json support for all IFF forms
@@ -1831,8 +1817,7 @@ def make_chunk(chunk_id: str, binary_data: bytes) -> Chunk:
 def make_form(form_type: str, sub_chunks: List[Union[Form, Chunk]]) -> Form:
     """Create the concrete form type registered for *form_type*.
 
-    Parsed forms used to remain generic until callers explicitly invoked
-    ``to_class()``.  Constructing the registered form here means children are
+    Parsing constructs the registered form directly, so children are
     immediately usable through their concrete interfaces (for example,
     ``Emrs.emrs_name`` and ``Vbmp.save_to_bmp``).
     """

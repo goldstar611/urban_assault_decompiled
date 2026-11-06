@@ -89,17 +89,6 @@ class TestChunk(unittest.TestCase):
     # TODO save_data_to_file (Can use io.BytesIO to provide a fake file stream)
     # TODO save_to_file (Can use io.BytesIO to provide a fake file stream)
 
-    def test_to_class(self):
-        c = compile.Chunk()
-        c.chunk_id = "NAME"
-        c.data = b"TEST\x00"
-        cl = c.to_class()
-        self.assertTrue(isinstance(cl, compile.Name))
-        self.assertTrue(cl.zero_terminated)
-        self.assertEqual(cl.full_data(), b'NAME\x00\x00\x00\x05TEST\x00\x00')
-
-    # TODO to_class (error condition)
-
     def test_to_json(self):
         c = compile.Chunk()
         c.chunk_id = "NAME"
@@ -118,23 +107,23 @@ class TestChunk(unittest.TestCase):
         import glob
         chunks = glob.glob("test/bin/chunks/*.bin")
         for chunk in chunks:
-            c = compile.Chunk().load_from_file(chunk)
-            cl = c.to_class()
-            fd = cl.full_data()
-            j = cl.to_dict()
-            if c.chunk_id != "DATA":
-                # DATA is a special case because we are free to order the ILBM references in any order
-                self.assertEqual(c.full_data(), cl.full_data())
+            with open(chunk, "rb") as f:
+                data = f.read()
+            parsed = compile.Form().parse_stream(io.BytesIO(data))[0]
+            # DATA is a special case because we are free to order the ILBM references in any order
+            if parsed.chunk_id != "DATA":
+                self.assertEqual(parsed.full_data(), data)
 
     def test_form_classes(self):
         import glob
         chunks = glob.glob("test/bin/forms/*.bin")
         for chunk in chunks:
-            c = compile.Form().load_from_file(chunk)
-            cl = c.to_class()
-            fd = cl.full_data()
-            j = cl.to_dict()
-            self.assertEqual(c.full_data(), cl.full_data())
+            with open(chunk, "rb") as f:
+                data = f.read()
+            parsed = compile.Form().parse_stream(io.BytesIO(data))[0]
+            # DATA is a special case because we are free to order the ILBM references in any order
+            if not parsed.get_all("DATA"):
+                self.assertEqual(parsed.full_data(), data)
 
     def test_parser_uses_registered_types(self):
         name = compile.Nam2()
@@ -405,17 +394,6 @@ class TestForm(unittest.TestCase):
         c.data = b"TEST CHUNK DATA"
         f = compile.Form("TFRM", [c])
         self.assertEqual(f.full_data(), b"FORM\x00\x00\x00\x1cTFRMCHNK\x00\x00\x00\x0fTEST CHUNK DATA\x00")
-
-    def test_to_class_1(self):
-        c = compile.Chunk()
-        c.chunk_id = "NAME"
-        c.data = b"TEST\x00"
-        f = compile.Form("VBMP", [c])
-        cl = f.to_class()
-        self.assertTrue(isinstance(cl, compile.Vbmp))
-        self.assertTrue(isinstance(cl.child(0).to_class(), compile.Name))
-
-    # TODO to_class (error condition)
 
     def test_to_json(self):
         c = compile.Chunk("NAME")
