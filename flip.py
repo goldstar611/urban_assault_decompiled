@@ -2,12 +2,15 @@
 
 import glob
 
-from PyQt5 import QtGui
+from PIL import Image
+
+mirror_horizontal = False
+mirror_vertical = False
 
 for file in glob.glob("*.bmp"):
-    image = QtGui.QImage(file)
-    mirror_horizontal = False
-    mirror_vertical = False
-    image = image.mirrored(mirror_horizontal, mirror_vertical)
-    image.save(file.replace(".ILB", "").replace(".bmp", ".png"))
-
+    with Image.open(file) as image:
+        if mirror_horizontal:
+            image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        if mirror_vertical:
+            image = image.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+        image.save(file.replace(".ILB", "").replace(".bmp", ".png"))

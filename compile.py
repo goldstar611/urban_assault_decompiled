@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import glob
 import io
@@ -6,9 +8,9 @@ import os
 import shutil
 import struct
 import sys
-from typing import Union, List
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Type, Union
 
-from PyQt5 import QtGui
+from PIL import Image, UnidentifiedImageError
 
 try:
     import myjson as json
@@ -22,38 +24,34 @@ unsigned_int_be = "<I"
 size_of_unsigned_int = 4
 unsigned_short_be = "<H"
 size_of_unsigned_short = 2
-color_table = [4294967040, 4294967295, 4292532954, 4288387995, 4285361517, 4282992969, 4278190081, 4288398800,
-               4278203647, 4278190335, 4294901760, 4294945564, 4278245713, 4282795590, 4294967176, 4278225322,
-               4278190081, 4294967295, 4289063167, 4285382071, 4284531364, 4284532626, 4288399276, 4284660169,
-               4284724444, 4284788975, 4291738328, 4292655531, 4294428045, 4294963045, 4294937927, 4294926689,
-               4278190081, 4293848814, 4288338158, 4284854442, 4284069273, 4284070280, 4287674784, 4284198075,
-               4284262605, 4284327135, 4290817481, 4291669151, 4293310339, 4293844830, 4293821250, 4293810778,
-               4278190081, 4292730333, 4287613405, 4284392350, 4283672718, 4283673726, 4287016085, 4283736238,
-               4283800766, 4283865295, 4289896891, 4290683028, 4292258426, 4292726615, 4292704829, 4292695124,
-               4278190081, 4291611852, 4286888396, 4283930514, 4283210627, 4283211636, 4286357385, 4283339936,
-               4283404463, 4283403455, 4288976044, 4289696904, 4291140976, 4291608400, 4291588152, 4291579213,
-               4278190081, 4290493371, 4286163643, 4283402886, 4282814072, 4282814827, 4285632894, 4282877843,
-               4282942625, 4283007407, 4288120990, 4288776061, 4290089063, 4290490186, 4290471732, 4290463559,
-               4278190081, 4289374890, 4285438634, 4282941050, 4282417517, 4282418273, 4284974194, 4282481542,
-               4282546322, 4282545567, 4287200400, 4287789938, 4288971614, 4289371971, 4289355311, 4289347648,
-               4278190081, 4288256409, 4284713881, 4282478957, 4281955426, 4281956183, 4284315495, 4282019704,
-               4282084483, 4282083727, 4286279553, 4286803814, 4287919700, 4288253756, 4288238634, 4288231994,
-               4278190081, 4287137928, 4283988872, 4282016865, 4281558871, 4281559629, 4283591259, 4281623147,
-               4281622645, 4281687423, 4285358963, 4285882971, 4286802251, 4287135541, 4287122213, 4287116083,
-               4278190081, 4286019447, 4283264119, 4281489493, 4281096780, 4281097284, 4282932304, 4281161309,
-               4281226342, 4281225839, 4284503652, 4284896847, 4285750081, 4286017327, 4286005537, 4286000429,
-               4278190081, 4284900966, 4282539110, 4281027401, 4280700225, 4280700730, 4282273604, 4280765008,
-               4280764503, 4280763999, 4283583062, 4283910724, 4284632632, 4284899112, 4284889116, 4284884518,
-               4278190081, 4283782485, 4281814357, 4280565565, 4280303670, 4280304176, 4281549369, 4280302915,
-               4280368201, 4280367695, 4282662472, 4282989881, 4283580719, 4283780897, 4283772695, 4283768864,
-               4278190081, 4282664004, 4281089348, 4280103472, 4279841579, 4279842086, 4280890669, 4279906613,
-               4279906362, 4279905855, 4281741625, 4282003757, 4282463269, 4282662682, 4282656018, 4282652953,
-               4278190081, 4281545523, 4280364595, 4279575844, 4279445024, 4279445277, 4280231714, 4279444776,
-               4279444523, 4279444271, 4280886571, 4281017634, 4281411356, 4281544468, 4281539598, 4281537299,
-               4278190081, 4280427042, 4279639586, 4279114008, 4278982933, 4278983187, 4279507478, 4279048218,
-               4279048221, 4279047967, 4279965724, 4280096790, 4280293906, 4280426253, 4280422921, 4280421388,
-               4278190081, 4279308561, 4278914833, 4278651916, 4278586378, 4278586633, 4278848779, 4278586381,
-               4278586382, 4278586127, 4279045134, 4279110667, 4279241993, 4279308038, 4279306500, 4279305734]
+DEFAULT_PALETTE_FILE = os.path.join("assets", "sets", "set1", "palette", "standard.pal")
+
+
+chunk_registry: Dict[str, Type[Chunk]] = {}
+form_registry: Dict[str, Type[Form]] = {}
+
+
+def _register(registry: Dict[str, Type[Any]], *identifiers: str) -> Callable[[Type[Any]], Type[Any]]:
+    """Return a decorator that registers a class for four-character IDs."""
+    def decorator(class_type):
+        for identifier in identifiers:
+            if not isinstance(identifier, str) or len(identifier) != 4:
+                raise ValueError("registered identifiers must be four-character strings")
+            if identifier in registry:
+                raise ValueError("%s is already registered" % identifier)
+            registry[identifier] = class_type
+        return class_type
+    return decorator
+
+
+def register_chunk(*identifiers: str) -> Callable[[Type[Chunk]], Type[Chunk]]:
+    """Register a chunk class for one or more chunk IDs."""
+    return _register(chunk_registry, *identifiers)
+
+
+def register_form(*identifiers: str) -> Callable[[Type[Form]], Type[Form]]:
+    """Register a form class for one or more form types."""
+    return _register(form_registry, *identifiers)
 
 
 class InvalidImage(Exception):
@@ -79,12 +77,12 @@ class Meshy(object):
 
 
 class Chunk(object):
-    def __init__(self, chunk_id="?!!?"):
+    def __init__(self, chunk_id: str = "?!!?") -> None:
         self.chunk_id = chunk_id
-        self.data = bytes("", "ascii")
+        self.data: bytes = bytes("", "ascii")
 
     @staticmethod
-    def validate_id(chunk_id):
+    def validate_id(chunk_id: str) -> str:
         if not isinstance(chunk_id, str):
             raise ValueError("chunk_id must be a string. Supplied type was %s" % type(chunk_id))
         if chunk_id and not len(chunk_id) == 4:
@@ -92,42 +90,30 @@ class Chunk(object):
         return chunk_id
 
     @staticmethod
-    def validate_data(chunk_data):
+    def validate_data(chunk_data: bytes) -> bytes:
         if not isinstance(chunk_data, bytes):
             raise ValueError("chunk_data must be bytes. Supplied type was %s" % type(chunk_data))
         return chunk_data
 
-    def set_binary_data(self, binary_data):
+    def set_binary_data(self, binary_data: bytes) -> None:
         self.data = binary_data
 
     # Returns only chunk data
-    def get_data(self):
-        """
-
-        :rtype: bytes
-        """
+    def get_data(self) -> bytes:
         return self.data
 
     # Returns chunk_id, size, chunk_data and pad byte
-    def full_data(self):
-        """
-
-        :rtype: bytes
-        """
+    def full_data(self) -> bytes:
         data = self.get_data()
         data_length = len(data)
         if len(data) % 2:
             data += b"\x00"
         return bytes(self.chunk_id, "ascii") + struct.pack(">I", data_length) + data
 
-    def size(self):
-        """
-
-        :rtype: int
-        """
+    def size(self) -> int:
         return len(self.data)
 
-    def load_data_from_file(self, file_name):
+    def load_data_from_file(self, file_name: str) -> bytes:
         if not os.path.isfile(file_name):
             raise FileNotFoundError("The specified file could not be found: %s" % file_name)
 
@@ -139,7 +125,7 @@ class Chunk(object):
 
         return data
 
-    def load_from_file(self, file_name):
+    def load_from_file(self, file_name: str) -> Chunk:
         if not os.path.isfile(file_name):
             raise FileNotFoundError("The specified file could not be found: %s" % file_name)  # No Test Coverage
 
@@ -157,49 +143,49 @@ class Chunk(object):
 
             return self
 
-    def save_data_to_file(self, file_name):
+    def save_data_to_file(self, file_name: str) -> None:
         with open(file_name, "wb") as f:
             f.write(self.get_data())
 
-    def save_to_file(self, file_name):
+    def save_to_file(self, file_name: str) -> None:
         with open(file_name, "wb") as f:
             f.write(self.full_data())
 
-    def to_class(self):
-        if self.chunk_id in master_list:
-            o = master_list[self.chunk_id]()  # type: Chunk
+    def to_class(self) -> Chunk:
+        if self.chunk_id in chunk_registry:
+            o = chunk_registry[self.chunk_id]()
             o.set_binary_data(self.data)
             return o
 
         raise ValueError("This class cannot be converted")  # No Test Coverage
 
-    def to_dict(self):
-        if self.chunk_id in master_list:
-            o = master_list[self.chunk_id]()  # type: Chunk
+    def to_dict(self) -> Dict[str, Dict[str, Any]]:
+        if self.chunk_id in chunk_registry:
+            o = chunk_registry[self.chunk_id]()
             o.set_binary_data(self.data)
             return o.to_dict()
         # Generic json support for all IFF chunks
         return {self.chunk_id: {"data": base64.b64encode(self.data).decode("ascii")}}  # No Test Coverage
 
-    def to_json(self):
+    def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=2, sort_keys=True)
 
-    def from_json(self, json_dict):
+    def from_json(self, json_dict: Union[str, Dict[str, Dict[str, Any]]]) -> Chunk:
         if isinstance(json_dict, str):
             json_dict = json.loads(json_dict)  # No Test Coverage
         self.chunk_id, attributes_dict = json_dict.popitem()
-        if self.chunk_id in master_list:
-            o = master_list[self.chunk_id]()  # type: Chunk
+        if self.chunk_id in chunk_registry:
+            o = chunk_registry[self.chunk_id]()
         else:
             raise ValueError("Cant call from_json() on unknown Chunk type")  # No Test Coverage
         o.from_json_generic({self.chunk_id: attributes_dict})
         self.set_binary_data(o.get_data())
         return self
 
-    def from_json_generic(self, json_string):
+    def from_json_generic(self, json_string: Union[str, Dict[str, Dict[str, Any]]]) -> Chunk:
         # Generic json support for all IFF chunks
         if isinstance(json_string, str):
-            json_dict = json.loads(json_string)  # type: dict  # No Test Coverage
+            json_dict = json.loads(json_string)  # No Test Coverage
         else:
             json_dict = json_string
 
@@ -209,8 +195,9 @@ class Chunk(object):
         return self
 
 
+@register_form("PTCL")
 class Form(object):
-    def __init__(self, form_type="!??!", sub_chunks=None):
+    def __init__(self, form_type: str = "!??!", sub_chunks: Optional[List[Union[Form, Chunk]]] = None) -> None:
         self.form_type = form_type
         if sub_chunks is None:
             sub_chunks = []
@@ -218,10 +205,10 @@ class Form(object):
         if not isinstance(sub_chunks, list):
             raise ValueError("sub_chunks must be a list. Supplied type was %s" % type(sub_chunks))
 
-        self.sub_chunks = sub_chunks  # type: List[Union[Form, Chunk]]
+        self.sub_chunks: List[Union[Form, Chunk]] = sub_chunks
 
     @staticmethod
-    def validate_form_type(form_type):
+    def validate_form_type(form_type: str) -> str:
         if not isinstance(form_type, str):
             raise ValueError("form_type must be a string. Supplied type was %s" % type(form_type))
         if form_type == "FORM":
@@ -231,26 +218,18 @@ class Form(object):
         return form_type
 
     @staticmethod
-    def validate_sub_chunks(sub_chunks):
+    def validate_sub_chunks(sub_chunks: Optional[List[Union[Form, Chunk]]]) -> List[Union[Form, Chunk]]:
         if sub_chunks is None:
             return []
         if not isinstance(sub_chunks, list):
             raise ValueError("sub_chunks must be a list. Supplied type was %s" % type(sub_chunks))
         return sub_chunks
 
-    def child(self, child_num):
-        """
-
-        :rtype: Union[Form,Chunk]
-        """
+    def child(self, child_num: int) -> Union[Form, Chunk]:
         return self.sub_chunks[child_num]
 
     # Returns only form_data
-    def get_data(self):
-        """
-
-        :rtype: bytes
-        """
+    def get_data(self) -> bytes:
         form_header = bytes(self.form_type, "ascii")
         form_data = bytes()
         for c in self.sub_chunks:
@@ -258,36 +237,28 @@ class Form(object):
         return form_header + form_data
 
     # Returns form_type, size, form_data
-    def full_data(self):
-        """
-
-        :rtype: bytes
-        """
+    def full_data(self) -> bytes:
         data = self.get_data()
         data_length = len(data)
         return bytes("FORM", "ascii") + struct.pack(">I", data_length) + data
 
-    def to_class(self):
-        if self.form_type in master_list:
-            o = master_list[self.form_type]()
-            # parsed_bas = Form().parse_stream(io.BytesIO(self.full_data()))[0]
-            o.sub_chunks = self.sub_chunks
-            o.form_type = self.form_type
-            return o
+    def to_class(self) -> Form:
+        if self.form_type in form_registry:
+            return form_registry[self.form_type](self.form_type, self.sub_chunks)
 
         raise ValueError("This class cannot be converted")  # No Test Coverage
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, List[Dict[str, Any]]]:
         # Generic json support for all IFF forms
         children = []
         for child in self.sub_chunks:
             children.append(child.to_dict())
         return {self.form_type: children}
 
-    def to_json(self):
+    def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=2, sort_keys=True)
 
-    def from_json(self, json_dict):
+    def from_json(self, json_dict: Union[str, List[Any], Dict[str, Any]]) -> Union[Form, Chunk, List[Union[Form, Chunk]]]:
         # Generic json support for all IFF forms
         if isinstance(json_dict, str):
             json_dict = json.loads(json_dict)  # No Test Coverage
@@ -301,29 +272,23 @@ class Form(object):
         if isinstance(json_dict, dict):
             for k, v in json_dict.items():
                 if isinstance(v, list):
-                    return Form(form_type=k, sub_chunks=self.from_json(v))
+                    return make_form(k, self.from_json(v))
                 if isinstance(v, dict):
-                    return Chunk(chunk_id=k).from_json({k: v})
+                    chunk = Chunk(chunk_id=k).from_json({k: v})
+                    return make_chunk(chunk.chunk_id, chunk.get_data())
                 raise ValueError("not dict or list :(", k, v)  # No Test Coverage
 
         raise ValueError("Fall through error. This shouldnt happen on well formed data "
                          "Check that you didn't send bytes to this function")  # No Test Coverage
 
-    def from_json_file(self, file_name):
+    def from_json_file(self, file_name: str) -> Union[Form, Chunk, List[Union[Form, Chunk]]]:
         with open(file_name, "r") as f:
             return self.from_json(json.loads(f.read()))
 
-    def size(self):
-        """
-
-        :rtype: int
-        """
+    def size(self) -> int:
         return len(self.get_data())
 
-    def get_all(self, ckid, max_count=9999):
-        """
-        :rtype: list[Union[Form,Chunk]]
-        """
+    def get_all(self, ckid: str, max_count: int = 9999) -> List[Union[Form, Chunk]]:
         ret_chunks = []
         for child in self.sub_chunks:
             if len(ret_chunks) >= max_count:
@@ -336,16 +301,24 @@ class Form(object):
                 ret_chunks.extend(child.get_all(ckid, max_count - len(ret_chunks)))
         return ret_chunks
 
-    def get_single(self, ckid):
-        """
-        :rtype: Union[Form,Chunk]
-        """
+    def get_single(self, ckid: str) -> Optional[Union[Form, Chunk]]:
         ret_form = self.get_all(ckid, max_count=1)
         if ret_form:
             return ret_form[0]
         return None
 
-    def load_from_file(self, file_name):
+    def get_direct_all(self, identifier: str) -> List[Union[Form, Chunk]]:
+        """Return immediate children whose chunk ID or form type matches *identifier*."""
+        return [child for child in self.sub_chunks
+                if (isinstance(child, Chunk) and child.chunk_id == identifier)
+                or (isinstance(child, Form) and child.form_type == identifier)]
+
+    def get_direct_single(self, identifier: str) -> Optional[Union[Form, Chunk]]:
+        """Return the first matching immediate child, without descending into forms."""
+        children = self.get_direct_all(identifier)
+        return children[0] if children else None
+
+    def load_from_file(self, file_name: str) -> Form:
         if not os.path.isfile(file_name):
             raise FileNotFoundError("The specified file could not be found: %s" % file_name)
 
@@ -356,19 +329,15 @@ class Form(object):
 
         return self
 
-    def save_to_file(self, file_name):
+    def save_to_file(self, file_name: str) -> None:
         with open(file_name, "wb") as f:
             f.write(self.full_data())
 
-    def save_to_json_file(self, file_name):
+    def save_to_json_file(self, file_name: str) -> None:
         with open(file_name, "wt") as f:
             f.write(self.to_json())
 
-    def parse_stream(self, bas_data):
-        """
-
-        :rtype: list
-        """
+    def parse_stream(self, bas_data: BinaryIO) -> List[Union[Form, Chunk]]:
         ret_chunks = []
         while True:
             magic = bytes(bas_data.read(4)).decode()
@@ -380,7 +349,7 @@ class Form(object):
                 form_type = bytes(bas_data.read(4)).decode()
                 form_data_stream = io.BytesIO(bas_data.read(form_size))
                 logging.debug("Found Form", form_type, form_size)
-                ret_chunks.append(Form(form_type=form_type, sub_chunks=self.parse_stream(form_data_stream)))
+                ret_chunks.append(make_form(form_type, self.parse_stream(form_data_stream)))
                 continue
 
             if magic != "FORM":
@@ -390,41 +359,65 @@ class Form(object):
                 if chunk_size % 2:
                     bas_data.read(1)  # Discard pad byte
                 logging.debug("Found Chunk", chunk_id, chunk_size)
-                c = Chunk(chunk_id)
-                c.set_binary_data(chunk_data)
-                ret_chunks.append(c)
+                ret_chunks.append(make_chunk(chunk_id, chunk_data))
 
         return ret_chunks
 
-    def add_chunk(self, chunk):
+    def add_chunk(self, chunk: Union[Form, Chunk]) -> None:
         self.sub_chunks.append(chunk)
 
 
+def palette_from_pal(file_name: str) -> List[int]:
+    """Load an IFF/ILBM CMAP chunk as opaque ARGB palette entries."""
+    form = Form().load_from_file(file_name)
+    cmap = form.get_single("CMAP")
+    if not isinstance(cmap, Chunk):
+        raise ValueError("%s does not contain a CMAP chunk" % file_name)
+
+    data = cmap.get_data()
+    if len(data) % 3:
+        raise ValueError("CMAP data in %s is not RGB triplets" % file_name)
+
+    return [0xFF000000 | (red << 16) | (green << 8) | blue
+            for red, green, blue in zip(data[0::3], data[1::3], data[2::3])]
+
+
+def palette_data(palette: Optional[List[int]] = None) -> bytes:
+    """Return a palette as Pillow's RGB byte sequence."""
+    if palette is None:
+        palette = palette_from_pal(DEFAULT_PALETTE_FILE)
+    return bytes(component
+                 for color in palette
+                 for component in ((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff))
+
+
+@register_form("AMSH")
 class Amsh(Form):
-    def __init__(self, chunk_id="AMSH"):
-        super(Amsh, self).__init__(chunk_id)
+    def __init__(self, form_type: str = "AMSH", sub_chunks: Optional[List[Union[Form, Chunk]]] = None) -> None:
+        super(Amsh, self).__init__(form_type, sub_chunks)
 
     @property
-    def has_uv(self):
+    def has_uv(self) -> bool:
         if self.get_single("OLPL"):
             return True
         return False
 
     @property
-    def get_texture_name(self):
-        return self.get_single("NAM2").to_class().name
+    def get_texture_name(self) -> str:
+        return self.get_single("NAM2").name
 
     @property
-    def get_polys(self):
-        return [x["poly_id"] for x in self.get_single("ATTS").to_class().atts_entries]
+    def get_polys(self) -> List[int]:
+        return [x["poly_id"] for x in self.get_single("ATTS").atts_entries]
 
     @property
-    def get_uv_mapping(self):
-        olpl = self.get_single("OLPL").to_class()  # type: Olpl
+    def get_uv_mapping(self) -> List[List[List[float]]]:
+        olpl = self.get_single("OLPL")
         olpl.normalize()
         return olpl.points
 
 
+@register_chunk("NAME")
 class Name(Chunk):
     def __init__(self, chunk_id="NAME"):
         super(Name, self).__init__(chunk_id)
@@ -453,6 +446,7 @@ class Name(Chunk):
                 }
 
 
+@register_chunk("CLID")
 class Clid(Chunk):
     def __init__(self, chunk_id="CLID"):
         super(Clid, self).__init__(chunk_id)
@@ -472,6 +466,7 @@ class Clid(Chunk):
                 }
 
 
+@register_chunk("EMRS")
 class Emrs(Chunk):
     def __init__(self, chunk_id="EMRS"):
         super(Emrs, self).__init__(chunk_id)
@@ -496,11 +491,13 @@ class Emrs(Chunk):
                 }
 
 
+@register_chunk("NAM2")
 class Nam2(Name):
     def __init__(self, chunk_id="NAM2"):
         super(Nam2, self).__init__(chunk_id)
 
 
+@register_chunk("DATA")
 class Data(Chunk):
     """
     000B                             # class_id_len
@@ -632,6 +629,7 @@ class Data(Chunk):
                 }
 
 
+@register_chunk("HEAD")
 class Head(Chunk):
     def __init__(self, chunk_id="HEAD"):
         super(Head, self).__init__(chunk_id)
@@ -659,6 +657,7 @@ class Head(Chunk):
                 }
 
 
+@register_chunk("BODY")
 class Body(Chunk):
     def __init__(self, chunk_id="BODY"):
         super(Body, self).__init__(chunk_id)
@@ -683,6 +682,7 @@ class Body(Chunk):
 
 # https://github.com/Marisa-Chan/UA_source/blob/master/src/amesh.cpp#L262
 # Particle.class has its own binary format https://github.com/Marisa-Chan/UA_source/blob/master/src/particle.cpp#L681
+@register_chunk("ATTS")
 class Atts(Chunk):
     def __init__(self, chunk_id="ATTS"):
         super(Atts, self).__init__(chunk_id)
@@ -856,6 +856,7 @@ class Vector:
 
 
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/sklt.cpp#L128
+@register_chunk("POO2")
 class Poo2(Chunk):
     def __init__(self, chunk_id="POO2"):
         super(Poo2, self).__init__(chunk_id)
@@ -925,12 +926,14 @@ class Poo2(Chunk):
                 }
 
 
+@register_chunk("SEN2")
 class Sen2(Poo2):
     def __init__(self, chunk_id="SEN2"):
         super(Sen2, self).__init__(chunk_id)
 
 
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/sklt.cpp#L207
+@register_chunk("POL2")
 class Pol2(Chunk):
     def __init__(self, chunk_id="POL2"):
         super(Pol2, self).__init__(chunk_id)
@@ -974,6 +977,7 @@ class Pol2(Chunk):
 
 
 # https://github.com/Marisa-Chan/UA_source/blob/44bb2284bf15fd55085ccca160d5bc2f6032e345/src/amesh.cpp#L301
+@register_chunk("OLPL")
 class Olpl(Chunk):
     def __init__(self, chunk_id="OLPL"):
         super(Olpl, self).__init__(chunk_id)
@@ -1037,6 +1041,7 @@ class Olpl(Chunk):
                 }
 
 
+@register_chunk("OTL2")
 class Otl2(Chunk):
     def __init__(self, chunk_id="OTL2"):
         super(Otl2, self).__init__(chunk_id)
@@ -1068,9 +1073,10 @@ class Otl2(Chunk):
                 }
 
 
+@register_form("VBMP")
 class Vbmp(Form):
-    def __init__(self, chunk_id="VBMP", sub_chunks=None):
-        super(Vbmp, self).__init__(chunk_id, sub_chunks)
+    def __init__(self, form_type="VBMP", sub_chunks=None):
+        super(Vbmp, self).__init__(form_type, sub_chunks)
         self.file_name = "not_used.vbmp"  # TODO USE THIS
 
     def load_from_ilbm(self, file_name):
@@ -1090,19 +1096,19 @@ class Vbmp(Form):
         pass
 
     def load_image(self, file_name):
-        image = QtGui.QImage(file_name)
-        if image.format() == QtGui.QImage.Format_Invalid:
-            raise InvalidImage("WARNING: Not loading invalid image file: {}".format(file_name))
+        try:
+            with Image.open(file_name) as source_image:
+                image = source_image.convert("RGB")
+        except (FileNotFoundError, UnidentifiedImageError, OSError) as error:
+            raise InvalidImage("WARNING: Not loading invalid image file: {}".format(file_name)) from error
 
-        if image.height() != 256 or image.width() != 256:
-            logging.warning("WARNING: The file {} has a height that is not 256x256!".format(file_name))
-            image = image.smoothScaled(256, 256)
+        if image.size != (256, 256):
+            logging.warning("WARNING: The file %s has a size that is not 256x256!", file_name)
+            image = image.resize((256, 256), Image.Resampling.LANCZOS)
 
-        image = image.convertToFormat(QtGui.QImage.Format_Indexed8, color_table)
-
-        ptr_image_data = image.bits()
-        ptr_image_data.setsize(image.byteCount())
-        bitmap_data = ptr_image_data.asstring()
+        palette = Image.new("P", (1, 1))
+        palette.putpalette(palette_data())
+        bitmap_data = image.quantize(palette=palette).tobytes()
 
         new_vbmp_head = Head()
         new_vbmp_head.height = 256
@@ -1120,20 +1126,17 @@ class Vbmp(Form):
 
     def save_to_bmp(self, file_name):
         data = self.sub_chunks[1].get_data()
-
-        mirror_horizontal = False
-        mirror_vertical = False
-        image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format_Indexed8)
-        image = image.mirrored(mirror_horizontal, mirror_vertical)
-        image.setColorTable(color_table)
+        image = Image.frombytes("P", (256, 256), data)
+        image.putpalette(palette_data())
         image.save(file_name)
 
 
+@register_form("EMBD")
 class Embd(Form):
     def __init__(self, form_type="EMBD", sub_chunks=None):
         if sub_chunks is None:
-            sub_chunks = list()
-        super(Embd, self).__init__(form_type, [Root()] + sub_chunks)
+            sub_chunks = [Root()]
+        super(Embd, self).__init__(form_type, sub_chunks)
         self.emrs_resources = {}
         self.parse_emrs()
 
@@ -1147,7 +1150,7 @@ class Embd(Form):
                     raise ValueError("Embd().parse_emrs() expects first sub_chunk to be Form() with type ROOT")
             elif i % 2:
                 # noinspection PyUnresolvedReferences
-                emrs_name = sub_chunk.to_class().emrs_name
+                emrs_name = sub_chunk.emrs_name
             else:
                 self.emrs_resources[emrs_name] = sub_chunk
 
@@ -1196,12 +1199,12 @@ class Embd(Form):
             elif i % 2:
                 # EMRS
                 # noinspection PyUnresolvedReferences
-                asset_name = sub_chunk.to_class().emrs_name
+                asset_name = sub_chunk.emrs_name
             else:
                 # Asset
                 if sub_chunk.form_type == "VBMP":
                     # noinspection PyUnresolvedReferences
-                    sub_chunk.to_class().save_to_bmp(os.path.join(output_location, "%s.bmp" % asset_name))
+                    sub_chunk.save_to_bmp(os.path.join(output_location, "%s.bmp" % asset_name))
                 elif sub_chunk.form_type == "SKLT" or sub_chunk.form_type == "VANM":
                     # TODO: Using the asset name is not compatible with MC2 forms which
                     # TODO:   expect the file name to be Skeleton/blah.sklt
@@ -1212,15 +1215,17 @@ class Embd(Form):
                     raise ValueError("extract_resources() unimplemented for %s", sub_chunk.form_type)
 
 
+@register_form("MC2 ")
 class Mc2(Form):
-    def __init__(self, form_type="MC2 "):
-        super(Mc2, self).__init__(form_type)
+    def __init__(self, form_type="MC2 ", sub_chunks=None):
+        super(Mc2, self).__init__(form_type, sub_chunks)
         self.embd = Embd()
         self.vehicles = Kids()
         self.buildings = Kids()
         self.ground = Kids()
 
-        self.init_mc2()
+        if sub_chunks is None:
+            self.init_mc2()
 
     def init_mc2(self):
         # Populate MC2 /OBJT
@@ -1326,6 +1331,7 @@ class Mc2(Form):
         self.embd.add_vanm(resource_name, vanm_form)
 
 
+@register_chunk("STRC")
 class Strc(Chunk):
     STRC_ADE = "STRC_ADE "
     STRC_AREA = "STRC_AREA"
@@ -1582,64 +1588,173 @@ class Strc(Chunk):
         raise ValueError("STRC().to_dict() Can't get json for unknown STRC!")  # No Test Coverage
 
 
+@register_form("ADE ")
+class Ade(Form):
+    """An area-definition form with a direct ``STRC`` descriptor."""
+    def __init__(self, form_type="ADE ", sub_chunks=None):
+        super(Ade, self).__init__(form_type, sub_chunks)
+
+    @property
+    def structure(self) -> Optional[Strc]:
+        structure = self.get_direct_single("STRC")
+        return structure if isinstance(structure, Strc) else None
+
+
+@register_form("BANI")
+class Bani(Form):
+    """A bone-animation form with a direct ``STRC`` descriptor."""
+    def __init__(self, form_type="BANI", sub_chunks=None):
+        super(Bani, self).__init__(form_type, sub_chunks)
+
+    @property
+    def animation(self) -> Optional[Strc]:
+        animation = self.get_direct_single("STRC")
+        return animation if isinstance(animation, Strc) else None
+
+
+@register_form("VANM")
+class Vanm(Form):
+    """A bitmap animation form containing a single ``DATA`` chunk."""
+    def __init__(self, form_type="VANM", sub_chunks=None):
+        super(Vanm, self).__init__(form_type, sub_chunks)
+
+    @property
+    def data(self) -> Optional[Data]:
+        data = self.get_direct_single("DATA")
+        return data if isinstance(data, Data) else None
+
+    @property
+    def frames(self) -> List[Dict[str, Any]]:
+        return self.data.frames if self.data else []
+
+    @property
+    def bitmap_names(self) -> List[str]:
+        return list(dict.fromkeys(frame["vbmp_name"] for frame in self.frames))
+
+
+@register_form("CIBO")
+class Cibo(Form):
+    """A bitmap reference form containing a ``NAM2`` chunk."""
+    def __init__(self, form_type="CIBO", sub_chunks=None):
+        super(Cibo, self).__init__(form_type, sub_chunks)
+
+    @property
+    def bitmap_name(self) -> Optional[str]:
+        name = self.get_direct_single("NAM2")
+        return name.name if isinstance(name, Nam2) else None
+
+    @property
+    def outline(self) -> Optional[Otl2]:
+        outline = self.get_direct_single("OTL2")
+        return outline if isinstance(outline, Otl2) else None
+
+
+@register_form("SKLC")
+class Sklc(Form):
+    """A skeleton resource reference containing a direct ``NAME`` chunk."""
+    def __init__(self, form_type="SKLC", sub_chunks=None):
+        super(Sklc, self).__init__(form_type, sub_chunks)
+
+    @property
+    def skeleton_name(self) -> Optional[str]:
+        name = self.get_direct_single("NAME")
+        return name.name if isinstance(name, Name) else None
+
+
+@register_form("AREA")
+class Area(Form):
+    """A textured or animated mesh area definition."""
+    def __init__(self, form_type="AREA", sub_chunks=None):
+        super(Area, self).__init__(form_type, sub_chunks)
+
+    @property
+    def definition(self) -> Optional[Ade]:
+        definition = self.get_direct_single("ADE ")
+        return definition if isinstance(definition, Ade) else None
+
+    @property
+    def polygon_index(self) -> Optional[int]:
+        if not self.definition:
+            return None
+        return self.definition.structure.poly if self.definition.structure else None
+
+    @property
+    def outline(self) -> Optional[Otl2]:
+        bitmap = self.get_single("CIBO")
+        return bitmap.outline if isinstance(bitmap, Cibo) else None
+
+    @property
+    def bitmap_name(self) -> Optional[str]:
+        bitmap = self.get_single("CIBO")
+        if isinstance(bitmap, Cibo):
+            return bitmap.bitmap_name
+        name = self.get_single("NAM2")
+        return name.name if isinstance(name, Nam2) else None
+
+    @property
+    def is_animated(self) -> bool:
+        return self.get_single("BANI") is not None
+
+
+@register_form("ROOT")
 class Root(Form):
     def __init__(self, form_type="ROOT", sub_chunks=None):
         super(Root, self).__init__(form_type, sub_chunks)
 
 
+@register_form("KIDS")
 class Kids(Form):
     def __init__(self, form_type="KIDS", sub_chunks=None):
         super(Kids, self).__init__(form_type, sub_chunks)
 
 
+@register_form("OBJT")
 class Objt(Form):
     def __init__(self, form_type="OBJT", sub_chunks=None):
         super(Objt, self).__init__(form_type, sub_chunks)
 
 
+@register_form("ADES")
+class Ades(Form):
+    """A collection of direct object definitions."""
+    def __init__(self, form_type="ADES", sub_chunks=None):
+        super(Ades, self).__init__(form_type, sub_chunks)
+
+    @property
+    def objects(self) -> List[Objt]:
+        return [child for child in self.get_direct_all("OBJT") if isinstance(child, Objt)]
+
+
+@register_form("BASE")
 class Base(Form):
     def __init__(self, form_type="BASE", sub_chunks=None):
         super(Base, self).__init__(form_type, sub_chunks)
 
 
+@register_form("SKLT")
 class Sklt(Form):
     def __init__(self, form_type="SKLT", sub_chunks=None):
         super(Sklt, self).__init__(form_type, sub_chunks)
 
 
-master_list = {
-    "ADE ": Form,
-    "ADES": Form,
-    "AMSH": Amsh,
-    "AREA": Form,
-    "BANI": Form,
-    "BASE": Form,
-    "CIBO": Form,
-    "EMBD": Embd,
-    "KIDS": Form,
-    "MC2 ": Mc2,
-    "OBJT": Form,
-    "PTCL": Form,
-    "ROOT": Form,
-    "SKLC": Form,
-    "SKLT": Sklt,
-    "VANM": Form,
-    "VBMP": Vbmp,
-    "ATTS": Atts,
-    "BODY": Body,
-    "CLID": Clid,
-    "DATA": Data,
-    "EMRS": Emrs,
-    "HEAD": Head,
-    "NAM2": Nam2,
-    "NAME": Name,
-    "OLPL": Olpl,
-    "OTL2": Otl2,
-    "POL2": Pol2,
-    "POO2": Poo2,
-    "SEN2": Sen2,
-    "STRC": Strc,
-}
+def make_chunk(chunk_id: str, binary_data: bytes) -> Chunk:
+    """Create the concrete chunk type registered for *chunk_id*."""
+    chunk_class = chunk_registry.get(chunk_id, Chunk)
+    chunk = chunk_class(chunk_id)
+    chunk.set_binary_data(binary_data)
+    return chunk
+
+
+def make_form(form_type: str, sub_chunks: List[Union[Form, Chunk]]) -> Form:
+    """Create the concrete form type registered for *form_type*.
+
+    Parsed forms used to remain generic until callers explicitly invoked
+    ``to_class()``.  Constructing the registered form here means children are
+    immediately usable through their concrete interfaces (for example,
+    ``Emrs.emrs_name`` and ``Vbmp.save_to_bmp``).
+    """
+    form_class = form_registry.get(form_type, Form)
+    return form_class(form_type, sub_chunks)
 
 
 def parse_set_descriptor(set_number="1"):
@@ -1681,7 +1796,8 @@ def parse_slurps(set_number="1"):
     return slurps
 
 
-def compile_set_bas(set_number="1"):
+def build_set(set_number="1") -> Mc2:
+    """Build an MC2 form for a set without writing an output file."""
     sdf = parse_set_descriptor(set_number)
     visproto = parse_visproto(set_number)
     slurps = parse_slurps(set_number)
@@ -1738,8 +1854,13 @@ def compile_set_bas(set_number="1"):
         logging.info(ground)
         mc2.add_ground_from_json_file(ground)
 
+    return mc2
+
+
+def compile_set_bas(set_number="1") -> None:
+    """Build a set and save its MC2 form to the standard output path."""
     path = os.path.join("output", "set{}_compiled.bas")
-    mc2.save_to_file(path.format(set_number))
+    build_set(set_number).save_to_file(path.format(set_number))
 
 
 def compile_bee_box(set_number="1"):

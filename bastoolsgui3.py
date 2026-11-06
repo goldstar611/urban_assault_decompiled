@@ -8,7 +8,7 @@ Created on Mon Jun 30 20:24:06 2014
 import os
 import struct
 import sys
-from typing import Union
+from typing import List, Optional, Union
 
 import numpy
 from PyQt5 import QtGui, QtCore, uic, QtWidgets, QtOpenGL
@@ -32,21 +32,13 @@ except ImportError:
 class MyQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
     def __init__(self, *args, **kwargs):
         super(MyQTreeWidgetItem, self).__init__(*args, **kwargs)
-        self.association = None  # type: Union[None,compile.Form,compile.Chunk]
+        self.association: Optional[Union[compile.Form, compile.Chunk]] = None
         self.icons = {}
         
-    def child(self, p_int):
-        """
-
-        :rtype: MyQTreeWidgetItem
-        """
+    def child(self, p_int: int) -> Optional["MyQTreeWidgetItem"]:
         return super(MyQTreeWidgetItem, self).child(p_int)
 
-    def parent(self):
-        """
-
-        :rtype: MyQTreeWidgetItem
-        """
+    def parent(self) -> Optional["MyQTreeWidgetItem"]:
         return super(MyQTreeWidgetItem, self).parent()
 
     def associate(self, form_or_chunk):
@@ -64,38 +56,22 @@ class MyQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
     def is_form(self):
         return isinstance(self.association, compile.Form)
 
-    def get_form(self):
-        """
-
-        :rtype: Form
-        """
+    def get_form(self) -> Optional[compile.Form]:
         if self.is_form():
             return self.association
 
-    def form_type(self):
-        """
-
-        :rtype: str
-        """
+    def form_type(self) -> Optional[str]:
         if self.is_form():
             return self.association.form_type
 
     def is_chunk(self):
         return isinstance(self.association, compile.Chunk)
 
-    def get_chunk(self):
-        """
-
-        :rtype: Chunk
-        """
+    def get_chunk(self) -> Optional[compile.Chunk]:
         if self.is_chunk():
             return self.association
 
-    def chunk_id(self):
-        """
-
-        :rtype: str
-        """
+    def chunk_id(self) -> Optional[str]:
         if self.is_chunk():
             return self.association.chunk_id
 
@@ -130,18 +106,10 @@ class MyQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
             return True
         return False
 
-    def get_data(self):
-        """
-
-        :rtype: bytes
-        """
+    def get_data(self) -> bytes:
         return self.association.get_data()
 
-    def full_data(self):
-        """
-
-        :rtype: bytes
-        """
+    def full_data(self) -> bytes:
         return self.association.full_data()
 
     def to_json(self):
@@ -221,16 +189,12 @@ class Mesh(object):
 
                 image = QtGui.QImage(data, width, height, QtGui.QImage.Format_Indexed8)
                 image = image.mirrored(mirror_horizontal, mirror_vertical)
-                # color_table = [QtGui.qRgb(i, i, i) for i in range(256)]
-                image.setColorTable(compile.color_table)
+                image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
                 self.image = image
                 return image
 
-    def load_ilbm_by_name(self, ilbm_name, width=256, height=256, mirror_horizontal=False, mirror_vertical=True):
-        """
-
-        :rtype: QtGui.QImage
-        """
+    def load_ilbm_by_name(self, ilbm_name: str, width: int = 256, height: int = 256,
+                          mirror_horizontal: bool = False, mirror_vertical: bool = True) -> QtGui.QImage:
         # file_begin = 0
         file_current = 1
         # file_end = 2
@@ -246,8 +210,7 @@ class Mesh(object):
 
         image = QtGui.QImage(data, width, height, QtGui.QImage.Format_Indexed8)
         image = image.mirrored(mirror_horizontal, mirror_vertical)
-        # color_table = [QtGui.qRgb(i, i, i) for i in range(256)]
-        image.setColorTable(compile.color_table)
+        image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
         self.image = image
 
         return image
@@ -458,11 +421,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.last_position = event.pos()
 
     @staticmethod
-    def normalize_angle(angle):
-        """
-
-        :rtype: float
-        """
+    def normalize_angle(angle: float) -> float:
         while angle < 0:
             angle += 360 * 16
         while angle > 360 * 16:
@@ -696,27 +655,15 @@ class Example(QtWidgets.QMainWindow):
     # END Experimental
     ##############################################################################
 
-    def current_item(self):
-        """
-
-        :rtype: MyQTreeWidgetItem
-        """
+    def current_item(self) -> Optional[MyQTreeWidgetItem]:
         return self.treeWidget.currentItem()
 
-    def current_item_parent(self):
-        """
-
-        :rtype: MyQTreeWidgetItem
-        """
+    def current_item_parent(self) -> Optional[MyQTreeWidgetItem]:
         if self.current_item():
             return self.current_item().parent()
 
     @staticmethod
-    def object_from_tree_widget_item(tree_widget_item):
-        """
-
-        :rtype: Union[Form,Chunk]
-        """
+    def object_from_tree_widget_item(tree_widget_item: MyQTreeWidgetItem) -> Optional[Union[compile.Form, compile.Chunk]]:
         return tree_widget_item.association
 
     def current_item_index(self):
@@ -780,13 +727,9 @@ class Example(QtWidgets.QMainWindow):
     def search_tree_widget_item(self,
                                 tree_widget_item: MyQTreeWidgetItem,
                                 search_term: str,
-                                level=0,
-                                search_selected=False,
-                                search_parents=False):
-        """
-
-        :rtype: QTreeWidgetItem
-        """
+                                level: int = 0,
+                                search_selected: bool = False,
+                                search_parents: bool = False) -> Optional[MyQTreeWidgetItem]:
         # noinspection PyArgumentList
         QtCore.QCoreApplication.processEvents()
         if tree_widget_item.is_form():
@@ -1029,8 +972,7 @@ class Example(QtWidgets.QMainWindow):
             data = QtCore.QByteArray(current_item.child(1).get_data())
             image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format_Indexed8)
             image = image.mirrored(False, True)  # Flip image so the BMP is saved correctly
-            # fakeColorTable = [QtGui.qRgb(i, i, i) for i in range(256)]
-            image.setColorTable(compile.color_table)
+            image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
             image.save("preview.bmp")
             # noinspection PyArgumentList
             new_pix = QtGui.QPixmap().fromImage(image)
@@ -1069,29 +1011,24 @@ class Example(QtWidgets.QMainWindow):
         if current_item and current_item.form_type() == "OBJT" and not current_item.get_form().get_single("KIDS"):
 
             amshes = current_item.get_form().get_all("AMSH")
-            sklc = current_item.get_form().get_single("SKLC")
+            sklc: compile.Sklc = current_item.get_form().get_single("SKLC")
             if amshes and sklc:
                 for amsh in amshes:
-                    sklc_name = sklc.get_single("NAME")
                     atts = amsh.get_single("ATTS")
                     olpl = amsh.get_single("OLPL")
                     nam2 = amsh.get_single("NAM2")
 
-                    if sklc_name and nam2 and atts and olpl:
+                    if sklc.skeleton_name and nam2 and atts and olpl:
                         self.GLWidget.show()
                         new_mesh = Mesh()
-                        sklc_name_data = sklc_name.get_data()
                         atts_data = atts.get_data()
                         olpl_data = olpl.get_data()
                         nam2_data = nam2.get_data()
 
-                        top_level = self.treeWidget.topLevelItem(0)  # type: MyQTreeWidgetItem
+                        top_level: MyQTreeWidgetItem = self.treeWidget.topLevelItem(0)
                         embd = top_level.get_form().get_single("EMBD")
 
-                        temp_name = compile.Name()
-                        temp_name.set_binary_data(sklc_name_data)
-                        sklt_name = temp_name.name
-                        new_mesh.load_sklt_from_embd(embd, sklt_name[:-1])
+                        new_mesh.load_sklt_from_embd(embd, sklc.skeleton_name[:-1])
                         #new_mesh.load_sklt_by_name(sklt_name[:-1])
 
                         nam2 = compile.Nam2()
@@ -1139,11 +1076,7 @@ class Example(QtWidgets.QMainWindow):
             self.update_status("Saved " + filename)
 
 
-def generate_color_table():
-    """
-
-    :rtype: list[QtGui.qRgb]
-    """
+def generate_color_table() -> List[int]:
     # This function is here to regenerate a new color_table if necessary
     file = open("colorMap.bin", "rb")
     data = file.read()

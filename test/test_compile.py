@@ -1,6 +1,11 @@
 import compile
+import hashlib
+import io
 import os
+import tempfile
 import unittest
+
+from PIL import Image
 
 
 class TestChunk(unittest.TestCase):
@@ -130,6 +135,111 @@ class TestChunk(unittest.TestCase):
             fd = cl.full_data()
             j = cl.to_dict()
             self.assertEqual(c.full_data(), cl.full_data())
+
+    def test_parser_uses_registered_types(self):
+        name = compile.Nam2()
+        name.name = "texture"
+        name.zero_terminated = True
+        amsh = compile.Amsh()
+        amsh.add_chunk(name)
+
+        parsed = compile.Form().parse_stream(io.BytesIO(amsh.full_data()))[0]
+
+        self.assertIsInstance(parsed, compile.Amsh)
+        self.assertIsInstance(parsed.get_single("NAM2"), compile.Nam2)
+
+    def test_registries_are_separate(self):
+        self.assertIs(compile.chunk_registry["NAME"], compile.Name)
+        self.assertIs(compile.form_registry["VBMP"], compile.Vbmp)
+        self.assertFalse(set(compile.chunk_registry) & set(compile.form_registry))
+
+    def test_form_constructors_accept_sub_chunks(self):
+        root = compile.Root()
+        embd = compile.Embd("EMBD", [root])
+
+        self.assertEqual(embd.sub_chunks, [root])
+
+    def test_vanm_area_and_cibo_forms(self):
+        data = compile.Data()
+        data.class_id = "ilbm.class"
+        data.frames = [{"frame_time": 80,
+                        "vbmp_name": "FX2.ILBM",
+                        "vbmp_coords": [[0, 0], [1, 0], [1, 1]]}]
+        vanm = compile.Vanm(sub_chunks=[data])
+
+        nam2 = compile.Nam2()
+        nam2.name = "FX2.ILBM"
+        outline = compile.Otl2()
+        outline.points = [[0, 0], [1, 0], [1, 1]]
+        cibo = compile.Cibo(sub_chunks=[nam2, outline])
+        definition_strc = compile.Strc()
+        definition_strc.strc_type = compile.Strc.STRC_ADE
+        definition_strc.version = 1
+        definition_strc.poly = 3
+        definition = compile.Ade(sub_chunks=[definition_strc])
+        area = compile.Area(sub_chunks=[definition, cibo])
+
+        parsed_vanm = compile.Form().parse_stream(io.BytesIO(vanm.full_data()))[0]
+        parsed_area = compile.Form().parse_stream(io.BytesIO(area.full_data()))[0]
+
+        self.assertIsInstance(parsed_vanm, compile.Vanm)
+        self.assertEqual(parsed_vanm.bitmap_names, ["FX2.ILBM"])
+        self.assertIsInstance(parsed_area, compile.Area)
+        self.assertEqual(parsed_area.bitmap_name, "FX2.ILBM")
+        self.assertEqual(parsed_area.polygon_index, 3)
+        self.assertEqual(parsed_area.outline.points, outline.points)
+        self.assertFalse(parsed_area.is_animated)
+
+    def test_direct_child_lookup_does_not_descend(self):
+        nested_name = compile.Name()
+        nested_name.name = "nested"
+        nested = compile.Form("NEST", [nested_name])
+        form = compile.Form("TEST", [nested])
+
+        self.assertEqual(form.get_direct_all("NAME"), [])
+        self.assertIsNone(form.get_direct_single("NAME"))
+        self.assertIs(form.get_single("NAME"), nested_name)
+
+    def test_ades_objects_only_returns_direct_objt_forms(self):
+        direct_object = compile.Objt()
+        nested_object = compile.Objt()
+        ades = compile.Ades(sub_chunks=[direct_object, compile.Kids(sub_chunks=[nested_object])])
+
+        parsed_ades = compile.Form().parse_stream(io.BytesIO(ades.full_data()))[0]
+
+        self.assertIsInstance(parsed_ades, compile.Ades)
+        self.assertEqual(parsed_ades.objects, [parsed_ades.sub_chunks[0]])
+        self.assertIsInstance(parsed_ades.objects[0], compile.Objt)
+
+    def test_sklc_exposes_its_direct_skeleton_name(self):
+        name = compile.Name()
+        name.name = "Skeleton/VP_NEU05.sklt"
+        sklc = compile.Sklc(sub_chunks=[name])
+
+        parsed_sklc = compile.Form().parse_stream(io.BytesIO(sklc.full_data()))[0]
+
+        self.assertIsInstance(parsed_sklc, compile.Sklc)
+        self.assertEqual(parsed_sklc.skeleton_name, "Skeleton/VP_NEU05.sklt")
+
+    def test_vbmp_image_round_trip_uses_pillow(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = os.path.join(directory, "source.bmp")
+            output = os.path.join(directory, "output.bmp")
+            Image.new("RGB", (256, 256), "red").save(source)
+
+            vbmp = compile.Vbmp().load_image(source)
+            vbmp.save_to_bmp(output)
+
+            self.assertEqual(vbmp.get_single("BODY").size(), 256 * 256)
+            with Image.open(output) as exported:
+                self.assertEqual(exported.size, (256, 256))
+
+    def test_standard_palette_is_loaded_from_cmap(self):
+        palette = compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE)
+
+        self.assertEqual(len(palette), 256)
+        self.assertEqual(palette[:2], [0xFFFFFF00, 0xFFFFFFFF])
+        self.assertEqual(compile.palette_data(palette)[:6], b"\xff\xff\x00\xff\xff\xff")
 
 
 class TestForm(unittest.TestCase):
@@ -319,12 +429,13 @@ class TestClasses(unittest.TestCase):
         pass
 
 
-class TestMain(unittest.TestCase):
+class TestIntegration(unittest.TestCase):
 
-    def test_main(self):
-        set_number = 1
-        compile.compile_single_files(set_number)
-        compile.compile_set_bas(set_number)
+    def test_set1_golden_build(self):
+        compiled_set = compile.build_set("1").full_data()
+        sha256 = hashlib.sha256(compiled_set).hexdigest()
+
+        self.assertEqual(sha256, "858d4daeab4daeee319ad74b02d6ba98a6ea4ef46322df6515f1457d0db8ed32")
 
 
 if __name__ == "__main__":

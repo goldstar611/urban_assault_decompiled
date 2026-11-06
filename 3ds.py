@@ -1,6 +1,6 @@
 import os
 
-from compile import Form, Poo2, Pol2, Olpl, Atts, Amsh, Otl2
+from compile import Ades, Area, Form, Poo2, Pol2, Olpl, Atts, Amsh, Otl2, Sklc
 from io_mesh_3ds.export_3ds import write_3ds
 
 
@@ -19,14 +19,14 @@ def make_fake_mesh(ob_name, vertices, faces, mesh: Amsh):
 
     if mesh.has_uv:
         material = mesh.get_single("NAM2").to_class().name
-        olpl = mesh.get_single("OLPL").to_class()  # type: Olpl
+        olpl: Olpl = mesh.get_single("OLPL").to_class()
         olpl.normalize()
         uv_map = olpl.points
     else:
         material = None
         uv_map = None
 
-    atts = mesh.get_single("ATTS").to_class()  # type: Atts
+    atts: Atts = mesh.get_single("ATTS").to_class()
     pop_faces = [i for i in range(len(faces)) if i not in [x["poly_id"] for x in atts.atts_entries]]
     pop_faces.sort(reverse=True)
     for idx in pop_faces:
@@ -40,26 +40,17 @@ def make_fake_mesh(ob_name, vertices, faces, mesh: Amsh):
                            )
 
 
-def area_to_fake_mesh(ob_name, vertices, faces, area: Form):
+def area_to_fake_mesh(ob_name, vertices, faces, area: Area):
     vertices = vertices.copy()
     faces = faces.copy()
 
-    if area.get_single("OTL2"):
-
-        # Material
-        nam2 = area.get_single("NAM2")
-        material = nam2.to_class().name
-
-        # Poly
-        ade = area.get_single("ADE ")  # type: Form
-        poly = ade.get_single("STRC").to_class().poly
-        faces = [faces[poly]]
+    if area.outline:
+        material = area.bitmap_name
+        faces = [faces[area.polygon_index]]
 
         # UV Mapping
-        otl2 = area.get_single("OTL2")  # type: Form
-        otl2 = otl2.to_class()  # type: Otl2
         olpl = Olpl()
-        olpl.points = [otl2.points]
+        olpl.points = [area.outline.points]
         olpl.normalize()
         uv_map = olpl.points
 
@@ -69,11 +60,8 @@ def area_to_fake_mesh(ob_name, vertices, faces, area: Form):
                                uv_map=uv_map,
                                material=material)
 
-    if area.get_single("BANI"):
-        # Poly
-        ade = area.get_single("ADE ")  # type: Form
-        poly = ade.get_single("STRC").to_class().poly
-        faces = [faces[poly]]
+    if area.is_animated:
+        faces = [faces[area.polygon_index]]
 
         return FakeBlenderMesh(ob_name=ob_name,
                                vertices=vertices,
@@ -93,10 +81,11 @@ def main():
         model_form = Form().from_json_file(file_name)
         ob_name = os.path.basename(file_name).replace(".bas", "").replace(".json", "")
 
-        sklt_file_name = model_form.get_single("SKLC").get_single("NAME").to_class().name[:-1]  # HACK
+        sklc: Sklc = model_form.get_single("SKLC")
+        sklt_file_name = sklc.skeleton_name[:-1]  # HACK: .sklt resource maps to a .skl.json file
 
         sklt_form = Form().from_json_file("./assets/sets/{}/{}.json".format(set_number, sklt_file_name))
-        poo2 = sklt_form.get_single("POO2").to_class()  # type: Poo2
+        poo2: Poo2 = sklt_form.get_single("POO2").to_class()
         poo2.scale_down(150)
         poo2.change_coordinate_system()
         vertices = poo2.points_as_vectors()
@@ -105,12 +94,13 @@ def main():
             print("Skipping {} because it has no polygons.".format(file_name))
             continue
 
-        pol2 = sklt_form.get_single("POL2").to_class()  # type: Pol2
+        pol2: Pol2 = sklt_form.get_single("POL2").to_class()
         faces = pol2.edges
 
         material_dict = {}
         meshes = []
-        for objt in model_form.get_single("ADES").sub_chunks:
+        ades: Ades = model_form.get_single("ADES")
+        for objt in ades.objects:
             class_id = objt.get_single("CLID").to_class().class_id
 
             if class_id == "amesh.class":
@@ -122,7 +112,7 @@ def main():
                 continue
 
             if class_id == "area.class":
-                mesh = area_to_fake_mesh(ob_name, vertices, faces, objt.get_single("AREA").to_class())
+                mesh = area_to_fake_mesh(ob_name, vertices, faces, objt.get_single("AREA"))
                 if mesh:
                     meshes.append(mesh)
                 if mesh and mesh.material:
