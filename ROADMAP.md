@@ -4,7 +4,6 @@
 
 ## Remove conversion shims
 
-- Replace remaining `.to_class()` calls in `3ds.py`, `sky.py`, and the Blender import/export modules with the concrete objects returned by parsing.
 - Deprecate, then remove, `Chunk.to_class()` and `Form.to_class()` once all call sites have migrated.
 
 ## Test coverage

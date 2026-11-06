@@ -38,15 +38,15 @@ def readSklt(filepath, sen2_mode):
     if first_sklt.form_type != "SKLT":
         first_sklt = first_sklt.get_single("SKLT")
 
-    sklt_primitives = first_sklt.get_single("POL2").to_class().edges
+    sklt_primitives = first_sklt.get_single("POL2").edges
 
-    poo2 = first_sklt.get_single("POO2").to_class()
+    poo2 = first_sklt.get_single("POO2")
     poo2.scale_down(150)
     poo2.change_coordinate_system()
     sklt_vertices = poo2.points_as_list()
 
     if first_sklt.get_single("SEN2"):
-        sen2 = first_sklt.get_single("SEN2").to_class()
+        sen2 = first_sklt.get_single("SEN2")
         sen2.scale_down(150)
         sen2.change_coordinate_system()
         sen2_vertices = sen2.points_as_list()

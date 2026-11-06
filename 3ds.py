@@ -1,6 +1,6 @@
 import os
 
-from compile import Ades, Area, Form, Poo2, Pol2, Olpl, Atts, Amsh, Otl2, Sklc
+from compile import Ades, Area, Form, Poo2, Pol2, Olpl, Atts, Amsh, Nam2, Otl2, Sklc
 from io_mesh_3ds.export_3ds import write_3ds
 
 
@@ -18,15 +18,16 @@ def make_fake_mesh(ob_name, vertices, faces, mesh: Amsh):
     faces = faces.copy()
 
     if mesh.has_uv:
-        material = mesh.get_single("NAM2").to_class().name
-        olpl: Olpl = mesh.get_single("OLPL").to_class()
+        nam2: Nam2 = mesh.get_single("NAM2")
+        material = nam2.name
+        olpl: Olpl = mesh.get_single("OLPL")
         olpl.normalize()
         uv_map = olpl.points
     else:
         material = None
         uv_map = None
 
-    atts: Atts = mesh.get_single("ATTS").to_class()
+    atts: Atts = mesh.get_single("ATTS")
     pop_faces = [i for i in range(len(faces)) if i not in [x["poly_id"] for x in atts.atts_entries]]
     pop_faces.sort(reverse=True)
     for idx in pop_faces:
@@ -85,7 +86,7 @@ def main():
         sklt_file_name = sklc.skeleton_name[:-1]  # HACK: .sklt resource maps to a .skl.json file
 
         sklt_form = Form().from_json_file("./assets/sets/{}/{}.json".format(set_number, sklt_file_name))
-        poo2: Poo2 = sklt_form.get_single("POO2").to_class()
+        poo2: Poo2 = sklt_form.get_single("POO2")
         poo2.scale_down(150)
         poo2.change_coordinate_system()
         vertices = poo2.points_as_vectors()
@@ -94,17 +95,17 @@ def main():
             print("Skipping {} because it has no polygons.".format(file_name))
             continue
 
-        pol2: Pol2 = sklt_form.get_single("POL2").to_class()
+        pol2: Pol2 = sklt_form.get_single("POL2")
         faces = pol2.edges
 
         material_dict = {}
         meshes = []
         ades: Ades = model_form.get_single("ADES")
         for objt in ades.objects:
-            class_id = objt.get_single("CLID").to_class().class_id
+            class_id = objt.get_single("CLID").class_id
 
             if class_id == "amesh.class":
-                mesh = make_fake_mesh(ob_name, vertices, faces, objt.get_single("AMSH").to_class())
+                mesh = make_fake_mesh(ob_name, vertices, faces, objt.get_single("AMSH"))
                 if mesh:
                     meshes.append(mesh)
                 if mesh and mesh.material:

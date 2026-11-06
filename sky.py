@@ -8,7 +8,8 @@ def decompile_sky():
         sky_dir = os.path.splitext(sky)[0]
         form = compile.Form().load_from_file(sky)
 
-        form.get_single("EMBD").to_class().extract_resources(sky_dir)  # Extract images + skeletons
+        embd: compile.Embd = form.get_single("EMBD")
+        embd.extract_resources(sky_dir)  # Extract images + skeletons
         form.get_single("EMBD").sub_chunks = [compile.Form("ROOT")]  # Drop resources since we already extracted them
 
         with open(os.path.join(sky_dir, "sky.json"), "w") as f:
@@ -21,7 +22,7 @@ def compile_sky():
         print(sky_dir)
 
         sky_form = compile.Form().from_json_file(sky)
-        embd = sky_form.get_single("EMBD").to_class()
+        embd: compile.Embd = sky_form.get_single("EMBD")
 
         json_files = glob.glob(os.path.join(sky_dir, "*.skl.json"))
         bmp_files = glob.glob(os.path.join(sky_dir, "*.*"))
