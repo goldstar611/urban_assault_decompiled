@@ -221,6 +221,99 @@ class TestChunk(unittest.TestCase):
         self.assertIsInstance(parsed_sklc, compile.Sklc)
         self.assertEqual(parsed_sklc.skeleton_name, "Skeleton/VP_NEU05.sklt")
 
+    def test_validate_reports_missing_direct_children(self):
+        # A form with no children at all misses every mandatory reference.
+        self.assertEqual(compile.Ade().validate(), ["ADE : missing direct STRC chunk"])
+        self.assertEqual(compile.Vanm().validate(), ["VANM: missing direct DATA chunk"])
+        self.assertEqual(compile.Cibo().validate(), ["CIBO: missing direct NAM2 chunk"])
+        self.assertEqual(compile.Area().validate(), ["AREA: missing direct ADE  form"])
+
+        ade = compile.Ade(sub_chunks=[compile.Strc()])
+        self.assertEqual(ade.validate(), ["ADE : direct STRC chunk is not a STRC_ADE structure"])
+
+        nam2 = compile.Nam2()
+        nam2.name = "FX2.ILBM"
+        complete_cibo = compile.Cibo(sub_chunks=[nam2])
+        complete_vanm = compile.Vanm(sub_chunks=[compile.Data()])
+        self.assertEqual(complete_cibo.validate(), [])
+        self.assertEqual(complete_vanm.validate(), [])
+
+    def test_validate_reports_duplicate_direct_children(self):
+        self.assertEqual(compile.Ade(sub_chunks=[compile.Strc(), compile.Strc()]).validate(),
+                         ["ADE : duplicate direct STRC chunks", "ADE : direct STRC chunk is not a STRC_ADE structure"])
+        self.assertEqual(compile.Vanm(sub_chunks=[compile.Data(), compile.Data()]).validate(),
+                         ["VANM: duplicate direct DATA chunks"])
+        self.assertEqual(compile.Cibo(sub_chunks=[compile.Nam2(), compile.Nam2()]).validate(),
+                         ["CIBO: duplicate direct NAM2 chunks"])
+        self.assertEqual(compile.Area(sub_chunks=[compile.Ade(), compile.Ade()]).validate(),
+                         ["AREA: duplicate direct ADE  forms",
+                          "AREA/ADE : missing direct STRC chunk"])
+
+    def test_area_validate_reports_duplicate_bitmap_references(self):
+        definition = compile.Ade()
+        self.assertEqual(compile.Area(sub_chunks=[definition]).validate(),
+                         ["AREA/ADE : missing direct STRC chunk"])
+
+        complete_objt = self.make_textured_area().get_direct_single("OBJT")
+        complete_ade = self.make_textured_area().get_direct_single("ADE ")
+        objt = compile.Objt(sub_chunks=[compile.Clid()])
+        self.assertEqual(compile.Area(sub_chunks=[complete_ade, objt, objt]).validate(),
+                         ["AREA: duplicate OBJT/CIBO/NAM2 bitmap references",
+                          "AREA: missing OBJT/CIBO/NAM2 bitmap reference"])
+
+        nam2 = compile.Nam2()
+        nam2.name = "BAGGER.ILBM"
+        objt = compile.Objt(sub_chunks=[compile.Clid(),
+                                        compile.Cibo(sub_chunks=[nam2, compile.Nam2()])])
+        self.assertEqual(compile.Area(sub_chunks=[complete_ade, objt]).validate(),
+                         ["AREA: duplicate OBJT/CIBO/NAM2 bitmap references"])
+
+    def test_area_validate_reports_paths_with_context(self):
+        # AREA/ADE : missing direct STRC
+        definition = compile.Ade()
+        self.assertEqual(compile.Area(sub_chunks=[definition]).validate(),
+                         ["AREA/ADE : missing direct STRC chunk"])
+
+    def test_textured_area_validate_requires_complete_bitmap_reference(self):
+        structure = compile.Strc()
+        structure.strc_type = compile.Strc.STRC_ADE
+        definition = compile.Ade(sub_chunks=[structure])
+        textured_area = self.make_textured_area()
+        self.assertEqual(textured_area.validate(), [])
+
+        # OBJT without a CIBO is an incomplete bitmap reference.
+        objt = compile.Objt(sub_chunks=[compile.Clid()])
+        broken = compile.Area(sub_chunks=[definition, objt])
+        self.assertEqual(broken.validate(), ["AREA: missing OBJT/CIBO/NAM2 bitmap reference"])
+
+        # A chunk with the OBJT ID is not a bitmap-reference form.
+        broken = compile.Area(sub_chunks=[definition, compile.Chunk("OBJT")])
+        self.assertEqual(broken.validate(), ["AREA: missing OBJT/CIBO/NAM2 bitmap reference"])
+
+        # CIBO without a NAM2 is an incomplete bitmap reference.
+        objt = compile.Objt(sub_chunks=[compile.Clid(), compile.Cibo()])
+        broken = compile.Area(sub_chunks=[definition, objt])
+        self.assertEqual(broken.validate(), ["AREA: missing OBJT/CIBO/NAM2 bitmap reference"])
+
+    @staticmethod
+    def make_textured_area():
+        structure = compile.Strc()
+        structure.strc_type = compile.Strc.STRC_ADE
+        definition = compile.Ade(sub_chunks=[structure])
+        nam2 = compile.Nam2()
+        nam2.name = "BAGGER.ILBM"
+        objt = compile.Objt(sub_chunks=[compile.Clid(), compile.Cibo(sub_chunks=[nam2])])
+        return compile.Area(sub_chunks=[definition, objt])
+
+    def test_real_textured_area_fixture_validates(self):
+        fixture = os.path.join("assets", "sets", "set3_xp", "objects",
+                               "vehicles", "VPwRT.bas.json")
+        parsed = compile.Form().from_json_file(fixture)
+        areas = parsed.get_all("AREA")
+        self.assertTrue(areas)
+        for area in areas:
+            self.assertEqual(area.validate(), [])
+
     def test_vbmp_image_round_trip_uses_pillow(self):
         with tempfile.TemporaryDirectory() as directory:
             source = os.path.join(directory, "source.bmp")

@@ -1599,6 +1599,22 @@ class Ade(Form):
         structure = self.get_direct_single("STRC")
         return structure if isinstance(structure, Strc) else None
 
+    def validate(self) -> List[str]:
+        """Return a list of structural-error paths; an empty list means valid."""
+        errors = []
+        structures = self.get_direct_all("STRC")
+        if not structures:
+            errors.append("ADE : missing direct STRC chunk")
+        else:
+            if len(structures) > 1:
+                errors.append("ADE : duplicate direct STRC chunks")
+            structure = structures[0]
+            if not isinstance(structure, Strc):
+                errors.append("ADE : direct STRC chunk is not a STRC chunk")
+            elif structure.strc_type != Strc.STRC_ADE:
+                errors.append("ADE : direct STRC chunk is not a STRC_ADE structure")
+        return errors
+
 
 @register_form("BANI")
 class Bani(Form):
@@ -1631,6 +1647,19 @@ class Vanm(Form):
     def bitmap_names(self) -> List[str]:
         return list(dict.fromkeys(frame["vbmp_name"] for frame in self.frames))
 
+    def validate(self) -> List[str]:
+        """Return a list of structural-error paths; an empty list means valid."""
+        errors = []
+        data_chunks = self.get_direct_all("DATA")
+        if not data_chunks:
+            errors.append("VANM: missing direct DATA chunk")
+        else:
+            if len(data_chunks) > 1:
+                errors.append("VANM: duplicate direct DATA chunks")
+            if not isinstance(data_chunks[0], Data):
+                errors.append("VANM: direct DATA chunk is not a DATA chunk")
+        return errors
+
 
 @register_form("CIBO")
 class Cibo(Form):
@@ -1647,6 +1676,19 @@ class Cibo(Form):
     def outline(self) -> Optional[Otl2]:
         outline = self.get_direct_single("OTL2")
         return outline if isinstance(outline, Otl2) else None
+
+    def validate(self) -> List[str]:
+        """Return a list of structural-error paths; an empty list means valid."""
+        errors = []
+        name_chunks = self.get_direct_all("NAM2")
+        if not name_chunks:
+            errors.append("CIBO: missing direct NAM2 chunk")
+        else:
+            if len(name_chunks) > 1:
+                errors.append("CIBO: duplicate direct NAM2 chunks")
+            if not isinstance(name_chunks[0], Nam2):
+                errors.append("CIBO: direct NAM2 chunk is not a NAM2 chunk")
+        return errors
 
 
 @register_form("SKLC")
@@ -1694,6 +1736,47 @@ class Area(Form):
     @property
     def is_animated(self) -> bool:
         return self.get_single("BANI") is not None
+
+    def validate(self) -> List[str]:
+        """Return a list of structural-error paths; an empty list means valid.
+
+        An ``AREA`` is considered textured when it has a direct ``OBJT``
+        bitmap reference container; that container must then provide a
+        complete ``OBJT/CIBO/NAM2`` bitmap reference path.
+        """
+        errors = []
+        definitions = self.get_direct_all("ADE ")
+        if not definitions:
+            errors.append("AREA: missing direct ADE  form")
+        else:
+            if len(definitions) > 1:
+                errors.append("AREA: duplicate direct ADE  forms")
+            definition = definitions[0]
+            if not isinstance(definition, Ade):
+                errors.append("AREA: direct ADE  child is not an ADE  form")
+            else:
+                errors.extend("AREA/" + error for error in definition.validate())
+
+        bitmap_refs = self.get_direct_all("OBJT")
+        if bitmap_refs:
+            if len(bitmap_refs) > 1:
+                errors.append("AREA: duplicate OBJT/CIBO/NAM2 bitmap references")
+            bitmap_ref = bitmap_refs[0]
+            if not isinstance(bitmap_ref, Objt):
+                errors.append("AREA: missing OBJT/CIBO/NAM2 bitmap reference")
+            else:
+                cibo_refs = bitmap_ref.get_direct_all("CIBO")
+                if len(cibo_refs) == 1 and isinstance(cibo_refs[0], Cibo):
+                    nam2_refs = cibo_refs[0].get_direct_all("NAM2")
+                    if len(nam2_refs) > 1:
+                        errors.append("AREA: duplicate OBJT/CIBO/NAM2 bitmap references")
+                    elif len(nam2_refs) != 1 or not isinstance(nam2_refs[0], Nam2):
+                        errors.append("AREA: missing OBJT/CIBO/NAM2 bitmap reference")
+                else:
+                    if len(cibo_refs) > 1:
+                        errors.append("AREA: duplicate OBJT/CIBO/NAM2 bitmap references")
+                    errors.append("AREA: missing OBJT/CIBO/NAM2 bitmap reference")
+        return errors
 
 
 @register_form("ROOT")

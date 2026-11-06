@@ -2,12 +2,6 @@
 
 ## Form validation
 
-- Add `validate()` methods to `Ade`, `Cibo`, `Vanm`, and `Area`.
-- Report precise structural errors for missing or invalid direct children, such as:
-  - `AREA`: missing direct `ADE ` form.
-  - `AREA/ADE `: missing direct `STRC` chunk.
-  - Textured `AREA`: missing `OBJT/CIBO/NAM2` bitmap reference.
-
 ## Remove conversion shims
 
 - Replace remaining `.to_class()` calls in `3ds.py`, `sky.py`, and the Blender import/export modules with the concrete objects returned by parsing.
