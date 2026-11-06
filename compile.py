@@ -514,6 +514,8 @@ class Data(Chunk):
     def __init__(self, chunk_id="DATA"):
         super(Data, self).__init__(chunk_id)
         self.class_id = ""
+        self.vbmp_names = []
+        self.polygons = []
         self.frames = []
 
     def set_binary_data(self, binary_data):
@@ -534,6 +536,7 @@ class Data(Chunk):
         # Split the names
         vbmp_fnames = bytes(vanm_data[idx:idx + vbmp_fnames_len].strip(b"\x00")).decode().split("\x00")
         idx += vbmp_fnames_len
+        self.vbmp_names = vbmp_fnames
 
         num_shorts_for_polygons = struct.unpack(">H", vanm_data[idx:idx + 2])[0]
         idx += 2
@@ -558,6 +561,8 @@ class Data(Chunk):
                 idx += 2
 
             vanm_polygons.append(temp_polygon)  # Now we have a list of ((x1,y1), (x2,y2), (x2,y2)...) sets
+
+        self.polygons = vanm_polygons
 
         # Read the number of frames
         vanm_num_frames = struct.unpack(">H", vanm_data[idx:idx + 2])[0]
@@ -584,13 +589,19 @@ class Data(Chunk):
 
     def get_data(self):
         class_id = self.class_id + "\x00"
-        vbmp_names = []
-        poly = []
+
+        # When parsed from binary data the original name and polygon tables
+        # are preserved byte-for-byte (the polygon table keeps one entry per
+        # frame usage); otherwise they are rebuilt from the frames.
+        poly = self.polygons if self.polygons else [frame["vbmp_coords"] for frame in self.frames]
+        vbmp_names = self.vbmp_names if self.vbmp_names else []
+        if not self.vbmp_names:
+            for frame in self.frames:
+                if frame["vbmp_name"] not in vbmp_names:
+                    vbmp_names.append(frame["vbmp_name"])
+
         frame_times = []
         for frame in self.frames:
-            poly.append(frame["vbmp_coords"])
-            if frame["vbmp_name"] not in vbmp_names:
-                vbmp_names.append(frame["vbmp_name"])
             frame_times.append([frame["frame_time"],
                                 vbmp_names.index(frame["vbmp_name"]),
                                 poly.index(frame["vbmp_coords"])])
@@ -610,6 +621,8 @@ class Data(Chunk):
 
     def to_dict(self):
         return {self.chunk_id: {"class_id": self.class_id,
+                                "vbmp_names": self.vbmp_names,
+                                "polygons": self.polygons,
                                 "frames": self.frames,
                                 }
                 }

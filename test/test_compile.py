@@ -110,9 +110,7 @@ class TestChunk(unittest.TestCase):
             with open(chunk, "rb") as f:
                 data = f.read()
             parsed = compile.Form().parse_stream(io.BytesIO(data))[0]
-            # DATA is a special case because we are free to order the ILBM references in any order
-            if parsed.chunk_id != "DATA":
-                self.assertEqual(parsed.full_data(), data)
+            self.assertEqual(parsed.full_data(), data)
 
     def test_form_classes(self):
         import glob
@@ -121,9 +119,7 @@ class TestChunk(unittest.TestCase):
             with open(chunk, "rb") as f:
                 data = f.read()
             parsed = compile.Form().parse_stream(io.BytesIO(data))[0]
-            # DATA is a special case because we are free to order the ILBM references in any order
-            if not parsed.get_all("DATA"):
-                self.assertEqual(parsed.full_data(), data)
+            self.assertEqual(parsed.full_data(), data)
 
     def test_parser_uses_registered_types(self):
         name = compile.Nam2()
