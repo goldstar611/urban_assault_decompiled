@@ -121,6 +121,28 @@ class TestChunk(unittest.TestCase):
             parsed = compile.Form().parse_stream(io.BytesIO(data))[0]
             self.assertEqual(parsed.full_data(), data)
 
+    def test_original_form_fixtures(self):
+        import glob
+        fixtures = glob.glob(os.path.join("test", "bin", "orig", "*.bin"))
+        self.assertTrue(fixtures)
+        for fixture in fixtures:
+            with self.subTest(form=os.path.basename(fixture)):
+                with open(fixture, "rb") as f:
+                    data = f.read()
+                parsed = compile.Form().parse_stream(io.BytesIO(data))[0]
+
+                expected_class = compile.form_registry[parsed.form_type]
+                self.assertIs(type(parsed), expected_class)
+                self.assertEqual(parsed.full_data(), data)
+
+                rebuilt = compile.Form().from_json(parsed.to_json())
+                self.assertEqual(rebuilt.full_data(), data)
+
+                if isinstance(parsed, compile.Area):
+                    self.assertEqual(parsed.validate(), [])
+                if isinstance(parsed, compile.Ade):
+                    self.assertEqual(parsed.validate(), [])
+
     def test_parser_uses_registered_types(self):
         name = compile.Nam2()
         name.name = "texture"

@@ -1757,23 +1757,27 @@ class Area(Form):
                 errors.extend("AREA/" + error for error in definition.validate())
 
         bitmap_refs = self.get_direct_all("OBJT")
-        if bitmap_refs:
-            if len(bitmap_refs) > 1:
-                errors.append("AREA: duplicate OBJT/CIBO/NAM2 bitmap references")
-            bitmap_ref = bitmap_refs[0]
+        if len(bitmap_refs) > 1:
+            errors.append("AREA: duplicate OBJT/CIBO/NAM2 bitmap references")
+        for bitmap_ref in bitmap_refs[:1]:
             if not isinstance(bitmap_ref, Objt):
                 errors.append("AREA: missing OBJT/CIBO/NAM2 bitmap reference")
+                continue
+            # A bitmap container is either textured (CIBO/NAM2) or
+            # animated (BANI/STRC); the game never mixes both.
+            if bitmap_ref.get_direct_single("BANI") is not None:
+                continue
+            cibo_refs = bitmap_ref.get_direct_all("CIBO")
+            if len(cibo_refs) == 1 and isinstance(cibo_refs[0], Cibo):
+                nam2_refs = cibo_refs[0].get_direct_all("NAM2")
+                if len(nam2_refs) > 1:
+                    errors.append("AREA: duplicate OBJT/CIBO/NAM2 bitmap references")
+                elif len(nam2_refs) != 1 or not isinstance(nam2_refs[0], Nam2):
+                    errors.append("AREA: missing OBJT/CIBO/NAM2 bitmap reference")
             else:
-                cibo_refs = bitmap_ref.get_direct_all("CIBO")
-                if len(cibo_refs) == 1 and isinstance(cibo_refs[0], Cibo):
-                    nam2_refs = cibo_refs[0].get_direct_all("NAM2")
-                    if len(nam2_refs) > 1:
-                        errors.append("AREA: duplicate OBJT/CIBO/NAM2 bitmap references")
-                    elif len(nam2_refs) != 1 or not isinstance(nam2_refs[0], Nam2):
-                        errors.append("AREA: missing OBJT/CIBO/NAM2 bitmap reference")
-                else:
-                    if len(cibo_refs) > 1:
-                        errors.append("AREA: duplicate OBJT/CIBO/NAM2 bitmap references")
+                if len(cibo_refs) > 1:
+                    errors.append("AREA: duplicate OBJT/CIBO/NAM2 bitmap references")
+                if not cibo_refs:
                     errors.append("AREA: missing OBJT/CIBO/NAM2 bitmap reference")
         return errors
 
