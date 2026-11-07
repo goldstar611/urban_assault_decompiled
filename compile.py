@@ -1097,6 +1097,25 @@ class Vbmp(Form):
     def load_image(self, file_name):
         try:
             with Image.open(file_name) as source_image:
+                if source_image.mode == "P" and source_image.size == (256, 256) and \
+                        source_image.getpalette() == list(palette_data()):
+                    # Lossless path: 8-bit palette image carrying exactly our
+                    # palette (written by save_to_bmp). Using tobytes() keeps
+                    # the original palette indices byte-for-byte; going through
+                    # convert("RGB") + quantize() changes indices of
+                    # neighbouring identical colors and breaks SET.BAS
+                    # byte-exactness.
+                    image = source_image.tobytes()
+                    new_vbmp_head = Head()
+                    new_vbmp_head.height = 256
+                    new_vbmp_head.width = 256
+                    new_vbmp_body = Body()
+                    new_vbmp_body.set_binary_data(image)
+                    self.sub_chunks = []
+                    self.add_chunk(new_vbmp_head)
+                    self.add_chunk(new_vbmp_body)
+                    self.file_name = os.path.splitext(os.path.basename(file_name))[0]
+                    return self
                 image = source_image.convert("RGB")
         except (FileNotFoundError, UnidentifiedImageError, OSError) as error:
             raise InvalidImage("WARNING: Not loading invalid image file: {}".format(file_name)) from error
@@ -1881,6 +1900,46 @@ def parse_slurps(set_number="1"):
     return slurps
 
 
+def build_resource_manifest_path(set_number="1"):
+    return os.path.join("assets", "sets", "set{}", "resource_order.json").format(set_number)
+
+
+def add_manifested_resources(mc2: "Mc2", set_number: str) -> bool:
+    """Add EMBD resources to *mc2* in the exact order of the per-set resource
+    manifest (written by ``decompile_set_bas.py``). Each manifest entry is
+    ``[emrs_name, form_type, relative_file]``; the EMRS name is applied verbatim
+    because the original file mixes upper- and lower-cased resource names
+    which sorted/synthesized names cannot reproduce. Returns False when no
+    manifest exists for the set, so callers can fall back to sorted globs."""
+    manifest_path = build_resource_manifest_path(set_number)
+    if not os.path.isfile(manifest_path):
+        return False
+    # myjson only vendors the encoder; manifest IO uses the standard module.
+    if json.__name__ != "json":
+        import json as std_json
+        with open(manifest_path, "r") as f:
+            manifest = std_json.load(f)
+    else:
+        with open(manifest_path, "r") as f:
+            manifest = json.load(f)
+    base_dir = os.path.dirname(manifest_path)
+    for resource_name, form_type, file_rel in manifest:
+        resource_file = os.path.join(base_dir, file_rel)
+        if form_type == "VBMP":
+            resource_form = Vbmp().load_image(resource_file)
+            mc2.embd.add_vbmp(resource_name, resource_form)
+        elif form_type == "SKLT":
+            resource_form = Form().from_json_file(resource_file)
+            mc2.embd.add_sklt(resource_name, resource_form)
+        elif form_type == "VANM":
+            resource_form = Form().from_json_file(resource_file)
+            mc2.embd.add_vanm(resource_name, resource_form)
+        else:
+            raise ValueError("Unimplemented resource type in manifest: %s" % form_type)
+        logging.info("resource: %s %s" % (resource_name, file_rel))
+    return True
+
+
 def build_set(set_number="1") -> Mc2:
     """Build an MC2 form for a set without writing an output file."""
     sdf = parse_set_descriptor(set_number)
@@ -1888,32 +1947,35 @@ def build_set(set_number="1") -> Mc2:
     slurps = parse_slurps(set_number)
     mc2 = Mc2()
 
-    path = os.path.join("assets", "sets", "set{}", "*.*")
-    bitmaps = glob.glob(path.format(set_number))
-    bitmaps.sort()
+    if add_manifested_resources(mc2, set_number):
+        pass
+    else:
+        path = os.path.join("assets", "sets", "set{}", "*.*")
+        bitmaps = glob.glob(path.format(set_number))
+        bitmaps.sort()
 
-    # Add bitmaps to Embd
-    for bitmap in bitmaps:
-        logging.info(bitmap)
-        mc2.add_image_from_file(bitmap)
+        # Add bitmaps to Embd
+        for bitmap in bitmaps:
+            logging.info(bitmap)
+            mc2.add_image_from_file(bitmap)
 
-    path = os.path.join("assets", "sets", "set{}", "Skeleton", "*.json")
-    skeletons = glob.glob(path.format(set_number))
-    skeletons.sort()
+        path = os.path.join("assets", "sets", "set{}", "Skeleton", "*.json")
+        skeletons = glob.glob(path.format(set_number))
+        skeletons.sort()
 
-    # Add skeletons to Embd
-    for skeleton in skeletons:
-        logging.info(skeleton)
-        mc2.add_skeleton_from_json_file(skeleton)
+        # Add skeletons to Embd
+        for skeleton in skeletons:
+            logging.info(skeleton)
+            mc2.add_skeleton_from_json_file(skeleton)
 
-    path = os.path.join("assets", "sets", "set{}", "rsrcpool", "*.json")
-    animations = glob.glob(path.format(set_number))
-    animations.sort()
+        path = os.path.join("assets", "sets", "set{}", "rsrcpool", "*.json")
+        animations = glob.glob(path.format(set_number))
+        animations.sort()
 
-    # Add animations to Embd
-    for animation in animations:
-        logging.info(animation)
-        mc2.add_animation_from_json_file(animation)
+        # Add animations to Embd
+        for animation in animations:
+            logging.info(animation)
+            mc2.add_animation_from_json_file(animation)
 
     path = os.path.join("assets", "sets", "set{}", "objects", "vehicles", "{}.json")
     vehicles = [path.format(set_number, x.replace("base", "bas")) for x in visproto]

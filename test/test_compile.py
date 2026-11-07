@@ -524,7 +524,10 @@ class TestIntegration(unittest.TestCase):
         compiled_set = compile.build_set("1").full_data()
         sha256 = hashlib.sha256(compiled_set).hexdigest()
 
-        self.assertEqual(sha256, "858d4daeab4daeee319ad74b02d6ba98a6ea4ef46322df6515f1457d0db8ed32")
+        # Byte-identical with the original game's
+        # "DATA/SET1/OBJECTS/SET.BAS". Achieved via decompile_set_bas.py's
+        # per-set resource manifest + Vbmp lossless palette-image loading.
+        self.assertEqual(sha256, "cf1b7051108542d8892cde8c689141249c90069d9a00c97af230d2c5315ea5b5")
 
 
 if __name__ == "__main__":
