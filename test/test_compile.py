@@ -1,6 +1,7 @@
 import compile
 import hashlib
 import io
+import json
 import os
 import tempfile
 import unittest
@@ -520,14 +521,45 @@ class TestClasses(unittest.TestCase):
 
 class TestIntegration(unittest.TestCase):
 
+    # sha256 of the original game files "DATA/SETn/OBJECTS/SET.BAS", all
+    # byte-identical with build_set(). Achieved via decompile_set_bas.py's
+    # per-set resource manifest + Vbmp lossless palette-image loading.
+    golden_shas = {
+        "1": "cf1b7051108542d8892cde8c689141249c90069d9a00c97af230d2c5315ea5b5",
+        "2": "c22568918da20a96986b3a3ef8ac4d1e70f071a0fb3293bca63b750feea79b2d",
+        "3": "f5e5dd71480c44e1bd228d86e157af3d0f4eaf4e86f3fedd1d49b6bf0d7b5dcf",
+        "4": "697c73e9e9d56046d5afb1f000b0f73d31ff054fe65530fbfe2125369e3b30fc",
+        "5": "6caa5ed31e96cc8cc16ce1275f470557071deebe2aa160505e590ac536764667",
+        "6": "60bb9f0980cb87285456b4e0a2691e75a4cdd51b875d6cfa293b982483efb63b",
+    }
+
     def test_set1_golden_build(self):
         compiled_set = compile.build_set("1").full_data()
-        sha256 = hashlib.sha256(compiled_set).hexdigest()
+        self.assertByteExactSha(compiled_set, self.golden_shas["1"])
 
-        # Byte-identical with the original game's
-        # "DATA/SET1/OBJECTS/SET.BAS". Achieved via decompile_set_bas.py's
-        # per-set resource manifest + Vbmp lossless palette-image loading.
-        self.assertEqual(sha256, "cf1b7051108542d8892cde8c689141249c90069d9a00c97af230d2c5315ea5b5")
+    def test_manifest_source_sha256(self):
+        """Each resource manifest must record the sha256 of the original
+        SET.BAS it was derived from, and it must match the golden sha."""
+        for set_number, expected_sha in self.golden_shas.items():
+            with self.subTest(set=set_number):
+                path = compile.build_resource_manifest_path(set_number)
+                if not os.path.isfile(path):
+                    continue
+                with open(path, "r") as f:
+                    manifest = json.load(f)
+                self.assertIn("resources", manifest)
+                self.assertEqual(expected_sha,
+                                 manifest["source_sha256"], "set" + set_number)
+
+    def test_all_sets_byte_exact(self):
+        for set_number, expected_sha in self.golden_shas.items():
+            with self.subTest(set=set_number):
+                compiled_set = compile.build_set(set_number).full_data()
+                self.assertByteExactSha(compiled_set, expected_sha)
+
+    def assertByteExactSha(self, compiled_bytes: bytes, expected_sha: str) -> None:
+        self.assertEqual(hashlib.sha256(compiled_bytes).hexdigest(), expected_sha)
+
 
 
 if __name__ == "__main__":

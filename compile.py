@@ -1906,15 +1906,18 @@ def build_resource_manifest_path(set_number="1"):
 
 def add_manifested_resources(mc2: "Mc2", set_number: str) -> bool:
     """Add EMBD resources to *mc2* in the exact order of the per-set resource
-    manifest (written by ``decompile_set_bas.py``). Each manifest entry is
-    ``[emrs_name, form_type, relative_file]``; the EMRS name is applied verbatim
-    because the original file mixes upper- and lower-cased resource names
-    which sorted/synthesized names cannot reproduce. Returns False when no
-    manifest exists for the set, so callers can fall back to sorted globs."""
+    manifest (written by ``decompile_set_bas.py``). The manifest is either a
+    plain resource list (legacy) or an object recording the sha256 of the
+    original ``SET.BAS`` plus a ``resources`` list; each entry is
+    ``[emrs_name, form_type, relative_file]``. The EMRS name is applied
+    verbatim because the original file mixes upper- and lower-cased resource
+    names which sorted/synthesized names cannot reproduce. Returns False when
+    no manifest exists for the set, so callers can fall back to sorted globs."""
     manifest_path = build_resource_manifest_path(set_number)
     if not os.path.isfile(manifest_path):
         return False
-    # myjson only vendors the encoder; manifest IO uses the standard module.
+    # myjson only vendors the encoder (and may have replaced sys.modules["json"]);
+    # manifest IO uses the standard library module.
     if json.__name__ != "json":
         import json as std_json
         with open(manifest_path, "r") as f:
@@ -1922,6 +1925,8 @@ def add_manifested_resources(mc2: "Mc2", set_number: str) -> bool:
     else:
         with open(manifest_path, "r") as f:
             manifest = json.load(f)
+    if isinstance(manifest, dict):  # provenance manifest from decompile_set_bas.py
+        manifest = manifest.get("resources", [])
     base_dir = os.path.dirname(manifest_path)
     for resource_name, form_type, file_rel in manifest:
         resource_file = os.path.join(base_dir, file_rel)

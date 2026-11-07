@@ -1,4 +1,7 @@
+import io
+
 import compile
+import hashlib
 import json
 import os
 
@@ -13,8 +16,9 @@ def decompile_set_bas(game_root: str = SET_BAS_PATH,
 
     Extracts the EMBD resources (VBMP bitmaps, SKLT skeletons, VANM
     animations) into the asset folders and writes a per-set manifest
-    ``resource_order.json`` that records the *exact original resource order
-    and EMRS names*, which ``compile.build_set()`` replays to stay
+    ``resource_order.json`` that records the source file's sha256 (encoded
+    EMRS names, for provenance) and the *exact original resource order;
+``compile.build_set()`` replays the manifest to stay
     byte-identical with the original game file. The original files mix upper
     and lower case versions of the same resource prefix (e.g. ``Skeleton/`` and
     ``skeleton/``), so the manifest must store exact names - sorting or
@@ -22,7 +26,9 @@ def decompile_set_bas(game_root: str = SET_BAS_PATH,
     """
     set_bas = os.path.join(game_root, "SET" + set_number, "OBJECTS", "SET.BAS")
     with open(set_bas, "rb") as f:
-        mc2 = compile.Form().parse_stream(f)[0]
+        set_bas_bytes = f.read()
+        mc2 = compile.Form().parse_stream(io.BytesIO(set_bas_bytes))[0]
+        set_bas_sha256 = hashlib.sha256(set_bas_bytes).hexdigest()
     embd = mc2.get_single("EMBD")
     if embd is None:
         raise ValueError("No EMBD form found in %s" % set_bas)
@@ -72,9 +78,15 @@ def decompile_set_bas(game_root: str = SET_BAS_PATH,
         print("extracted:", emrs, "->", files_rel)
 
     manifest_path = os.path.join(base_dir, "resource_order.json")
+    manifest = {
+        "source": os.path.relpath(set_bas, game_root),
+        "source_sha256": set_bas_sha256,
+        "resources": manifest_resources,
+    }
     with open(manifest_path, "w") as f:
-        json.dump(manifest_resources, f, indent=2)
-    print("manifest written:", manifest_path, len(manifest_resources), "entries")
+        json.dump(manifest, f, indent=2)
+    print("manifest written:", manifest_path, len(manifest_resources),
+          "entries, source sha256:", set_bas_sha256)
 
 
 def main() -> None:
