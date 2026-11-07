@@ -1,5 +1,15 @@
 import json
 
+# NOTE: This module only adjusts the *textual output formatting* of dumps():
+# arrays are rendered compactly (e.g. '[1, 2]' instead of Python's indented
+# 'one element per line' style), while objects still get the pretty layout.
+# It is a vendored/shimmed copy of CPython's json.encoder internals (based on
+# the pure-Python encoder): the formatting tweaks live in _iterencode_list()
+# and the compact separators used by dumps() below; the big 'HACK:
+# hand-optimized bytecode' parameter block in my_encode() is the stdlib's own
+# global-into-local optimization, kept so results match the stdlib encoder.
+# It has no effect on data structure or ordering -- it touches rendering only.
+
 
 def my_encode(markers, _default, _encoder, _indent, _floatstr,
         _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
@@ -186,7 +196,8 @@ def my_encode(markers, _default, _encoder, _indent, _floatstr,
     return _iterencode
 
 
-# Apply monkey patch
+# Apply monkey patch: swap the stdlib's pure-Python encoder for our
+# formatting-adjusted copy above.
 json.encoder._make_iterencode = my_encode
 loads = json.loads
 dumps = json.dumps
