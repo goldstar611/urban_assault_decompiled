@@ -521,7 +521,8 @@ class TestClasses(unittest.TestCase):
 
 class TestIntegration(unittest.TestCase):
 
-    # sha256 of the original game files "DATA/SETn/OBJECTS/SET.BAS", all
+    # sha256 of the original game files "DATA/SETn/OBJECTS/SET.BAS" (sets)
+    # and "dataxp/Setn/Objects/SET.BAS" (sets ending in _xp), all
     # byte-identical with build_set(). Achieved via decompile_set_bas.py's
     # per-set resource manifest + Vbmp lossless palette-image loading.
     golden_shas = {
@@ -531,6 +532,12 @@ class TestIntegration(unittest.TestCase):
         "4": "697c73e9e9d56046d5afb1f000b0f73d31ff054fe65530fbfe2125369e3b30fc",
         "5": "6caa5ed31e96cc8cc16ce1275f470557071deebe2aa160505e590ac536764667",
         "6": "60bb9f0980cb87285456b4e0a2691e75a4cdd51b875d6cfa293b982483efb63b",
+        "1_xp": "1d65b2ab93622a0593ca23e84f01301c2d2045e49b8baee6adc0d56c17ab4a34",
+        "2_xp": "d73f0af63ec22b2c6f3346f012dc5f9473b105006f98141027540ab668071574",
+        "3_xp": "01b166191998f20d396ae518aed35c0af6efe63f176b14114378cc40953edcbe",
+        "4_xp": "bf2ed14dd8ce073bd9a5ad8ae7d2d5379cab323523e397d2db2dffaa4518a721",
+        "5_xp": "10450aa5b59702d530745ce93ec4bd0629f483014145156fd36af97355109a23",
+        "6_xp": "f9530931b1a0791a05805f4c4d5f546a42c521a746b123ad6e35ea5fc2859264",
     }
 
     def test_set1_golden_build(self):
@@ -539,20 +546,26 @@ class TestIntegration(unittest.TestCase):
 
     def test_manifest_source_sha256(self):
         """Each resource manifest must record the sha256 of the original
-        SET.BAS it was derived from, and it must match the golden sha."""
+        SET.BAS it was derived from, and it must match the golden sha.
+        Only the manifests present in the repo are checked."""
         for set_number, expected_sha in self.golden_shas.items():
             with self.subTest(set=set_number):
                 path = compile.build_resource_manifest_path(set_number)
                 if not os.path.isfile(path):
-                    continue
+                    self.skipTest("no manifest in repo for set %s" % set_number)
                 with open(path, "r") as f:
                     manifest = json.load(f)
                 self.assertIn("resources", manifest)
                 self.assertEqual(expected_sha,
                                  manifest["source_sha256"], "set" + set_number)
 
-    def test_all_sets_byte_exact(self):
+    def test_manifested_sets_byte_exact(self):
+        """Builds must stay byte-identical with the original game files for
+        every set whose manifest is present in the repo."""
         for set_number, expected_sha in self.golden_shas.items():
+            path = compile.build_resource_manifest_path(set_number)
+            if not os.path.isfile(path):
+                continue
             with self.subTest(set=set_number):
                 compiled_set = compile.build_set(set_number).full_data()
                 self.assertByteExactSha(compiled_set, expected_sha)

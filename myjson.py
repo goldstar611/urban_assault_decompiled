@@ -70,7 +70,9 @@ def my_encode(markers, _default, _encoder, _indent, _floatstr,
                 # see comment above for int
                 yield buf + _floatstr(value)
             else:
-                yield buf + '\n' + _indent * _current_indent_level
+                # Nested containers go on their own line; no trailing
+                # whitespace after the '[' or the item separator.
+                yield buf.rstrip() + '\n' + _indent * _current_indent_level
                 if isinstance(value, (list, tuple)):
                     chunks = _iterencode_list(value, _current_indent_level)
                 elif isinstance(value, dict):

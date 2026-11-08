@@ -1,37 +1,31 @@
 import io
+import os
 
 import compile
 import hashlib
 import json
-import os
 
 
-SET_BAS_PATH = os.path.join("/Users/af/Downloads/OpenUA Standalone Package", "DATA")
-
-
-def decompile_set_bas(game_root: str = SET_BAS_PATH,
-                      set_number: str = "1",
-                      assets_dir: str = "assets/sets/set{}") -> None:
-    """Decompile the original game ``SET.BAS`` for one set.
+def decompile_set_bas(set_bas_path: str,
+                      assets_dir: str) -> None:
+    """Decompile one original game ``SET.BAS`` file into *assets_dir*.
 
     Extracts the EMBD resources (VBMP bitmaps, SKLT skeletons, VANM
-    animations) into the asset folders and writes a per-set manifest
-    ``resource_order.json`` that records the source file's sha256 (encoded
-    EMRS names, for provenance) and the *exact original resource order;
-``compile.build_set()`` replays the manifest to stay
-    byte-identical with the original game file. The original files mix upper
-    and lower case versions of the same resource prefix (e.g. ``Skeleton/`` and
-    ``skeleton/``), so the manifest must store exact names - sorting or
-    normalizing them breaks the byte layout.
+    animations) and writes a manifest ``resource_order.json`` that records
+    the source file's sha256 (for provenance) and the *exact original
+    resource order and EMRS names*; ``compile.build_set()`` replays the
+    manifest to stay byte-identical with the original game file. The
+    original files mix upper and lower case versions of the same resource
+    prefix (e.g. ``Skeleton/`` and ``skeleton/``), so the manifest must
+    store exact names - sorting or normalizing them breaks the byte layout.
     """
-    set_bas = os.path.join(game_root, "SET" + set_number, "OBJECTS", "SET.BAS")
-    with open(set_bas, "rb") as f:
+    with open(set_bas_path, "rb") as f:
         set_bas_bytes = f.read()
         mc2 = compile.Form().parse_stream(io.BytesIO(set_bas_bytes))[0]
         set_bas_sha256 = hashlib.sha256(set_bas_bytes).hexdigest()
     embd = mc2.get_single("EMBD")
     if embd is None:
-        raise ValueError("No EMBD form found in %s" % set_bas)
+        raise ValueError("No EMBD form found in %s" % set_bas_path)
     elif not isinstance(embd, compile.Embd):
         # A generic Form was parsed; rebuild the EMRS/resource pairing
         # manually (Root first, then EMRS + resource pairs).
@@ -46,11 +40,16 @@ def decompile_set_bas(game_root: str = SET_BAS_PATH,
     if not resources:
         raise ValueError("No EMBD resources found in %s" % set_bas)
 
-    base_dir = assets_dir.format(set_number)
+    base_dir = assets_dir
     manifest_resources = []
+    import glob
     for emrs, resource in resources:
         if resource.form_type == "VBMP":
-            files_rel = emrs + ".bmp"
+            # Reuse an already-extracted bitmap file if one exists; asset
+            # dirs differ in naming (".ILBM.bmp" vs ".ILB.bmp"), and the
+            # assets are what they are.
+            existing = glob.glob(os.path.join(base_dir, emrs + "*.bmp"))
+            files_rel = os.path.basename(existing[0]) if existing else emrs + ".bmp"
         elif resource.form_type == "SKLT":
             stem = emrs[:-len(".sklt")] + ".skl.json"
             if "/" in emrs:
@@ -79,7 +78,7 @@ def decompile_set_bas(game_root: str = SET_BAS_PATH,
 
     manifest_path = os.path.join(base_dir, "resource_order.json")
     manifest = {
-        "source": os.path.relpath(set_bas, game_root),
+        "source": set_bas_path,
         "source_sha256": set_bas_sha256,
         "resources": manifest_resources,
     }
@@ -90,7 +89,11 @@ def decompile_set_bas(game_root: str = SET_BAS_PATH,
 
 
 def main() -> None:
-    decompile_set_bas()
+    import sys
+    if len(sys.argv) != 3:
+        print("usage: decompile_set_bas.py <SET.BAS path> <assets_dir>")
+        raise SystemExit(1)
+    decompile_set_bas(sys.argv[1], sys.argv[2])
 
 
 if __name__ == '__main__':
