@@ -325,9 +325,14 @@ class Animation(object):
         for emrs_name, resource in embd_form.emrs_resources.items():
             if emrs_name == vbmp_name and resource.form_type == "VBMP":
                 data = resource.full_data()[34:]
-                image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format_Indexed8)
+                # QImage does not copy the buffer we hand it, so take a deep
+                # copy right away; and convert indexed8 -> RGB32 so the
+                # palette survives texture upload.
+                image = QtGui.QImage(QtCore.QByteArray(data), 256, 256,
+                                     256, QtGui.QImage.Format_Indexed8)
                 image = image.mirrored(False, True)
                 image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
+                image = image.convertToFormat(QtGui.QImage.Format_RGB32)
                 return image
         return None
 
@@ -383,6 +388,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         texture.setMinificationFilter(QtGui.QOpenGLTexture.Nearest)
         texture.bind()
         GL.glEnable(GL.GL_TEXTURE_2D)
+        GL.glDisable(GL.GL_CULL_FACE)
         GL.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
         side = 1.6  # sprite size in ortho view (-0.5..0.5 usable)
         GL.glBegin(GL.GL_QUADS)
@@ -396,6 +402,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         GL.glVertex3f(-side / 2, side / 2, 0.0)
         GL.glEnd()
         GL.glDisable(GL.GL_TEXTURE_2D)
+        GL.glEnable(GL.GL_CULL_FACE)
         texture.release()
 
     def minimumSizeHint(self):
