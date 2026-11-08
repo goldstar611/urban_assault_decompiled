@@ -114,6 +114,15 @@ class MyQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
             return bani.animation.anim_name
         return None
 
+    def _animation_poly_index(self):
+        """The STRC poly index of the BANI-carrying AREA (which mesh polygon)."""
+        if self.association.form_type not in ("AREA", "FARE"):
+            return None
+        for strc in self.association.get_all("STRC"):
+            if getattr(strc, "poly", None):
+                return strc.poly
+        return None
+
     def can_render_3d(self):
         if self.is_form():
             if self.association.form_type in ["SKLT", "AMSH"]:
@@ -280,10 +289,10 @@ class Animation(object):
     """Bitmap animation built from a VANM form.
 
     A VANM does not render by itself; it is a *modifier* referenced from
-    another object (BANI/AREA in a building or vehicle). Each frame says
-    which VBMP to use and which polygon region of that bitmap to show, so
-    frames are cropped to their polygon's bounding box (the region the game
-    stamps onto the animated area's texture)."""
+    another object (BANI/AREA in a building or vehicle). Each frame names a
+    VBMP plus polygon coords (bitmap pixel space) that act as the *texture
+    coordinates* for the animated object's polygon; per frame the whole
+    bitmap is bound and the polygon vertices are mapped onto those coords."""
 
     def __init__(self):
         self.frames = []
@@ -298,26 +307,46 @@ class Animation(object):
             image = self.qimage_from_vbmp(embd_form, frame["vbmp_name"])
             if image is not None:
                 self.frames.append((frame["frame_time"],
-                                    self.crop_polygon(image, frame["vbmp_coords"])))
+                                    image,
+                                    frame["vbmp_coords"]))
         self.elapsed_ms = 0
         self.frame_index = 0 if self.frames else -1
         return self
+
+    @staticmethod
+    def find_resource(embd_form, name):
+        """EMBD lookup by exact name first, case-insensitive as fallback."""
+        resource = embd_form.emrs_resources.get(name)
+        if resource is None:
+            for emrs_name, candidate in embd_form.emrs_resources.items():
+                if emrs_name.upper() == name.upper():
+                    resource = candidate
+                    break
+        return resource
 
     @staticmethod
     def load_vanm_by_name(embd_form, anim_name):
         """Build the animation for a BANI STRC ``anim_name`` (e.g. 'SMILEY1.ANM')."""
         if not anim_name:
             return None
-        vanm = embd_form.emrs_resources.get(anim_name)
+        vanm = Animation.find_resource(embd_form, anim_name)
         if vanm is None or vanm.form_type != "VANM":
-            # Fall back to a case-insensitive EMBD lookup
-            for emrs_name, resource in embd_form.emrs_resources.items():
-                if emrs_name.upper() == anim_name.upper() and resource.form_type == "VANM":
-                    vanm = resource
-                    break
-        if vanm is None:
             return None
         return Animation().load_vanm(vanm, embd_form)
+
+    @staticmethod
+    def load_sklt_by_name(embd_form, sklt_name):
+        """Resolve a skeleton (POO2 points + POL2 edges) from the EMBD."""
+        if not sklt_name:
+            return None
+        sklt = Animation.find_resource(embd_form, sklt_name)
+        if sklt is None or sklt.form_type != "SKLT":
+            return None
+        poo2 = sklt.get_single("POO2")
+        pol2 = sklt.get_single("POL2")
+        if poo2 is None or pol2 is None:
+            return None
+        return sklt
 
     @staticmethod
     def crop_polygon(image, polygon):
@@ -341,8 +370,14 @@ class Animation(object):
             return self.frames[self.frame_index][1]
         return None
 
+    @property
+    def current_uvs(self):
+        if 0 <= self.frame_index < len(self.frames):
+            return self.frames[self.frame_index][2]
+        return None
+
     def duration_ms(self):
-        return sum(d for d, _ in self.frames)
+        return sum(frame[0] for frame in self.frames)
 
     def advance(self, delta_ms):
         """Advance playback by *delta_ms*; returns True when a new frame begins."""
@@ -406,52 +441,133 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.meshes = [Mesh()]
         self.animation = None
+        # Mesh-driven playback: (vertices, edges) of the owning skeleton plus
+        # (poly_index, Animation) pairs drawing frame textures onto polygons.
+        self.anim_mesh = None
+        self.poly_animations = []
         self.animation_timer = QtCore.QTimer(self)
         self.animation_timer.setInterval(33)
         self.animation_timer.timeout.connect(self.animation_tick)
 
     def animation_tick(self):
-        if self.animation is None:
+        animations = [animation for _, animation in self.poly_animations]
+        if self.animation is not None:
+            animations.append(self.animation)
+        if not animations:
             self.animation_timer.stop()
             return
-        if self.animation.advance(self.animation_timer.interval()):
+        changed = any(animation.advance(self.animation_timer.interval())
+                      for animation in animations)
+        if changed:
             self.updateGL()
+
+    def play_animations(self, mesh, poly_animations):
+        """Play animation(s) mapped onto polygons of *mesh* (vertices, edges)."""
+        self.animation = None
+        self.anim_mesh = mesh
+        self.poly_animations = poly_animations
+        self.animation_timer.start()
+        self.updateGL()
 
     def play_animation(self, animation: Animation):
         self.animation = animation
+        self.anim_mesh = None
+        self.poly_animations = []
         self.animation_timer.start()
         self.updateGL()
 
     def stop_animation(self):
         self.animation_timer.stop()
         self.animation = None
+        self.anim_mesh = None
+        self.poly_animations = []
         self.updateGL()
 
-    def draw_animation(self):
-        image = self.animation.current_image
-        if image is None:
-            return
-        texture = QtGui.QOpenGLTexture(image.mirrored(vertical=True))
+    def _bind_frame_texture(self, image):
+        """Bind a VBMP frame as texture; matches the sklt mesh uv convention."""
+        texture = QtGui.QOpenGLTexture(image.mirrored())
         texture.setMagnificationFilter(QtGui.QOpenGLTexture.Nearest)
         texture.setMinificationFilter(QtGui.QOpenGLTexture.Nearest)
         texture.bind()
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glDisable(GL.GL_CULL_FACE)
         GL.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
-        side = 1.6  # sprite size in ortho view (-0.5..0.5 usable)
-        GL.glBegin(GL.GL_QUADS)
-        GL.glTexCoord2f(0.0, 1.0)
-        GL.glVertex3f(-side / 2, -side / 2, 0.0)
-        GL.glTexCoord2f(1.0, 1.0)
-        GL.glVertex3f(side / 2, -side / 2, 0.0)
-        GL.glTexCoord2f(1.0, 0.0)
-        GL.glVertex3f(side / 2, side / 2, 0.0)
-        GL.glTexCoord2f(0.0, 0.0)
-        GL.glVertex3f(-side / 2, side / 2, 0.0)
+        return texture
+
+    def _draw_textured_polygon(self, image, uvs, vertices):
+        """Map *uvs* (bitmap pixel coords) onto polygon *vertices*."""
+        texture = self._bind_frame_texture(image)
+        GL.glBegin(GL.GL_POLYGON)
+        for (uv_x, uv_y), vertex in zip(uvs, vertices):
+            GL.glTexCoord2f(uv_x / 255.0, uv_y / 255.0)
+            GL.glVertex3fv(vertex)
         GL.glEnd()
         GL.glDisable(GL.GL_TEXTURE_2D)
         GL.glEnable(GL.GL_CULL_FACE)
         texture.release()
+
+    def draw_animation(self):
+        if self.poly_animations and self.anim_mesh:
+            vertices, edges = self.anim_mesh
+            if not vertices or not edges:
+                return
+            scale_factor = numpy.amax([numpy.linalg.norm(x) for x in vertices]) * 2
+            GL.glPushMatrix()
+            GL.glScalef(1.0 / scale_factor, 1.0 / scale_factor, 1.0 / scale_factor)
+            # Static polygons as wireframe context
+            GL.glColor3f(1.0, 0.0, 1.0)
+            GL.glLineWidth(1.0)
+            animated_indices = set(poly_index for poly_index, _ in self.poly_animations)
+            GL.glBegin(GL.GL_LINES)
+            for poly_index, edge in enumerate(edges):
+                if poly_index in animated_indices:
+                    continue
+                for j, vertex_index in enumerate(edge):
+                    next_index = edge[(j + 1) % len(edge)]
+                    GL.glVertex3fv(vertices[vertex_index])
+                    GL.glVertex3fv(vertices[next_index])
+            GL.glEnd()
+            # Animated polygons textured with the current frame
+            for poly_index, animation in self.poly_animations:
+                image = animation.current_image
+                uvs = animation.current_uvs
+                if image is None or uvs is None or poly_index >= len(edges):
+                    continue
+                poly_vertices = [vertices[vi] for vi in edges[poly_index]]
+                if len(uvs) != len(poly_vertices):
+                    # Coords do not align with the polygon; pad/clamp to vertex count
+                    uvs = (list(uvs) * len(poly_vertices))[:len(poly_vertices)]
+                self._draw_textured_polygon(image, uvs, poly_vertices)
+            GL.glPopMatrix()
+        elif self.animation is not None:
+            image = self.animation.current_image
+            if image is None:
+                return
+            # Standalone preview: sprite cropped to the frame polygon
+            uvs = self.animation.current_uvs
+            if uvs:
+                image = Animation.crop_polygon(image, uvs)
+            texture = QtGui.QOpenGLTexture(image.mirrored(vertical=True))
+            texture.setMagnificationFilter(QtGui.QOpenGLTexture.Nearest)
+            texture.setMinificationFilter(QtGui.QOpenGLTexture.Nearest)
+            texture.bind()
+            GL.glEnable(GL.GL_TEXTURE_2D)
+            GL.glDisable(GL.GL_CULL_FACE)
+            GL.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
+            side = 1.6  # sprite size in ortho view (-0.5..0.5 usable)
+            GL.glBegin(GL.GL_QUADS)
+            GL.glTexCoord2f(0.0, 1.0)
+            GL.glVertex3f(-side / 2, -side / 2, 0.0)
+            GL.glTexCoord2f(1.0, 1.0)
+            GL.glVertex3f(side / 2, -side / 2, 0.0)
+            GL.glTexCoord2f(1.0, 0.0)
+            GL.glVertex3f(side / 2, side / 2, 0.0)
+            GL.glTexCoord2f(0.0, 0.0)
+            GL.glVertex3f(-side / 2, side / 2, 0.0)
+            GL.glEnd()
+            GL.glDisable(GL.GL_TEXTURE_2D)
+            GL.glEnable(GL.GL_CULL_FACE)
+            texture.release()
 
     def minimumSizeHint(self):
         return QtCore.QSize(50, 50)
@@ -853,6 +969,33 @@ class Example(QtWidgets.QMainWindow):
         if self.current_item_parent():
             return self.current_item_parent().indexOfChild(self.current_item())
 
+    def find_skeleton_for_item(self, tree_widget_item, embd):
+        """Resolve the (vertices, edges) mesh of the skeleton owning *item*.
+
+        Top-level objects (buildings, vehicles, ground) carry a SKLC naming
+        their skeleton; kids hang under them per the MC2/OBJT/BASE/KIDS/OBJT
+        tree."""
+        item = tree_widget_item
+        while item is not None:
+            association = item.association
+            if association is not None and not isinstance(association, compile.Chunk):
+                name_chunks = association.get_all("SKLC")
+            else:
+                name_chunks = []
+            for chunk in name_chunks:
+                names = chunk.get_all("NAME")
+                for name_chunk in names:
+                    sklt_name = name_chunk.name
+                    sklt = Animation.load_sklt_by_name(embd, sklt_name)
+                    if sklt is not None:
+                        poo2 = sklt.get_single("POO2")
+                        pol2 = sklt.get_single("POL2")
+                        vertices = [(point["x"], point["y"], point["z"]) for point in poo2.points]
+                        edges = pol2.edges
+                        return (vertices, edges), sklt_name
+            item = item.parent()
+        return None, None
+
     def goto(self, destination=None):
         # TODO Requires MyQTreeWidgetItem to have .goto() method
 
@@ -1158,14 +1301,26 @@ class Example(QtWidgets.QMainWindow):
             else:
                 if current_item.form_type() == "VANM":
                     animation = Animation().load_vanm(current_item.get_form(), embd)
+                    poly_index = None
                 else:
-                    # AREA/FARE: the BANI descendant names the VANM to play
+                    # AREA/FARE: the BANI descendant names the VANM to play;
+                    # its STRC poly index tells which mesh polygon animates.
                     anim_name = current_item._animation_reference()
-                    animation = Animation.load_vanm_by_name(embd, anim_name) if anim_name else None
+                    animation = (Animation.load_vanm_by_name(embd, anim_name)
+                                 if anim_name else None)
+                    poly_index = current_item._animation_poly_index()
                 if animation is not None and animation.frames:
                     self.update_status("Playing %d frames (%d ms loop)" % (
                         len(animation.frames), animation.duration_ms()))
-                    self.GLWidget.play_animation(animation)
+                    mesh, sklt_name = self.find_skeleton_for_item(current_item, embd)
+                    if poly_index is not None and mesh is not None:
+                        self.update_status("Playing %d frames (%d ms loop) on skeleton %s polygon %d" % (
+                            len(animation.frames), animation.duration_ms(),
+                            sklt_name, poly_index))
+                        self.GLWidget.play_animations(mesh,
+                                                      [(poly_index, animation)])
+                    else:
+                        self.GLWidget.play_animation(animation)
                 else:
                     self.update_status("Could not resolve animation frames")
 
