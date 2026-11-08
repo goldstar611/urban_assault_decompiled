@@ -1073,17 +1073,22 @@ class Example(QtWidgets.QMainWindow):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open a .BAS File")
 
         if filename:
-            file_extension = str(filename).lower()[-4:]
-            if file_extension in [".bas", ".anm", ".ilb", ".skl"]:
-                print("adding BAS top_level_item to tree_widget")
-                self.top_level_form.load_from_file(filename)
-            else:
-                self.update_status("You must select a file that ends with with .bas")
-                return
+            self.load_bas_file(filename)
 
-            self.refresh_tree_widget()
-            self.file_changed = False
-            self.setWindowTitle(self.default_windows_title + " " + filename)
+    def load_bas_file(self, filename: str) -> bool:
+        """Load *filename* and populate the tree; False if rejected."""
+        file_extension = str(filename).lower()[-4:]
+        if file_extension not in [".bas", ".anm", ".ilb", ".skl"]:
+            self.update_status("You must select a file that ends with with .bas")
+            return False
+
+        print("adding BAS top_level_item to tree_widget")
+        self.top_level_form.load_from_file(filename)
+
+        self.refresh_tree_widget()
+        self.file_changed = False
+        self.setWindowTitle(self.default_windows_title + " " + filename)
+        return True
 
     def refresh_tree_widget(self):
         self.treeWidget.clear()
@@ -1253,4 +1258,6 @@ if __name__ == "__main__":
     print(sys.version)
     app = QtWidgets.QApplication(sys.argv)
     ex = Example()
+    if len(sys.argv) > 1:
+        ex.load_bas_file(sys.argv[1])
     sys.exit(app.exec_())
