@@ -463,6 +463,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def play_animations(self, mesh, poly_animations):
         """Play animation(s) mapped onto polygons of *mesh* (vertices, edges)."""
+        print("DEBUG play_animations: mesh=%r poly_animations=%r" % (mesh, poly_animations), flush=True)
         self.animation = None
         self.anim_mesh = mesh
         self.poly_animations = poly_animations
@@ -470,6 +471,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.updateGL()
 
     def play_animation(self, animation: Animation):
+        print("DEBUG play_animation: animation=%r" % (animation,), flush=True)
         self.animation = animation
         self.anim_mesh = None
         self.poly_animations = []
@@ -507,6 +509,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         texture.release()
 
     def draw_animation(self):
+        print("DEBUG draw_animation: poly_animations=%r animation=%r" % (self.poly_animations, self.animation), flush=True)
         if self.poly_animations and self.anim_mesh:
             vertices, edges = self.anim_mesh
             if not vertices or not edges:
@@ -656,17 +659,21 @@ class GLWidget(QtOpenGL.QGLWidget):
         GL.glEnable(GL.GL_CULL_FACE)
 
     def paintGL(self):
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        GL.glLoadIdentity()
-        GL.glTranslated(self.camera_position["x"], self.camera_position["y"], self.camera_position["z"])
-        GL.glRotated(self.x_rotation / 16.0, 1.0, 0.0, 0.0)
-        GL.glRotated(self.y_rotation / 16.0, 0.0, 1.0, 0.0)
-        GL.glRotated(self.z_rotation / 16.0, 0.0, 0.0, 1.0)
-        # GL.glCallList(self.object))
-        if self.animation is not None:
-            self.draw_animation()
-        else:
-            self.draw_simpl()
+        try:
+            GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+            GL.glLoadIdentity()
+            GL.glTranslated(self.camera_position["x"], self.camera_position["y"], self.camera_position["z"])
+            GL.glRotated(self.x_rotation / 16.0, 1.0, 0.0, 0.0)
+            GL.glRotated(self.y_rotation / 16.0, 0.0, 1.0, 0.0)
+            GL.glRotated(self.z_rotation / 16.0, 0.0, 0.0, 1.0)
+            # GL.glCallList(self.object))
+            if self.animation is not None or self.poly_animations:
+                self.draw_animation()
+            else:
+                self.draw_simpl()
+        except Exception:
+            import traceback
+            traceback.print_exc()
 
     def resizeGL(self, width, height):
         side = min(width, height)
@@ -1309,17 +1316,29 @@ class Example(QtWidgets.QMainWindow):
                     animation = (Animation.load_vanm_by_name(embd, anim_name)
                                  if anim_name else None)
                     poly_index = current_item._animation_poly_index()
+                    # Debug:
+                    print("DEBUG AREA selection: form_type=%s anim_name=%s poly_index=%s" % (
+                        current_item.form_type(), anim_name, poly_index))
                 if animation is not None and animation.frames:
                     self.update_status("Playing %d frames (%d ms loop)" % (
                         len(animation.frames), animation.duration_ms()))
                     mesh, sklt_name = self.find_skeleton_for_item(current_item, embd)
-                    if poly_index is not None and mesh is not None:
+                    if mesh is not None and poly_index is not None and 0 <= poly_index < len(mesh[1]):
+                        # Build poly_animations for full skeleton render
                         self.update_status("Playing %d frames (%d ms loop) on skeleton %s polygon %d" % (
                             len(animation.frames), animation.duration_ms(),
                             sklt_name, poly_index))
                         self.GLWidget.play_animations(mesh,
                                                       [(poly_index, animation)])
                     else:
+                        # Fallback to standalone sprite preview
+                        if mesh is None:
+                            print("DEBUG: skeleton mesh not found, falling back to sprite preview")
+                        elif poly_index is None:
+                            print("DEBUG: poly_index None, falling back to sprite preview")
+                        elif not (0 <= poly_index < len(mesh[1])):
+                            print("DEBUG: poly_index %d out of range (edges=%d), falling back to sprite preview" % (
+                                poly_index, len(mesh[1])))
                         self.GLWidget.play_animation(animation)
                 else:
                     self.update_status("Could not resolve animation frames")
