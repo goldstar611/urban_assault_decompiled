@@ -1,29 +1,29 @@
 {
-  "VANM": [ 
+  "VANM": [
     {
       "DATA": {
         "class_id": "ilbm.class",
-        "frames": [ 
+        "frames": [
           {
             "frame_time": 40,
-            "vbmp_coords": [ 
-              [ 89, 128 ], 
-              [ 113, 106 ], 
+            "vbmp_coords": [
+              [ 89, 128 ],
+              [ 113, 106 ],
               [ 89, 86 ] ],
             "vbmp_name": "HUBI.ILBM"
-          }, 
+          },
           {
             "frame_time": 80,
-            "vbmp_coords": [ 
-              [ 89, 128 ], 
-              [ 113, 106 ], 
+            "vbmp_coords": [
+              [ 89, 128 ],
+              [ 113, 106 ],
               [ 89, 86 ] ],
             "vbmp_name": "FHUBI.ILBM"
           } ],
-        "polygons": [ 
-          [ 
-            [ 89, 128 ], 
-            [ 113, 106 ], 
+        "polygons": [
+          [
+            [ 89, 128 ],
+            [ 113, 106 ],
             [ 89, 86 ] ] ],
         "vbmp_names": [ "HUBI.ILBM", "FHUBI.ILBM" ]
       }

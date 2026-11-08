@@ -76,9 +76,12 @@ def decompile_set_bas(set_bas_path: str,
         manifest_resources.append([emrs, resource.form_type, files_rel])
         print("extracted:", emrs, "->", files_rel)
 
+    # Portable provenance: the last four path components of the source file
+    # (e.g. "DATA/SET1/OBJECTS/SET.BAS", "dataxp/Set1/Objects/SET.BAS").
+    source_record = os.sep.join(set_bas_path.rstrip(os.sep).split(os.sep)[-4:])
     manifest_path = os.path.join(base_dir, "resource_order.json")
     manifest = {
-        "source": set_bas_path,
+        "source": source_record,
         "source_sha256": set_bas_sha256,
         "resources": manifest_resources,
     }
