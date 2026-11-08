@@ -95,6 +95,12 @@ class MyQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
                 return True
         return False
 
+    def can_render_animation(self):
+        if self.is_form():
+            if self.association.form_type == "VANM":
+                return True
+        return False
+
     def can_render_3d(self):
         if self.is_form():
             if self.association.form_type in ["SKLT", "AMSH"]:
@@ -257,6 +263,75 @@ class Mesh(object):
         return vertices, edges
 
 
+class Animation(object):
+    """Sprite-sheet style bitmap animation built from a VANM form.
+
+    Frames are ``(duration_ms, QImage)`` tuples; ``frame_time`` in the VANM
+    DATA chunk is milliseconds (verified: SMILEY1 80ms, GIGANT1 40ms,
+    INSANE up to 1320ms)."""
+
+    def __init__(self):
+        self.frames = []
+        self.frame_index = 0
+        self.elapsed_ms = 0
+        self.playing = True
+        self.loop = True
+
+    def load_vanm(self, vanm_form, embd_form):
+        """Resolve a VANM's frames from its EMBD through the sibling VBMPs."""
+        for frame in vanm_form.frames:
+            image = self.qimage_from_vbmp(embd_form, frame["vbmp_name"])
+            if image is not None:
+                self.frames.append((frame["frame_time"], image))
+        self.elapsed_ms = 0
+        self.frame_index = 0 if self.frames else -1
+        return self
+
+    @property
+    def current_image(self):
+        if 0 <= self.frame_index < len(self.frames):
+            return self.frames[self.frame_index][1]
+        return None
+
+    def duration_ms(self):
+        return sum(d for d, _ in self.frames)
+
+    def advance(self, delta_ms):
+        """Advance playback by *delta_ms*; returns True when a new frame begins."""
+        if not self.frames or not self.playing:
+            return False
+        if self.frame_index < 0:
+            self.frame_index = 0
+            self.elapsed_ms = 0
+            return True
+        self.elapsed_ms += delta_ms
+        started_frame = False
+        while self.elapsed_ms >= self.frames[self.frame_index][0]:
+            self.elapsed_ms -= self.frames[self.frame_index][0]
+            self.frame_index += 1
+            started_frame = True
+            if self.frame_index >= len(self.frames):
+                if not self.loop:
+                    self.frame_index = len(self.frames) - 1
+                    self.playing = False
+                    self.elapsed_ms = 0
+                    break
+                self.frame_index = 0
+        return started_frame
+
+    @staticmethod
+    def qimage_from_vbmp(embd_form, vbmp_name):
+        """Look up *vbmp_name* in the EMBD and decode it into a QImage."""
+        for emrs_name, resource in embd_form.emrs_resources.items():
+            if emrs_name == vbmp_name and resource.form_type == "VBMP":
+                data = resource.full_data()[34:]
+                image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format_Indexed8)
+                image = image.mirrored(False, True)
+                image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
+                return image
+        return None
+
+
 class GLWidget(QtOpenGL.QGLWidget):
     x_rotation_changed = QtCore.pyqtSignal(int)
     y_rotation_changed = QtCore.pyqtSignal(int)
@@ -277,6 +352,51 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.last_position = QtCore.QPoint()
 
         self.meshes = [Mesh()]
+        self.animation = None
+        self.animation_timer = QtCore.QTimer(self)
+        self.animation_timer.setInterval(33)
+        self.animation_timer.timeout.connect(self.animation_tick)
+
+    def animation_tick(self):
+        if self.animation is None:
+            self.animation_timer.stop()
+            return
+        if self.animation.advance(self.animation_timer.interval()):
+            self.updateGL()
+
+    def play_animation(self, animation: Animation):
+        self.animation = animation
+        self.animation_timer.start()
+        self.updateGL()
+
+    def stop_animation(self):
+        self.animation_timer.stop()
+        self.animation = None
+        self.updateGL()
+
+    def draw_animation(self):
+        image = self.animation.current_image
+        if image is None:
+            return
+        texture = QtGui.QOpenGLTexture(image.mirrored(vertical=True))
+        texture.setMagnificationFilter(QtGui.QOpenGLTexture.Nearest)
+        texture.setMinificationFilter(QtGui.QOpenGLTexture.Nearest)
+        texture.bind()
+        GL.glEnable(GL.GL_TEXTURE_2D)
+        GL.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
+        side = 1.6  # sprite size in ortho view (-0.5..0.5 usable)
+        GL.glBegin(GL.GL_QUADS)
+        GL.glTexCoord2f(0.0, 1.0)
+        GL.glVertex3f(-side / 2, -side / 2, 0.0)
+        GL.glTexCoord2f(1.0, 1.0)
+        GL.glVertex3f(side / 2, -side / 2, 0.0)
+        GL.glTexCoord2f(1.0, 0.0)
+        GL.glVertex3f(side / 2, side / 2, 0.0)
+        GL.glTexCoord2f(0.0, 0.0)
+        GL.glVertex3f(-side / 2, side / 2, 0.0)
+        GL.glEnd()
+        GL.glDisable(GL.GL_TEXTURE_2D)
+        texture.release()
 
     def minimumSizeHint(self):
         return QtCore.QSize(50, 50)
@@ -372,7 +492,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         GL.glRotated(self.y_rotation / 16.0, 0.0, 1.0, 0.0)
         GL.glRotated(self.z_rotation / 16.0, 0.0, 0.0, 1.0)
         # GL.glCallList(self.object))
-        self.draw_simpl()
+        if self.animation is not None:
+            self.draw_animation()
+        else:
+            self.draw_simpl()
 
     def resizeGL(self, width, height):
         side = min(width, height)
@@ -398,11 +521,16 @@ class GLWidget(QtOpenGL.QGLWidget):
         if event.key() == QtCore.Qt.Key_S:
             self.camera_position["y"] += 0.01
         if event.key() == QtCore.Qt.Key_Space:
-            self.camera_position["x"] = 0.0
-            self.camera_position["y"] = 0.0
-            self.x_rotation = 0
-            self.y_rotation = 0
-            self.z_rotation = 0
+            if self.animation is not None:
+                self.animation.playing = not self.animation.playing
+            else:
+                self.camera_position["x"] = 0.0
+                self.camera_position["y"] = 0.0
+                self.x_rotation = 0
+                self.y_rotation = 0
+                self.z_rotation = 0
+        if event.key() == QtCore.Qt.Key_Escape and self.animation is not None:
+            self.stop_animation()
         if event.key() == QtCore.Qt.Key_Q:
             self.grabFrameBuffer().save("opengl.bmp")
         self.glDraw()
@@ -669,6 +797,16 @@ class Example(QtWidgets.QMainWindow):
     def current_item_index(self):
         if self.current_item_parent():
             return self.current_item_parent().indexOfChild(self.current_item())
+
+    def find_embd_form(self, tree_widget_item):
+        """Walk up the tree until the containing EMBD form is found."""
+        parent = tree_widget_item.parent()
+        while parent is not None:
+            association = parent.association
+            if association is not None and getattr(association, "form_type", None) == "EMBD":
+                return association
+            parent = parent.parent()
+        return None
 
     def goto(self, destination=None):
         # TODO Requires MyQTreeWidgetItem to have .goto() method
@@ -951,6 +1089,7 @@ class Example(QtWidgets.QMainWindow):
         current_item = self.current_item()
         self.plainTextEdit.setPlainText("")
         self.VBMP_display.hide()
+        self.GLWidget.stop_animation()
         self.GLWidget.clear()
         self.GLWidget.hide()
         self.plainTextEdit.hide()
@@ -958,6 +1097,18 @@ class Example(QtWidgets.QMainWindow):
 
         if self.current_item_parent():
             print("current_item_index: ", self.current_item_parent().indexOfChild(current_item))
+
+        if current_item and current_item.can_render_animation():
+            self.GLWidget.show()
+            embd = self.find_embd_form(current_item)
+            if embd is not None:
+                vanm = current_item.get_form()
+                animation = Animation().load_vanm(vanm, embd)
+                self.update_status("Playing %d frames (%d ms loop)" % (
+                    len(animation.frames), animation.duration_ms()))
+                self.GLWidget.play_animation(animation)
+            else:
+                self.update_status("No EMBD parent found for this VANM")
 
         if current_item and current_item.is_editable():
             self.plainTextEdit.show()
