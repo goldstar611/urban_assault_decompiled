@@ -106,7 +106,6 @@
     <addaction name="actionOpen_BAS"/>
     <addaction name="separator"/>
     <addaction name="actionSave_to_BAS"/>
-    <addaction name="actionSave_to_XML"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
@@ -193,18 +192,10 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionOpen_BAS">
    <property name="text">
-    <string>Open .BAS/.XML</string>
+     <string>Open .BAS</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
-   </property>
-  </action>
-  <action name="actionOpen_XML">
-   <property name="text">
-    <string>Open .XML</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+O</string>
    </property>
   </action>
   <action name="actionSave_to_BAS">
@@ -213,14 +204,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
-   </property>
-  </action>
-  <action name="actionSave_to_XML">
-   <property name="text">
-    <string>Save to .XML</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+S</string>
    </property>
   </action>
   <action name="actionQuit">
