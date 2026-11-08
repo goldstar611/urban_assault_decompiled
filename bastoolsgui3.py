@@ -99,7 +99,20 @@ class MyQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         if self.is_form():
             if self.association.form_type == "VANM":
                 return True
+            # A VANM is a modifier: BANI-carrying AREA/FARE objects reference
+            # it by name (BANI lives below an OBJT child of the AREA).
+            if self.association.form_type in ("AREA", "FARE"):
+                return self._animation_reference() is not None
         return False
+
+    def _animation_reference(self):
+        """The BANI STRC ``anim_name`` below an AREA/FARE form, if any."""
+        if self.association.form_type not in ("AREA", "FARE"):
+            return None
+        bani = self.association.get_single("BANI")
+        if isinstance(bani, compile.Bani) and bani.animation:
+            return bani.animation.anim_name
+        return None
 
     def can_render_3d(self):
         if self.is_form():
@@ -264,11 +277,13 @@ class Mesh(object):
 
 
 class Animation(object):
-    """Sprite-sheet style bitmap animation built from a VANM form.
+    """Bitmap animation built from a VANM form.
 
-    Frames are ``(duration_ms, QImage)`` tuples; ``frame_time`` in the VANM
-    DATA chunk is milliseconds (verified: SMILEY1 80ms, GIGANT1 40ms,
-    INSANE up to 1320ms)."""
+    A VANM does not render by itself; it is a *modifier* referenced from
+    another object (BANI/AREA in a building or vehicle). Each frame says
+    which VBMP to use and which polygon region of that bitmap to show, so
+    frames are cropped to their polygon's bounding box (the region the game
+    stamps onto the animated area's texture)."""
 
     def __init__(self):
         self.frames = []
@@ -282,10 +297,43 @@ class Animation(object):
         for frame in vanm_form.frames:
             image = self.qimage_from_vbmp(embd_form, frame["vbmp_name"])
             if image is not None:
-                self.frames.append((frame["frame_time"], image))
+                self.frames.append((frame["frame_time"],
+                                    self.crop_polygon(image, frame["vbmp_coords"])))
         self.elapsed_ms = 0
         self.frame_index = 0 if self.frames else -1
         return self
+
+    @staticmethod
+    def load_vanm_by_name(embd_form, anim_name):
+        """Build the animation for a BANI STRC ``anim_name`` (e.g. 'SMILEY1.ANM')."""
+        if not anim_name:
+            return None
+        vanm = embd_form.emrs_resources.get(anim_name)
+        if vanm is None or vanm.form_type != "VANM":
+            # Fall back to a case-insensitive EMBD lookup
+            for emrs_name, resource in embd_form.emrs_resources.items():
+                if emrs_name.upper() == anim_name.upper() and resource.form_type == "VANM":
+                    vanm = resource
+                    break
+        if vanm is None:
+            return None
+        return Animation().load_vanm(vanm, embd_form)
+
+    @staticmethod
+    def crop_polygon(image, polygon):
+        """Crop *image* to the bounding box of *polygon* (xy uv coords)."""
+        if not polygon:
+            return image
+        xs = [p[0] for p in polygon]
+        ys = [p[1] for p in polygon]
+        left = max(0, min(xs) - 1)
+        top = max(0, min(ys) - 1)
+        right = min(image.width(), max(xs) + 1)
+        bottom = min(image.height(), max(ys) + 1)
+        if left >= right or top >= bottom:
+            return image
+        from PyQt5 import QtCore
+        return image.copy(QtCore.QRect(left, top, right - left, bottom - top))
 
     @property
     def current_image(self):
@@ -805,16 +853,6 @@ class Example(QtWidgets.QMainWindow):
         if self.current_item_parent():
             return self.current_item_parent().indexOfChild(self.current_item())
 
-    def find_embd_form(self, tree_widget_item):
-        """Walk up the tree until the containing EMBD form is found."""
-        parent = tree_widget_item.parent()
-        while parent is not None:
-            association = parent.association
-            if association is not None and getattr(association, "form_type", None) == "EMBD":
-                return association
-            parent = parent.parent()
-        return None
-
     def goto(self, destination=None):
         # TODO Requires MyQTreeWidgetItem to have .goto() method
 
@@ -1112,15 +1150,24 @@ class Example(QtWidgets.QMainWindow):
 
         if current_item and current_item.can_render_animation():
             self.GLWidget.show()
-            embd = self.find_embd_form(current_item)
-            if embd is not None:
-                vanm = current_item.get_form()
-                animation = Animation().load_vanm(vanm, embd)
-                self.update_status("Playing %d frames (%d ms loop)" % (
-                    len(animation.frames), animation.duration_ms()))
-                self.GLWidget.play_animation(animation)
+            # The EMBD is not an ancestor of the current item; it is a
+            # sibling branch of the top-level MC2 form.
+            embd = self.top_level_form.get_single("EMBD")
+            if embd is None:
+                self.update_status("No EMBD parent found for this animation")
             else:
-                self.update_status("No EMBD parent found for this VANM")
+                if current_item.form_type() == "VANM":
+                    animation = Animation().load_vanm(current_item.get_form(), embd)
+                else:
+                    # AREA/FARE: the BANI descendant names the VANM to play
+                    anim_name = current_item._animation_reference()
+                    animation = Animation.load_vanm_by_name(embd, anim_name) if anim_name else None
+                if animation is not None and animation.frames:
+                    self.update_status("Playing %d frames (%d ms loop)" % (
+                        len(animation.frames), animation.duration_ms()))
+                    self.GLWidget.play_animation(animation)
+                else:
+                    self.update_status("Could not resolve animation frames")
 
         if current_item and current_item.is_editable():
             self.plainTextEdit.show()
