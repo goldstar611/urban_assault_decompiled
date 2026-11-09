@@ -11,7 +11,9 @@ import sys
 from typing import List, Optional, Union
 
 import numpy
-from PyQt5 import QtGui, QtCore, uic, QtWidgets, QtOpenGL
+from PyQt6 import QtGui, QtCore, uic, QtWidgets, QtOpenGLWidgets
+from OpenGL.GL import glClearColor
+from PyQt6.QtOpenGL import QOpenGLTexture
 
 import compile
 import myjson
@@ -158,7 +160,7 @@ unsigned_int_be = "<I"
 size_of_unsigned_int = 4
 unsigned_short_be = "<H"
 size_of_unsigned_short = 2
-QtUserRole = QtCore.Qt.UserRole
+QtUserRole = QtCore.Qt.ItemDataRole.UserRole
 
 ########################################################################################################################
 # MyQGLWidget.py
@@ -215,7 +217,7 @@ class Mesh(object):
                 print("Found ", ilbm_name, "in embd")
                 data = embd_form.sub_chunks[i + 1].full_data()[34:]
 
-                image = QtGui.QImage(data, width, height, QtGui.QImage.Format_Indexed8)
+                image = QtGui.QImage(data, width, height, QtGui.QImage.Format.Format_Indexed8)
                 image = image.mirrored(mirror_horizontal, mirror_vertical)
                 image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
                 self.image = image
@@ -236,7 +238,7 @@ class Mesh(object):
         data = f.read()
         f.close()
 
-        image = QtGui.QImage(data, width, height, QtGui.QImage.Format_Indexed8)
+        image = QtGui.QImage(data, width, height, QtGui.QImage.Format.Format_Indexed8)
         image = image.mirrored(mirror_horizontal, mirror_vertical)
         image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
         self.image = image
@@ -361,8 +363,7 @@ class Animation(object):
         bottom = min(image.height(), max(ys) + 1)
         if left >= right or top >= bottom:
             return image
-        from PyQt5 import QtCore
-        return image.copy(QtCore.QRect(left, top, right - left, bottom - top))
+        return image.copy(left, top, right - left, bottom - top)
 
     @property
     def current_image(self):
@@ -412,18 +413,18 @@ class Animation(object):
                 # copy right away; and convert indexed8 -> RGB32 so the
                 # palette survives texture upload.
                 image = QtGui.QImage(QtCore.QByteArray(data), 256, 256,
-                                     256, QtGui.QImage.Format_Indexed8)
+                                     256, QtGui.QImage.Format.Format_Indexed8)
                 image = image.mirrored(False, True)
                 image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
-                image = image.convertToFormat(QtGui.QImage.Format_RGB32)
+                image = image.convertToFormat(QtGui.QImage.Format.Format_RGB32)
                 return image
         return None
 
 
-class GLWidget(QtOpenGL.QGLWidget):
-    x_rotation_changed = QtCore.pyqtSignal(int)
-    y_rotation_changed = QtCore.pyqtSignal(int)
-    z_rotation_changed = QtCore.pyqtSignal(int)
+class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
+    x_rotation_changed = QtCore.pyqtSignal(float)
+    y_rotation_changed = QtCore.pyqtSignal(float)
+    z_rotation_changed = QtCore.pyqtSignal(float)
 
     def __init__(self, parent=None):
         super(GLWidget, self).__init__(parent)
@@ -459,7 +460,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         changed = any(animation.advance(self.animation_timer.interval())
                       for animation in animations)
         if changed:
-            self.updateGL()
+            self.update()
 
     def play_animations(self, mesh, poly_animations):
         """Play animation(s) mapped onto polygons of *mesh* (vertices, edges)."""
@@ -468,7 +469,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.anim_mesh = mesh
         self.poly_animations = poly_animations
         self.animation_timer.start()
-        self.updateGL()
+        self.update()
 
     def play_animation(self, animation: Animation):
         print("DEBUG play_animation: animation=%r" % (animation,), flush=True)
@@ -476,20 +477,20 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.anim_mesh = None
         self.poly_animations = []
         self.animation_timer.start()
-        self.updateGL()
+        self.update()
 
     def stop_animation(self):
         self.animation_timer.stop()
         self.animation = None
         self.anim_mesh = None
         self.poly_animations = []
-        self.updateGL()
+        self.update()
 
     def _bind_frame_texture(self, image):
         """Bind a VBMP frame as texture; matches the sklt mesh uv convention."""
-        texture = QtGui.QOpenGLTexture(image.mirrored())
-        texture.setMagnificationFilter(QtGui.QOpenGLTexture.Nearest)
-        texture.setMinificationFilter(QtGui.QOpenGLTexture.Nearest)
+        texture = QOpenGLTexture(image.mirrored())
+        texture.setMagnificationFilter(QOpenGLTexture.Filter.Nearest)
+        texture.setMinificationFilter(QOpenGLTexture.Filter.Nearest)
         texture.bind()
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glDisable(GL.GL_CULL_FACE)
@@ -509,7 +510,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         texture.release()
 
     def draw_animation(self):
-        print("DEBUG draw_animation: poly_animations=%r animation=%r" % (self.poly_animations, self.animation), flush=True)
         if self.poly_animations and self.anim_mesh:
             vertices, edges = self.anim_mesh
             if not vertices or not edges:
@@ -550,9 +550,9 @@ class GLWidget(QtOpenGL.QGLWidget):
             uvs = self.animation.current_uvs
             if uvs:
                 image = Animation.crop_polygon(image, uvs)
-            texture = QtGui.QOpenGLTexture(image.mirrored(vertical=True))
-            texture.setMagnificationFilter(QtGui.QOpenGLTexture.Nearest)
-            texture.setMinificationFilter(QtGui.QOpenGLTexture.Nearest)
+            texture = QOpenGLTexture(image.mirrored(vertical=True))
+            texture.setMagnificationFilter(QOpenGLTexture.Filter.Nearest)
+            texture.setMinificationFilter(QOpenGLTexture.Filter.Nearest)
             texture.bind()
             GL.glEnable(GL.GL_TEXTURE_2D)
             GL.glDisable(GL.GL_CULL_FACE)
@@ -583,21 +583,21 @@ class GLWidget(QtOpenGL.QGLWidget):
         if angle != self.x_rotation:
             self.x_rotation = angle
             self.x_rotation_changed.emit(angle)
-            self.updateGL()
+            self.update()
 
     def set_y_rotation(self, angle):
         angle = self.normalize_angle(angle)
         if angle != self.y_rotation:
             self.y_rotation = angle
             self.y_rotation_changed.emit(angle)
-            self.updateGL()
+            self.update()
 
     def set_z_rotation(self, angle):
         angle = self.normalize_angle(angle)
         if angle != self.z_rotation:
             self.z_rotation = angle
             self.z_rotation_changed.emit(angle)
-            self.updateGL()
+            self.update()
 
     def clear(self):
         self.meshes = []
@@ -607,9 +607,9 @@ class GLWidget(QtOpenGL.QGLWidget):
             GL.glPushMatrix()
 
             if draw_texture and mesh.texture and mesh.image:
-                texture = QtGui.QOpenGLTexture(mesh.image.mirrored())
-                texture.setMinificationFilter(QtGui.QOpenGLTexture.LinearMipMapLinear)
-                texture.setMagnificationFilter(QtGui.QOpenGLTexture.Linear)
+                texture = QOpenGLTexture(mesh.image.mirrored())
+                texture.setMinificationFilter(QOpenGLTexture.Filter.LinearMipMapLinear)
+                texture.setMagnificationFilter(QOpenGLTexture.Filter.Linear)
                 texture.bind()
 
                 GL.glEnable(GL.GL_TEXTURE_2D)
@@ -653,10 +653,15 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def initializeGL(self):
         # noinspection PyCallByClass, PyTypeChecker
-        self.qglClearColor(QtGui.QColor.fromRgb(0, 0, 0))
+        #self.qglClearColor(QtGui.QColor.fromRgb(0, 0, 0))
+        glClearColor(0.0, 0.0, 0.0, 1.0)
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glEnable(GL.GL_CULL_FACE)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.update()
 
     def paintGL(self):
         try:
@@ -687,51 +692,51 @@ class GLWidget(QtOpenGL.QGLWidget):
         GL.glMatrixMode(GL.GL_MODELVIEW)
 
     def mousePressEvent(self, event):
-        self.last_position = event.pos()
+        self.last_position = event.position()
 
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_A:
+        if event.key() == QtCore.Qt.Key.Key_A:
             self.camera_position["x"] -= 0.01
-        if event.key() == QtCore.Qt.Key_D:
+        if event.key() == QtCore.Qt.Key.Key_D:
             self.camera_position["x"] += 0.01
-        if event.key() == QtCore.Qt.Key_W:
+        if event.key() == QtCore.Qt.Key.Key_W:
             self.camera_position["y"] -= 0.01
-        if event.key() == QtCore.Qt.Key_S:
+        if event.key() == QtCore.Qt.Key.Key_S:
             self.camera_position["y"] += 0.01
-        if event.key() == QtCore.Qt.Key_Space:
+        if event.key() == QtCore.Qt.Key.Key_Space:
             if self.animation is not None:
                 self.animation.playing = not self.animation.playing
             else:
                 self.camera_position["x"] = 0.0
                 self.camera_position["y"] = 0.0
-                self.x_rotation = 0
-                self.y_rotation = 0
-                self.z_rotation = 0
-        if event.key() == QtCore.Qt.Key_Escape and self.animation is not None:
+                self.x_rotation = 0.0
+                self.y_rotation = 0.0
+                self.z_rotation = 0.0
+        if event.key() == QtCore.Qt.Key.Key_Escape and self.animation is not None:
             self.stop_animation()
-        if event.key() == QtCore.Qt.Key_Q:
+        if event.key() == QtCore.Qt.Key.Key_Q:
             self.grabFrameBuffer().save("opengl.bmp")
-        self.glDraw()
+        self.update()
 
     def mouseMoveEvent(self, event):
-        dx = event.x() - self.last_position.x()
-        dy = event.y() - self.last_position.y()
+        dx = event.position().x() - self.last_position.x()
+        dy = event.position().y() - self.last_position.y()
 
-        if event.buttons() & QtCore.Qt.LeftButton:
-            self.set_x_rotation(self.x_rotation + 8 * -dy)
-            self.set_y_rotation(self.y_rotation + 8 * dx)
-        elif event.buttons() & QtCore.Qt.RightButton:
-            self.set_x_rotation(self.x_rotation + 8 * -dy)
-            self.set_z_rotation(self.z_rotation + 8 * dx)
+        if event.buttons() & QtCore.Qt.MouseButton.LeftButton:
+            self.set_x_rotation(self.x_rotation + 8.0 * -dy)
+            self.set_y_rotation(self.y_rotation + 8.0 * dx)
+        elif event.buttons() & QtCore.Qt.MouseButton.RightButton:
+            self.set_x_rotation(self.x_rotation + 8.0 * -dy)
+            self.set_z_rotation(self.z_rotation + 8.0 * dx)
 
-        self.last_position = event.pos()
+        self.last_position = event.position()
 
     @staticmethod
     def normalize_angle(angle: float) -> float:
-        while angle < 0:
-            angle += 360 * 16
-        while angle > 360 * 16:
-            angle -= 360 * 16
+        while angle < 0.0:
+            angle += 360.0 * 16.0
+        while angle > 360.0 * 16.0:
+            angle -= 360.0 * 16.0
         return angle
 
 
@@ -758,7 +763,7 @@ class Example(QtWidgets.QMainWindow):
                       }
 
         self.GLWidget = GLWidget()
-        self.GLWidget.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.GLWidget.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
         self.splitter2.addWidget(self.GLWidget)
 
         # self.GLWidget.load_ilbm_by_name("BAGGER.ILB")
@@ -797,8 +802,8 @@ class Example(QtWidgets.QMainWindow):
         result = QtWidgets.QMessageBox.question(self,
                                                 "Unsaved Changes!",
                                                 "Exit without saving changes?",
-                                                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-        if result == QtWidgets.QMessageBox.Yes:
+                                                QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+        if result == QtWidgets.QMessageBox.StandardButton.Yes:
             event.accept()
         else:
             event.ignore()
@@ -813,153 +818,15 @@ class Example(QtWidgets.QMainWindow):
         self.actionOpen_BAS.triggered.connect(self.open_bas)
         self.actionSave_to_BAS.triggered.connect(self.save_to_bas)
         self.actionQuit.triggered.connect(self.close)
-        self.actionDelete_Chunk.triggered.connect(self.delete_selected)
-        self.actionInsert_Chunk_Below.triggered.connect(self.insert_chunk_below)
         self.actionRefresh_Tree_Widget.triggered.connect(self.refresh_tree_widget)
-        self.actionConvert_to_FORM.triggered.connect(self.convert_to_form)
-        self.actionExport_Data_to_File.triggered.connect(self.export_data_to_file)
-        self.actionImport_Data_from_File.triggered.connect(self.import_data_from_file)
-        self.actionRename.triggered.connect(self.rename_selected)
-        self.actionExport_FORM_Chunk.triggered.connect(self.export_form_chunk)
         self.actionSearch.triggered.connect(self.search)
         self.actionSearch_Next.triggered.connect(self.search_next)
-        self.actionConvert_to_Chunk.triggered.connect(self.convert_to_chunk)
-        self.actionReplace_FORM.triggered.connect(self.replace_form)
         self.actionGoto.triggered.connect(self.goto)
-        self.actionExtract_All_EMRS.triggered.connect(self.extract_all_emrs)
-        self.actionExtract_Buildings.triggered.connect(self.extract_all_vehicles)
-        self.actionExtract_Vehicles.triggered.connect(self.extract_all_buildings)
-        self.actionExtract_Ground.triggered.connect(self.extract_all_ground)
-        self.actionReplace_VBMPData.triggered.connect(self.replace_vbmp_data)
 
-        # TODO actions:
-        self.actionInsert_Chunk_Above.triggered.connect(self.not_implemented)
-        self.actionEdit_Chunk_Properties.triggered.connect(self.not_implemented)
-        self.actionMove_Up.triggered.connect(self.not_implemented)
-        self.actionMove_Down.triggered.connect(self.not_implemented)
-        self.actionCopy.triggered.connect(self.not_implemented)
-        self.actionPaste.triggered.connect(self.not_implemented)
+        # TODO: replace_vbmp_data ??
 
         print("all signals connected")
         self.update_status("Use [Ctrl]+[O] to open .BAS file.")
-
-    def not_implemented(self):
-        self.update_status("Sorry, this function not implemented :\\")
-
-    ##############################################################################
-    #   Experimental
-    ##############################################################################
-
-    @staticmethod
-    def get_ready_for_extraction():
-
-        check_dirs = ["/set",
-                      "/set/rsrcpool",
-                      "/set/Skeleton",
-                      "/set/objects/vehicles",
-                      "/set/objects/buildings",
-                      "/set/objects/ground"]
-        for dirs in check_dirs:
-            if not os.path.exists(os.getcwd() + dirs):
-                os.makedirs(os.getcwd() + dirs)
-
-    ########################
-    #   Extract all EMRS   #
-    ########################
-
-    def extract_all_emrs(self):
-        self.get_ready_for_extraction()
-        self.goto("MC2 /OBJT 0/BASE/OBJT 1/EMBD")
-
-        level = 0
-        current_item = self.current_item()
-        for i in range(level, current_item.childCount()):
-            if current_item.child(i).chunk_id() == "EMRS":
-                emrs_class, filename, _, __ = bytes(current_item.child(i).get_data()).decode("ascii").split("\0")
-
-                if "bmpanim.class" in emrs_class.lower():
-                    filename = "rsrcpool/" + filename
-
-                if "sklt.class" in emrs_class.lower():
-                    filename = "Skeleton/" + filename.split("/")[1]
-
-                if "." in filename:
-                    filename = filename.split(".")[0] + "." + filename.split(".")[1][:3]
-
-                print("found EMRS: " + filename)
-
-                i = i + 1
-
-                current_item.child(i).save_to_file(os.getcwd() + "/set/" + filename)
-
-        self.update_status("Extracted all EMRS to  directory")
-
-    ############################
-    #   Extract all vehicles   #
-    ############################
-
-    def extract_all_vehicles(self):
-        self.get_ready_for_extraction()
-        self.goto("MC2 /OBJT 0/BASE/KIDS/OBJT 0/BASE/KIDS")
-
-        level = 0
-        current_item = self.current_item()
-        for i in range(level, current_item.childCount()):
-            filename = bytes(current_item.child(i).child(1).child(0).child(0).get_data()).decode()
-            print("found vehicle: " + filename)
-
-            selected_bas_chunk = current_item.child(i).get_form()
-
-            new_mc2_form = compile.Form("MC2 ", sub_chunks=[selected_bas_chunk])
-            new_mc2_form.save_to_file(os.getcwd() + "/set/objects/vehicles/" + filename + ".bas")
-
-        self.update_status("Extracted all vehicles to  directory")
-
-    ############################
-    #   Extract all buildings  #
-    ############################
-
-    def extract_all_buildings(self):
-        self.get_ready_for_extraction()
-        self.goto("MC2 /OBJT 0/BASE/KIDS/OBJT 1/BASE/KIDS")
-
-        level = 0
-        current_item = self.current_item()
-        for i in range(level, current_item.childCount()):
-            filename = bytes(current_item.child(i).child(1).child(0).child(0).get_data()).decode()
-            print("found building: " + filename)
-
-            selected_bas_chunk = current_item.child(i).get_form()
-
-            new_mc2_form = compile.Form("MC2 ", sub_chunks=[selected_bas_chunk])
-            new_mc2_form.save_to_file(os.getcwd() + "/set/objects/buildings/" + filename + ".bas")
-
-        self.update_status("Extracted all buildings to  directory")
-
-    ############################
-    #     Extract all ground   #
-    ############################
-
-    def extract_all_ground(self):
-        self.get_ready_for_extraction()
-        self.goto("MC2 /OBJT 0/BASE/KIDS/OBJT 2/BASE/KIDS")
-
-        level = 0
-        current_item = self.current_item()
-        for i in range(level, current_item.childCount()):
-            filename = bytes(current_item.child(i).child(1).child(0).child(0).get_data()).decode()
-            print("found ground: " + filename)
-
-            selected_bas_chunk = current_item.child(i).get_form()
-
-            new_mc2_form = compile.Form("MC2 ", sub_chunks=[selected_bas_chunk])
-            new_mc2_form.save_to_file(os.getcwd() + "/set/objects/ground/" + filename + ".bas")
-
-        self.update_status("Extracted all ground to  directory")
-
-    ##############################################################################
-    # END Experimental
-    ##############################################################################
 
     def current_item(self) -> Optional[MyQTreeWidgetItem]:
         return self.treeWidget.currentItem()
@@ -1103,44 +970,6 @@ class Example(QtWidgets.QMainWindow):
 
         return False
 
-    def rename_selected(self):
-        # TODO Requires MyQTreeWidgetItem to have .rename() method
-        # TODO Requires Chunk() to have .rename() method
-        # TODO Requires Form() to have .rename method
-        current_item_index = self.current_item_index()
-
-        new_name = self.current_item().text(0)
-        # noinspection PyArgumentList,PyCallByClass
-        new_name, _ = QtWidgets.QInputDialog.getText(self, "Enter new chunk name",
-                                                     "Please enter a new name for the selected chunk",
-                                                     QtWidgets.QLineEdit.Normal, new_name)
-        if new_name == "":
-            return
-        new_name = new_name[0:4]
-
-        if isinstance(self.current_item_parent().get_form().sub_chunks[current_item_index], compile.Form):
-            self.current_item_parent().get_form().sub_chunks[current_item_index].form_type = str(new_name)
-        else:
-            self.current_item_parent().get_form().sub_chunks[current_item_index].chunk_id = str(new_name)
-
-        self.current_item().setText(0, str(new_name))
-        self.update_status("Selected chunk renamed")
-        self.file_changed = True
-
-    def export_form_chunk(self):
-        # noinspection PyArgumentList,PyCallByClass
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Export Form to File")
-        if filename:
-            self.current_item().save_to_file(filename)
-            self.update_status("Saved selected FORM chunk")
-
-    def export_data_to_file(self):
-        # noinspection PyArgumentList,PyCallByClass
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Export Chunk to File")
-        if filename:
-            self.current_item().save_to_file(filename)
-            self.update_status("Saved selected Chunk chunk")
-
     def replace_vbmp_data(self):
         # TODO Requires VBMP to have .replace_bitmap() method
         if self.current_item().chunk_id() != "BODY":
@@ -1173,62 +1002,11 @@ class Example(QtWidgets.QMainWindow):
                 self.file_changed = True
                 # print(jsonpickle.dumps({"data": bitmap_data}))
 
-    def import_data_from_file(self):
-        # noinspection PyArgumentList,PyCallByClass
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Import Form Chunk File")
-        if filename:
-            new_chunk = compile.Chunk().load_from_file(filename)
-            self.plainTextEdit.setPlainText(new_chunk.to_json())
-
     def clear_status(self):
         self.update_status("")
 
     def update_status(self, status):
         self.statusbar.showMessage(status)
-
-    def convert_to_form(self):
-        # Todo Requires Chunk to have .convert() method
-        self.update_status("Error: Not implemented")
-
-    def convert_to_chunk(self):
-        # Todo Requires Form to have .convert() method
-        self.update_status("Error: Not implemented")
-
-    def replace_form(self):
-        # TODO Requires MyQTreeWidgetItem to implement .replace_form()
-        current_item_index = self.current_item_index()
-        # noinspection PyArgumentList,PyCallByClass
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Import Form Chunk File")
-        if filename:
-            # noinspection PyArgumentList
-            local_bas_struct = compile.Form().load_from_file(filename)
-
-            self.current_item_parent().get_form().sub_chunks[current_item_index] = local_bas_struct
-            self.refresh_tree_widget()
-
-    def delete_selected(self):
-        current_item = self.current_item()
-        current_item_index = self.current_item_index()
-
-        self.current_item_parent().get_form().sub_chunks.pop(current_item_index)
-
-        self.current_item_parent().removeChild(current_item)
-        self.update_status("Selected chunk deleted")
-        self.file_changed = True
-
-    def insert_chunk_below(self):
-        current_item_index = self.current_item_index()
-        new_chunk = compile.Chunk("NEW1")
-        print("added new chunk")
-
-        if self.current_item().is_form():
-            self.current_item().get_form().sub_chunks.insert(0, new_chunk)
-            self.current_item().insertChild(0, self.iterate_and_add(new_chunk))
-        else:
-            self.current_item_parent().get_form().sub_chunks.insert(current_item_index + 1, new_chunk)
-            self.current_item_parent().insertChild(current_item_index + 1, self.iterate_and_add(new_chunk))
-
-        self.file_changed = True
 
     def iterate_and_add(self, sub_chunk, parent=None, idx=None):
         new_twi = MyQTreeWidgetItem(parent)
@@ -1354,7 +1132,7 @@ class Example(QtWidgets.QMainWindow):
             self.VBMP_display.show()
             # noinspection PyArgumentList
             data = QtCore.QByteArray(current_item.child(1).get_data())
-            image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format_Indexed8)
+            image = QtGui.QImage(data, 256, 256, QtGui.QImage.Format.Format_Indexed8)
             image = image.mirrored(False, True)  # Flip image so the BMP is saved correctly
             image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
             image.save("preview.bmp")
@@ -1481,4 +1259,4 @@ if __name__ == "__main__":
     ex = Example()
     if len(sys.argv) > 1:
         ex.load_bas_file(sys.argv[1])
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
