@@ -301,6 +301,7 @@ class Mesh(object):
                                               QtGui.QImage.Format.Format_Indexed8)
                         image = image.mirrored(mirror_horizontal, mirror_vertical)
                         image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
+                        image = Animation.map_yellow_to_alpha(image)
                         Animation.ilbm_image_cache[ilbm_name.upper()] = image
                         self.image = image
                         return image
@@ -521,8 +522,26 @@ class Animation(object):
                 image = image.mirrored(False, True)
                 image.setColorTable(compile.palette_from_pal(compile.DEFAULT_PALETTE_FILE))
                 image = image.convertToFormat(QtGui.QImage.Format.Format_RGB32)
-                return image
+                return Animation.map_yellow_to_alpha(image)
         return None
+
+    @staticmethod
+    def map_yellow_to_alpha(image):
+        """Return *image* with pure yellow (255,255,0) pixels made transparent."""
+        image = image.convertToFormat(QtGui.QImage.Format.Format_ARGB32)
+        height = image.height()
+        width = image.width()
+        stride = image.bytesPerLine() // 4
+        if not image.bytesPerLine() % 4:
+            import ctypes
+            pointer = ctypes.cast(int(image.constBits()),
+                                  ctypes.POINTER(ctypes.c_uint32))
+            array = numpy.ctypeslib.as_array(pointer, shape=(stride * height,))
+            array = array.reshape(height, stride)
+            # little endian ARGB: 0xAARRGGBB; pure yellow = 0xFFFFFF00
+            mask = array == 0xFFFFFF00
+            array[mask] = 0
+        return image
 
 
 class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
@@ -596,6 +615,8 @@ class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
         texture.bind()
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glDisable(GL.GL_CULL_FACE)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
         return texture
 
@@ -684,6 +705,8 @@ class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
             texture.bind()
             GL.glEnable(GL.GL_TEXTURE_2D)
             GL.glDisable(GL.GL_CULL_FACE)
+            GL.glEnable(GL.GL_BLEND)
+            GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
             GL.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
             side = 1.6  # sprite size in ortho view (-0.5..0.5 usable)
             GL.glBegin(GL.GL_QUADS)
@@ -741,6 +764,8 @@ class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
                 texture.bind()
 
                 GL.glEnable(GL.GL_TEXTURE_2D)
+                GL.glEnable(GL.GL_BLEND)
+                GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
                 gl_mode = GL.GL_POLYGON
 
                 # Using GL_REPLACE will prevent any other vertex colors from interfering with texture colors
