@@ -113,10 +113,6 @@ class MyQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
                 return len(self.animated_areas()) > 0
         return False
 
-    # CLID classes that name renderable object units; container classes
-    # (base.class, sklt.class) merely group children.
-    RENDERABLE_CLID_CLASSES = ("area.class", "amesh.class", "particle.class")
-
     def _clid_class(self):
         if self.form_type() != "OBJT":
             return None
@@ -126,20 +122,28 @@ class MyQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         return None
 
     def is_renderable_unit(self):
-        return self._clid_class() in self.RENDERABLE_CLID_CLASSES
+        """A renderable object unit is an OBJT with CLID base.class whose BASE
+        holds a direct ADES part list (a whole vehicle/building/ground entry).
+        Skeleton-only links (SKLC, no ADES) draw nothing and are skipped."""
+        if self._clid_class() != "base.class":
+            return False
+        base = self.get_form().get_direct_single("BASE")
+        if not isinstance(base, compile.Form):
+            return False
+        ades = base.get_direct_single("ADES")
+        return (isinstance(ades, compile.Form)
+                and bool(getattr(ades, "sub_chunks", None)))
 
     def animation_object_units(self):
-        """Self and descendant OBJT+CLID forms holding animated AREA/FARE forms.
-
-        Every renderable OBJT (CLID names a renderable unit class) whose
-        subtree holds animated areas becomes its own render group, resolved
-        against the nearest owned/ancestor skeleton."""
+        """Self and descendant renderable object units (OBJT+CLID base.class
+        with a direct ADES payload). A qualifying OBJT is one unit; its own
+        subtree (area/amesh parts, nested links) is not searched further."""
         units = []
         if not self.is_form():
             return units
-        if (self.is_renderable_unit()
-                and self.animated_areas()):
+        if self.is_renderable_unit():
             units.append(self)
+            return units
         for i in range(self.childCount()):
             child = self.child(i)
             if child.is_form():
@@ -1343,40 +1347,44 @@ class Example(QtWidgets.QMainWindow):
                     else:
                         self.update_status("Could not resolve animation frames")
                 else:
-                    # Top-level selection: animate every animated OBJT+CLID
-                    # unit beneath it (base.class, particle.class, amesh.class,
-                    # area.class ...), each against its own nearest skeleton.
-                    groups = []
-                    groups_by_sklt = {}
-                    unit_skelts = []
-                    for unit in current_item.animation_object_units():
-                        mesh, sklt_name, static_textures = self.find_skeleton_for_item(unit, embd)
-                        if mesh is None:
-                            continue
-                        unit_poly_animations = []
-                        for anim_name, poly_index in unit.animated_areas():
-                            animation = (Animation.load_vanm_by_name(embd, anim_name)
-                                         if anim_name else None)
-                            if (animation is not None and animation.frames
-                                    and poly_index is not None
-                                    and 0 <= poly_index < len(mesh[1])):
-                                unit_poly_animations.append((poly_index, animation))
-                        if unit_poly_animations:
-                            # Units sharing one skeleton render as a single group
-                            if sklt_name not in groups_by_sklt:
-                                groups_by_sklt[sklt_name] = (mesh, [], static_textures)
-                            groups_by_sklt[sklt_name][1].extend(unit_poly_animations)
-                            unit_skelts.append(sklt_name)
-                    groups = list(groups_by_sklt.values())
-                    if groups:
-                        self.update_status("Playing %d frame(s) on %d object unit(s) %r" % (
-                            sum(len(a.frames)
-                                for _, unit_polys, _ in groups
-                                for _, a in unit_polys),
-                            len(groups), unit_skelts))
-                        self.GLWidget.play_animations(groups)
+                    # Top-level selection: every renderable object unit beneath
+                    # it (OBJT+CLID base.class with a direct ADES part list)
+                    # plays its own animated areas against its own skeleton.
+                    units = current_item.animation_object_units()
+                    if len(units) > 1 and not current_item.is_renderable_unit():
+                        # A container holding many units would render them all
+                        # stacked at the origin; leave that to per-unit picks.
+                        self.GLWidget.hide()
+                        self.update_status(
+                            "%d object unit(s) beneath; select one to render it"
+                            % len(units))
                     else:
-                        self.update_status("Could not resolve animation frames under selected object")
+                        groups = []
+                        unit_skelts = []
+                        for unit in units:
+                            mesh, sklt_name, static_textures = self.find_skeleton_for_item(unit, embd)
+                            if mesh is None:
+                                continue
+                            unit_poly_animations = []
+                            for anim_name, poly_index in unit.animated_areas():
+                                animation = (Animation.load_vanm_by_name(embd, anim_name)
+                                             if anim_name else None)
+                                if (animation is not None and animation.frames
+                                        and poly_index is not None
+                                        and 0 <= poly_index < len(mesh[1])):
+                                    unit_poly_animations.append((poly_index, animation))
+                            if unit_poly_animations:
+                                groups.append((mesh, unit_poly_animations, static_textures))
+                                unit_skelts.append(sklt_name)
+                        if groups:
+                            self.update_status("Playing %d frame(s) on %d object unit(s) %r" % (
+                                sum(len(a.frames)
+                                    for _, unit_polys, _ in groups
+                                    for _, a in unit_polys),
+                                len(groups), unit_skelts))
+                            self.GLWidget.play_animations(groups)
+                        else:
+                            self.update_status("Could not resolve animation frames under selected object")
 
         if current_item and current_item.is_editable():
             self.plainTextEdit.show()
