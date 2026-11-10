@@ -525,12 +525,16 @@ class Animation(object):
                 return Animation.map_yellow_to_alpha(image)
         return None
 
+    # Pixels with squared RGB distance from pure yellow below this radius ramp
+    # from transparent to opaque, so near-yellow blends out smoothly.
+    YELLOW_KEY_RADIUS_SQ = 90 * 90
+
     @staticmethod
     def map_yellow_to_alpha(image):
-        """Return *image* with pure yellow (255,255,0) pixels made transparent."""
+        """Return *image* with pure yellow made transparent and near-yellow
+        ramped from transparent to opaque within YELLOW_KEY_RADIUS_SQ."""
         image = image.convertToFormat(QtGui.QImage.Format.Format_ARGB32)
         height = image.height()
-        width = image.width()
         stride = image.bytesPerLine() // 4
         if not image.bytesPerLine() % 4:
             import ctypes
@@ -539,8 +543,21 @@ class Animation(object):
             array = numpy.ctypeslib.as_array(pointer, shape=(stride * height,))
             array = array.reshape(height, stride)
             # little endian ARGB: 0xAARRGGBB; pure yellow = 0xFFFFFF00
-            mask = array == 0xFFFFFF00
-            array[mask] = 0
+            blue = array & 0xFF
+            green = (array >> 8) & 0xFF
+            red = (array >> 16) & 0xFF
+            delta = (255 - red).astype(numpy.int32)
+            delta2 = (255 - green).astype(numpy.int32)
+            delta3 = blue.astype(numpy.int32)
+            distance_sq = delta * delta + delta2 * delta2 + delta3 * delta3
+            # Yellow-family pixels (red/green dominating over blue) ramp to
+            # opaque; non-yellow pixels keep full alpha.
+            yellowish = (red >= blue) & (green >= blue)
+            alpha = numpy.minimum(
+                255, distance_sq * 255 // Animation.YELLOW_KEY_RADIUS_SQ)
+            new_alpha = numpy.where(yellowish, alpha, 255).astype(numpy.uint32)
+            array &= numpy.uint32(0x00FFFFFF)
+            array |= new_alpha << numpy.uint32(24)
         return image
 
 
@@ -806,8 +823,10 @@ class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
 
     def initializeGL(self):
         # noinspection PyCallByClass, PyTypeChecker
-        #self.qglClearColor(QtGui.QColor.fromRgb(0, 0, 0))
+        # Black for pictures
         glClearColor(0.0, 0.0, 0.0, 1.0)
+        # Grey for detecting missing texture
+        glClearColor(0.33, 0.33, 0.33, 1.0)
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glEnable(GL.GL_CULL_FACE)
