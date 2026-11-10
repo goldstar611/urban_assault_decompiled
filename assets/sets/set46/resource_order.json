@@ -1,0 +1,8 @@
+{
+  "source": "DATA/SET46/OBJECTS/SET.BAS",
+  "source_sha256": "d53174432b123e314623b9def80b9e79ff7c97de6eacf4479ed5924cf3399e99",
+  "resources": [
+    [ "skeleton/colside.sklt", "SKLT", "skeleton/colside.skl.json" ],
+    [ "skeleton/colcross.sklt", "SKLT", "skeleton/colcross.skl.json" ],
+    [ "Skeleton/DUMMY.sklt", "SKLT", "Skeleton/DUMMY.skl.json" ] ]
+}

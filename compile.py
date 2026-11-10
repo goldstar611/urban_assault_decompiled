@@ -1947,6 +1947,14 @@ def add_manifested_resources(mc2: "Mc2", set_number: str) -> bool:
 
 def build_set(set_number="1") -> Mc2:
     """Build an MC2 form for a set without writing an output file."""
+    # The shell set (SET46) stores its whole object tree inside the single
+    # top-level OBJT of its original SET.BAS (no per-vehicle/building/
+    # ground sub-trees), so it is rebuilt verbatim from the decompiled
+    # vehicle JSON instead of the generic vehicles/buildings/ground path.
+    shell_form = os.path.join("assets", "sets", "set{}", "objects", "buildings", "shell.bas.json")
+    if os.path.isfile(shell_form.format(set_number)):
+        return Mc2(form_type="MC2 ", sub_chunks=Form().from_json_file(shell_form.format(set_number)).sub_chunks)
+
     sdf = parse_set_descriptor(set_number)
     visproto = parse_visproto(set_number)
     slurps = parse_slurps(set_number)
