@@ -150,37 +150,50 @@ class MyQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
                 units.extend(child.animation_object_units())
         return units
 
+    # FLATTRACY polFlag bit: the polygon draws as a translucent "tracy"
+    # effect with a global vertex alpha (area.cpp:293-294).
+    POLFLAG_FLATTRACY = 0x80
+
+    # gfx.alpha, the engine's global LUMTRACY vertex alpha (inivals.cpp:12).
+    LUMTRACY_ALPHA = 192 / 255.0
+
     def animated_areas(self):
-        """Return [(anim_name, poly_index)] for BANI-driven AREA/FARE forms below this item."""
+        """Return [(anim_name, poly_index, luminance)] for BANI-driven
+        AREA/FARE forms below this item; luminance marks FLATTRACY polys."""
         ret = []
         if not isinstance(self.association, compile.Form):
             return ret
         for area in self.association.get_all("AREA"):
             if not isinstance(area, compile.Form):
                 continue
-            anim_name, poly_index = self._bani_reference_for_area(area)
+            anim_name, poly_index, luminance = self._bani_reference_for_area(area)
             if anim_name:
-                ret.append((anim_name, poly_index))
+                ret.append((anim_name, poly_index, luminance))
         for area in self.association.get_all("FARE"):
             if not isinstance(area, compile.Form):
                 continue
-            anim_name, poly_index = self._bani_reference_for_area(area)
+            anim_name, poly_index, luminance = self._bani_reference_for_area(area)
             if anim_name:
-                ret.append((anim_name, poly_index))
+                ret.append((anim_name, poly_index, luminance))
         return ret
 
     def _bani_reference_for_area(self, area):
-        """Return (anim_name, poly_index) for the BANI animation driving *area*."""
+        """Return (anim_name, poly_index, luminance) for the BANI animation
+        driving *area*; luminance reflects the FLATTRACY polFlag of the
+        area's STRC_AREA flavor (the surface header, area.cpp:89-122)."""
         bani = area.get_single("BANI")
         if isinstance(bani, compile.Bani) and bani.animation and bani.animation.anim_name:
             anim_name = bani.animation.anim_name
             poly_index = None
+            luminance = False
             for strc in area.get_all("STRC"):
-                if getattr(strc, "poly", None) is not None:
+                if getattr(strc, "strc_type", None) == "STRC_AREA":
+                    luminance = bool(
+                        getattr(strc, "polFlags", 0) & self.POLFLAG_FLATTRACY)
+                if poly_index is None and getattr(strc, "poly", None) is not None:
                     poly_index = strc.poly
-                    break
-            return anim_name, poly_index
-        return None, None
+            return anim_name, poly_index, luminance
+        return None, None, False
 
     def _animation_reference(self):
         """The BANI STRC ``anim_name`` below an AREA/FARE form, if any."""
@@ -199,6 +212,19 @@ class MyQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
             if getattr(strc, "poly", None) is not None:
                 return strc.poly
         return None
+
+    def _area_alpha(self):
+        """Vertex alpha for an AREA/FARE poly: the LUMTRACY factor for
+        FLATTRACY polys, else 1.0 (area.cpp:293-302)."""
+        if self.association.form_type not in ("AREA", "FARE"):
+            return 1.0
+        for strc in self.association.get_all("STRC"):
+            if getattr(strc, "strc_type", None) != "STRC_AREA":
+                continue
+            polflags = getattr(strc, "polFlags", 0)
+            if polflags & self.POLFLAG_FLATTRACY:
+                return self.LUMTRACY_ALPHA
+        return 1.0
 
     def can_render_3d(self):
         if self.is_form():
@@ -529,14 +555,13 @@ class Animation(object):
                 return Animation.map_yellow_to_alpha(image)
         return None
 
-    # Pixels with squared RGB distance from pure yellow below this radius ramp
-    # from transparent to opaque, so near-yellow blends out smoothly.
-    YELLOW_KEY_RADIUS_SQ = 90 * 90
-
     @staticmethod
     def map_yellow_to_alpha(image):
-        """Return *image* with pure yellow made transparent and near-yellow
-        ramped from transparent to opaque within YELLOW_KEY_RADIUS_SQ."""
+        """Return *image* with exactly palette-yellow (255, 255, 0) keyed
+        transparent, matching the engine's ConvAlphaPalette
+        (system/gfx.cpp:2202-2208). Every other color stays opaque; the
+        translucent look of exhaust polys comes from the FLATTRACY render
+        mode, not the key."""
         image = image.convertToFormat(QtGui.QImage.Format.Format_ARGB32)
         height = image.height()
         stride = image.bytesPerLine() // 4
@@ -546,22 +571,11 @@ class Animation(object):
                                   ctypes.POINTER(ctypes.c_uint32))
             array = numpy.ctypeslib.as_array(pointer, shape=(stride * height,))
             array = array.reshape(height, stride)
-            # little endian ARGB: 0xAARRGGBB; pure yellow = 0xFFFFFF00
-            blue = array & 0xFF
-            green = (array >> 8) & 0xFF
-            red = (array >> 16) & 0xFF
-            delta = (255 - red).astype(numpy.int32)
-            delta2 = (255 - green).astype(numpy.int32)
-            delta3 = blue.astype(numpy.int32)
-            distance_sq = delta * delta + delta2 * delta2 + delta3 * delta3
-            # Yellow-family pixels (red/green dominating over blue) ramp to
-            # opaque; non-yellow pixels keep full alpha.
-            yellowish = (red >= blue) & (green >= blue)
-            alpha = numpy.minimum(
-                255, distance_sq * 255 // Animation.YELLOW_KEY_RADIUS_SQ)
-            new_alpha = numpy.where(yellowish, alpha, 255).astype(numpy.uint32)
+            # little endian ARGB: 0xAARRGGBB; pure yellow rgb = 0x00FFFF00
+            yellow = numpy.uint32(0x00FFFF00)
             array &= numpy.uint32(0x00FFFFFF)
-            array |= new_alpha << numpy.uint32(24)
+            array |= numpy.where(array == yellow,
+                                 numpy.uint32(0), numpy.uint32(0xFF000000)).astype(numpy.uint32)
         return image
 
 
@@ -598,7 +612,7 @@ class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
     def animation_tick(self):
         animations = [animation
                       for _, poly_animations, _ in self.animation_groups
-                      for _, animation in poly_animations]
+                      for _, animation, _ in poly_animations]
         if self.animation is not None:
             animations.append(self.animation)
         if not animations:
@@ -638,12 +652,22 @@ class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
         GL.glDisable(GL.GL_CULL_FACE)
         GL.glEnable(GL.GL_BLEND)
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
-        GL.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
+        # MODULATE multiplies the fragment by glColor, so per-pixel keyed
+        # alpha survives while a global tracy factor scales the whole poly.
+        GL.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_MODULATE)
         return texture
 
-    def _draw_textured_polygon(self, image, uvs, vertices):
+    def _draw_textured_polygon(self, image, uvs, vertices, alpha=1.0):
         """Map *uvs* (bitmap pixel coords) onto polygon *vertices*."""
         texture = self._bind_frame_texture(image)
+        if alpha < 1.0:
+            # FLATTRACY polys glow additively (engine destblend path,
+            # gfx.cpp:1047-1048): dark pixels add nothing, so the effect
+            # melts into the background instead of shading it.
+            GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE)
+        else:
+            GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glColor4f(1.0, 1.0, 1.0, alpha)
         GL.glBegin(GL.GL_POLYGON)
         for (uv_x, uv_y), vertex in zip(uvs, vertices):
             GL.glTexCoord2f(uv_x / 255.0, uv_y / 255.0)
@@ -672,7 +696,7 @@ class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
                 GL.glScalef(1.0 / scale_factor, 1.0 / scale_factor, 1.0 / scale_factor)
                 # Static polygons: textured where the AMSH defines a texture,
                 # otherwise plain wireframe context
-                animated_indices = set(poly_index for poly_index, _ in poly_animations)
+                animated_indices = set(poly_index for poly_index, _, _ in poly_animations)
                 GL.glColor3f(1.0, 0.0, 1.0)
                 GL.glLineWidth(1.0)
                 GL.glBegin(GL.GL_LINES)
@@ -701,7 +725,7 @@ class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
                             uvs = (list(uvs) * len(poly_vertices))[:len(poly_vertices)]
                         self._draw_textured_polygon(image, uvs, poly_vertices)
                 # Animated polygons textured with the current frame
-                for poly_index, animation in poly_animations:
+                for poly_index, animation, poly_alpha in poly_animations:
                     image = animation.current_image
                     uvs = animation.current_uvs
                     if image is None or uvs is None or poly_index >= len(edges):
@@ -710,7 +734,7 @@ class GLWidget(QtOpenGLWidgets.QOpenGLWidget):
                     if len(uvs) != len(poly_vertices):
                         # Coords do not align with the polygon; pad/clamp to vertex count
                         uvs = (list(uvs) * len(poly_vertices))[:len(poly_vertices)]
-                    self._draw_textured_polygon(image, uvs, poly_vertices)
+                    self._draw_textured_polygon(image, uvs, poly_vertices, poly_alpha)
                 GL.glPopMatrix()
         elif self.animation is not None:
             image = self.animation.current_image
@@ -1334,13 +1358,15 @@ class Example(QtWidgets.QMainWindow):
                     animation = (Animation.load_vanm_by_name(embd, anim_name)
                                  if anim_name else None)
                     poly_index = current_item._animation_poly_index()
+                    poly_alpha = current_item._area_alpha()
                     if animation is not None and animation.frames:
                         mesh, sklt_name, static_textures = self.find_skeleton_for_item(current_item, embd)
                         if mesh is not None and poly_index is not None and 0 <= poly_index < len(mesh[1]):
                             self.update_status("Playing %d frames (%d ms loop) on skeleton %s polygon %d" % (
                                 len(animation.frames), animation.duration_ms(),
                                 sklt_name, poly_index))
-                            self.GLWidget.play_animations([(mesh, [(poly_index, animation)], static_textures)])
+                            self.GLWidget.play_animations(
+                                [(mesh, [(poly_index, animation, poly_alpha)], static_textures)])
                         else:
                             # Fallback to standalone sprite preview
                             self.GLWidget.play_animation(animation)
@@ -1366,13 +1392,16 @@ class Example(QtWidgets.QMainWindow):
                             if mesh is None:
                                 continue
                             unit_poly_animations = []
-                            for anim_name, poly_index in unit.animated_areas():
+                            for anim_name, poly_index, luminance in unit.animated_areas():
                                 animation = (Animation.load_vanm_by_name(embd, anim_name)
                                              if anim_name else None)
                                 if (animation is not None and animation.frames
                                         and poly_index is not None
                                         and 0 <= poly_index < len(mesh[1])):
-                                    unit_poly_animations.append((poly_index, animation))
+                                    poly_alpha = (MyQTreeWidgetItem.LUMTRACY_ALPHA
+                                                  if luminance else 1.0)
+                                    unit_poly_animations.append(
+                                        (poly_index, animation, poly_alpha))
                             if unit_poly_animations:
                                 groups.append((mesh, unit_poly_animations, static_textures))
                                 unit_skelts.append(sklt_name)
@@ -1380,7 +1409,7 @@ class Example(QtWidgets.QMainWindow):
                             self.update_status("Playing %d frame(s) on %d object unit(s) %r" % (
                                 sum(len(a.frames)
                                     for _, unit_polys, _ in groups
-                                    for _, a in unit_polys),
+                                    for _, a, _ in unit_polys),
                                 len(groups), unit_skelts))
                             self.GLWidget.play_animations(groups)
                         else:
