@@ -25,6 +25,12 @@ Engine: `src/ade.cpp:75` (`NC_STACK_ade::LoadingFromIFF`) parses the
 `STRC`; bit 1 of `flags` = depth-fade, bit 2 = back-face check. There is
 no `KIDS` here — an ADE is a leaf.
 
+**Note**: even for `area.class` payloads, the surface settings
+(`polFlags`, `clrVal`, `trcVal`, `shdVal`) are *not* in this form — the
+plain `ADE` subform only carries the `STRC_ADE` point/poly bytes. The
+AREA's own `STRC` chunk (sibling of the `ADE` subform inside the `AREA`
+form) holds them; see `[[AREA]]`.
+
 ## ADES layout
 
 ```

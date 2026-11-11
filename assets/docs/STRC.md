@@ -62,28 +62,36 @@ Real bytes (an area-definition ADE, `point=4`, `poly=10`):
     00 01 00 04 00 00 00 0a 00 00     version 1, flags 0, point 4, poly 10
 ```
 
-### 3) `[[AREA]]` (STRC_AREA), 10 bytes — `src/area.cpp:93`
+### 3) `[[AREA]]` (STRC_AREA), 10 bytes — `src/area.cpp:89-122`
 
 ```
- 0  int16  version (=1)
+ 0  int16  version (=256, i.e. 0x0100 big-endian)
  2  uint16 flags  (bit 1 = depth-fade, bit 2 = back-check)
- 4  uint16 polflags (see [[AREA]] for the bit meanings)
+ 4  uint16 polFlags (see [[AREA]] for the bit meanings and render modes)
  6  byte   _un1 (=0)
  7  byte   clrVal
  8  byte   trcVal
  9  byte   shdVal
 ```
 
-Real bytes (`color=138`, `shade=128`, no transparency):
+Real bytes (a LUMTRACY texture plane from `VPfJET1`, set 1):
 
 ```
-    01 00 00 00 00 8a 00 00 80 00     ver 1, flags 0, polflags 0
+    01 00 00 00 00 8a 00 00 80 00     ver 256 (0x0100), flags 0,
+                                      polFlags 0x8a = 138
+                                      (LINEARMAPPED|TEXBIT|FLATTRACY),
+                                      clrVal 0, trcVal 0, shdVal 128
 ```
+
+(`version >= 1` is the only test the engine makes on this field
+(`area.cpp:105`), so the 256 still passes — the values are applied
+regardless.)
 
 **Trap**: if an ADE reader (layout 2) parses an AREA chunk, its `version`
-field reads as **256** — because `0x0100` big-endian is version `1` for an
-area. Our `compile.Strc` factory exploits this (`set_binary_data`: length
-10 + `version==256` → AREA). It's a heuristic, not a format feature.
+field reads as **256** instead of 1, because the AREA flavor stores
+`0x0100` big-endian. Our `compile.Strc` factory exploits this
+(`set_binary_data`: length 10 + `version==256` → AREA). It's a heuristic,
+not a format feature.
 
 ### 4) `[[BANI]]` (STRC_BANI), 6 + name bytes — `src/bmpAnm.cpp:46`
 
