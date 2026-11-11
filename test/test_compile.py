@@ -574,6 +574,30 @@ class TestIntegration(unittest.TestCase):
     def assertByteExactSha(self, compiled_bytes: bytes, expected_sha: str) -> None:
         self.assertEqual(hashlib.sha256(compiled_bytes).hexdigest(), expected_sha)
 
+    def test_wireless_manifest_covers_repo_assets(self):
+        """The WIRELESS manifest must list every decompiled skeleton in
+        assets/wireless, keyed by original (lowercased) .SKL name."""
+        with open(os.path.join("assets", "wireless", "manifest.json"), "r") as f:
+            manifest = json.load(f)
+        self.assertEqual(manifest.get("source"), "DATA/WIRELESS")
+        jsons = {n for n in os.listdir(os.path.join("assets", "wireless"))
+                 if n.endswith(".skl.json")}
+        expected = {name + ".json" for name in manifest["resources"]}
+        self.assertEqual(jsons, expected)
+
+    def test_wireless_skeletons_byte_exact(self):
+        """Recompiled WIRELESS skeletons must be byte-identical with the
+        original game files, proven via the recorded sha256s."""
+        with open(os.path.join("assets", "wireless", "manifest.json"), "r") as f:
+            manifest = json.load(f)
+        self.assertTrue(manifest["resources"])
+        for name, expected_sha in sorted(manifest["resources"].items()):
+            with self.subTest(skl=name):
+                path = os.path.join("assets", "wireless", name + ".json")
+                rebuilt = compile.Form().from_json_file(path)
+                self.assertEqual(hashlib.sha256(rebuilt.full_data()).hexdigest(),
+                                 expected_sha)
+
 
 
 if __name__ == "__main__":
